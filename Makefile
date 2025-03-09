@@ -1,11 +1,11 @@
 OS := BigOS
 
-export CC := riscv64-elf-gcc
-export AS := riscv64-elf-as
-export LD := riscv64-elf-ld
+export CC := riscv64-unknown-elf-gcc
+export AS := riscv64-unknown-elf-as
+export LD := riscv64-unknown-elf-ld
 export VM := qemu-system-riscv64
-export OBJDUMP := riscv64-elf-objdump
-export OBJCOPY := riscv64-elf-objcopy
+export OBJDUMP := riscv64-unknown-elf-objdump
+export OBJCOPY := riscv64-unknown-elf-objcopy
 
 INCLUDES := -I./src
 
