@@ -6,4 +6,5 @@ void example_main() {
 
 void example_int_handler() {
 	DEBUG_PUTS("exception triggered\n");
+	void x = 2;
 }
