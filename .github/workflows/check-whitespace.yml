@@ -8,6 +8,7 @@ name: check-whitespace
 on:
   pull_request:
     types: [opened, synchronize]
+  push:
 
 # Avoid unnecessary builds. Unlike the main CI jobs, these are not
 # ci-configurable (but could be).
