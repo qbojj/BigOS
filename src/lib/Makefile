@@ -1,4 +1,4 @@
-LIBS = debug
+LIBS = stdbigos debug
 
 LIB = lib
 
