@@ -17,8 +17,8 @@ always:
 run: all
 	$(VM) $(VMFLAGS) -kernel $(BUILD_DIR)/example/example.elf
 
-FILES_C := $(shell find . -name '*.c')
-FILES_H := $(shell find . -name '*.h')
+FILES_C := $(shell find ./src/ -name '*.c')
+FILES_H := $(shell find ./src/ -name '*.h')
 
 format $(FILES_C) $(FILES_H):
 	@clang-format -i $(FILES_C)
