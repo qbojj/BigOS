@@ -2,6 +2,7 @@ OS := BigOS
 
 SRC_DIR := src
 BUILD_DIR := build
+EXTERN_DIR := external
 
 export MAKE_INCLUDE_PATH := $(shell pwd)/Make
 
@@ -9,7 +10,7 @@ VM := qemu-system-riscv64
 VMFLAGS := -bios none -machine virt -serial mon:stdio
 
 all:
-	make -C $(SRC_DIR) SRC_DIR=$(abspath $(SRC_DIR)) BUILD_DIR=$(abspath $(BUILD_DIR))
+	make -C $(SRC_DIR) SRC_DIR=$(abspath $(SRC_DIR)) BUILD_DIR=$(abspath $(BUILD_DIR)) EXTERN_DIR=$(abspath $(EXTERN_DIR))
 
 always:
 	mkdir -p build
