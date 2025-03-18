@@ -18,6 +18,9 @@ always:
 run: all
 	$(VM) $(VMFLAGS) -kernel $(BUILD_DIR)/example/example.elf
 
+debug: all
+	$(VM) $(VMFLAGS) -kernel $(BUILD_DIR)/example/example.elf -s -S
+
 FILES_C := $(shell find ./src/ -name '*.c')
 FILES_H := $(shell find ./src/ -name '*.h')
 
@@ -31,4 +34,4 @@ clean:
 image:
 	dd if=/dev/zero of=$(BUILD_DIR)/$(OS).img bs=1M count=10
 
-.PHONY: all clean always image run format
+.PHONY: all clean always image run format debug

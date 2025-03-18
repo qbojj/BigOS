@@ -1,11 +1,14 @@
 INCLUDES := lib
 DEFINES := DEBUG
 
-export CFLAGS := -Wall -Wextra -Werror -Wno-attributes -mcmodel=medany -g -Os -Wno-ignored-qualifiers -ffreestanding -march=rv64g -std=c2x
+export CFLAGS := -Wall -Wextra -Werror -mcmodel=medany \
+	-g -O2 -Wno-ignored-qualifiers -ffreestanding \
+	-march=rv64ima_zicsr_zifencei -mabi=lp64 -std=c2x
+
 CFLAGS += $(addprefix -D__, $(addsuffix __,$(DEFINES)))
 CFLAGS += $(patsubst %, -I$(SRC_DIR)/%, $(INCLUDES))
 CFLAGS += "-isystem$(EXTERN_DIR)/include"
-export AFLAGS := -march=rv64g
+export AFLAGS := -march=rv64ima_zicsr_zifencei
 export LDFLAGS := -nostdlib
 
 SRC_DIRS := $(wildcard $(SRC_DIR)/*/)

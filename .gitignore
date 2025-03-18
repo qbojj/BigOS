@@ -65,3 +65,5 @@ build/
 
 # Compiler commands
 compile_commands.json
+
+.gdb_history
