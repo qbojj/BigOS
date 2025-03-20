@@ -3,7 +3,7 @@ DEFINES := DEBUG
 
 export CFLAGS := -Wall -Wextra -Werror -mcmodel=medany \
 	-g -O2 -Wno-ignored-qualifiers -ffreestanding \
-	-march=rv64ima_zicsr_zifencei -mabi=lp64 -std=c2x
+	-march=rv64ima_zicsr_zifencei -mabi=lp64 -std=gnu2x
 
 CFLAGS += $(addprefix -D__, $(addsuffix __,$(DEFINES)))
 CFLAGS += $(patsubst %, -I$(SRC_DIR)/%, $(INCLUDES))
