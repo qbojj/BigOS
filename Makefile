@@ -7,7 +7,7 @@ EXTERN_DIR := external
 export MAKE_INCLUDE_PATH := $(shell pwd)/Make
 
 VM := qemu-system-riscv64
-VMFLAGS := -bios none -machine virt -serial mon:stdio
+VMFLAGS := -machine virt -serial mon:stdio
 
 all:
 	make -C $(SRC_DIR) SRC_DIR=$(abspath $(SRC_DIR)) BUILD_DIR=$(abspath $(BUILD_DIR)) EXTERN_DIR=$(abspath $(EXTERN_DIR))
@@ -16,10 +16,10 @@ always:
 	mkdir -p build
 
 run: all
-	$(VM) $(VMFLAGS) -kernel $(BUILD_DIR)/example/example.elf
+	$(VM) $(VMFLAGS) -kernel $(BUILD_DIR)/example/example.bin
 
 debug: all
-	$(VM) $(VMFLAGS) -kernel $(BUILD_DIR)/example/example.elf -s -S
+	$(VM) $(VMFLAGS) -kernel $(BUILD_DIR)/example/example.bin -s -S
 
 FILES_C := $(shell find ./src/ -name '*.c')
 FILES_H := $(shell find ./src/ -name '*.h')

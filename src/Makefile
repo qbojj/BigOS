@@ -9,7 +9,7 @@ CFLAGS += $(addprefix -D__, $(addsuffix __,$(DEFINES)))
 CFLAGS += $(patsubst %, -I$(SRC_DIR)/%, $(INCLUDES))
 CFLAGS += "-isystem$(EXTERN_DIR)/include"
 export AFLAGS := -march=rv64ima_zicsr_zifencei
-export LDFLAGS := -nostdlib
+export LDFLAGS := -nostdlib -L $(BUILD_DIR)/lib
 
 SRC_DIRS := $(wildcard $(SRC_DIR)/*/)
 SRC_DIRS := $(filter-out $(SRC_DIR)/lib/, $(SRC_DIRS))

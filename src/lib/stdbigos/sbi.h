@@ -22,22 +22,18 @@ typedef enum : ireg_t {
 
 typedef enum : ireg_t {
 	SbiExtBase = 0x10,
-	SbiExtSystemReset = 0x53525354,	 // 'SRST' in ASCII
-	SbiExtTime = 0x54494D45,		 // 'TIME' in ASCII
-	SbiExtIpi = 0x495049,			 // 'IPI' in ASCII
-	SbiExtShutdown = 0x53554844,	 // 'SHUT' in ASCII
-	SbiExtHsm = 0x48534D,			 // 'HSM' in ASCII
-	SbiExtPmu = 0x504D55,			 // 'PMU' in ASCII
-	SbiExtFp = 0x46500000,			 // 'FP' in ASCII
-	SbiExtMessageProxy = 0x4D505859, // 'MPXY' in ASCII
+	SbiExtDebugConsole = 0x4442434E, // 'DBCN'
 } SbiExtensionId;
 
 typedef struct {
 	SbiError error;
-	reg_t value;
+	union {
+		ireg_t value;
+		reg_t uvalue;
+	};
 } sbiret;
 
-sbiret sbi_ecall(SbiExtensionId ext, ireg_t fid, reg_t arg0, reg_t arg1,
+sbiret sbi_ecall(SbiExtensionId ext, reg_t fid, reg_t arg0, reg_t arg1,
 				 reg_t arg2, reg_t arg3, reg_t arg4, reg_t arg5);
 
 // Base Extension
@@ -51,5 +47,11 @@ sbiret sbi_get_marchid();
 sbiret sbi_get_mimpid();
 
 // ...
+
+sbiret sbi_debug_console_write(reg_t num_bytes, reg_t base_addr_lo,
+							   reg_t base_addr_hi);
+sbiret sbi_debug_console_read(reg_t num_bytes, reg_t base_addr_lo,
+							  reg_t base_addr_hi);
+sbiret sbi_debug_console_write_byte(u8 byte);
 
 #endif
