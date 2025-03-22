@@ -34,18 +34,33 @@
       "environment": {
         "CMAKE_BUILD_TYPE": "Release"
       }
+    },
+    {
+      "name": "ninja",
+      "inherits": "base",
+      "generator": "Ninja"
+    },
+    {
+      "name": "ci-ninja",
+      "inherits": "ninja",
+      "environment": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "OFF"
+      },
+      "cacheVariables": {
+        "BIGOS_WARNINGS_AS_ERRORS": "ON"
+      }
     }
   ],
   "buildPresets": [
     {
-      "name": "release",
-      "configurePreset": "release"
+      "name": "ci-ninja",
+      "configurePreset": "ci-ninja"
     }
   ],
   "testPresets": [
     {
-      "name": "release",
-      "configurePreset": "release"
+      "name": "ci-ninja",
+      "configurePreset": "ci-ninja"
     }
   ]
 }
