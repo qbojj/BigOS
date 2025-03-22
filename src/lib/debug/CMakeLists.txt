@@ -1,8 +1,9 @@
+project(Debug LANGUAGES C)
 add_library(Debug)
 
 file(GLOB SOURCES CONFIGURE_DEPENDS src/*.c)
-file(GLOB HEADERS CONFIGURE_DEPENDS include/*.h)
 file(GLOB AS_SOURCES CONFIGURE_DEPENDS src/*.s)
+file(GLOB HEADERS CONFIGURE_DEPENDS include/*.h)
 
 target_sources(Debug
   PRIVATE
@@ -13,5 +14,3 @@ target_sources(Debug
     BASE_DIRS include
     FILES ${HEADERS}
   )
-
-target_include_directories(Debug PUBLIC include)

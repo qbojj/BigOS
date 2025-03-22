@@ -17,10 +17,17 @@ target_sources(example
 
 target_link_libraries(example PRIVATE Debug)
 target_link_options(example PRIVATE -T ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld)
-target_compile_definitions(example PRIVATE __DEBUG__=1)
+target_compile_definitions(example PRIVATE __DEBUG__)
 
 add_custom_command(
-    TARGET ${PROJECT_NAME}
-    POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${PROJECT_NAME}> ${PROJECT_NAME}.bin
+    TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY}
+                -O binary
+                "$<TARGET_FILE:${PROJECT_NAME}>"
+                "${PROJECT_NAME}.bin"
+    BYPRODUCTS "${PROJECT_NAME}.bin"
+    VERBATIM
 )
+
+install(TARGETS example)
+install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.bin" TYPE BIN)
