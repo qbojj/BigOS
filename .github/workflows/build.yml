@@ -2,6 +2,10 @@ name: Build and Test
 
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   CMAKE_BUILD_PARALLEL_LEVEL: ""
   CMAKE_COMPILE_WARNING_AS_ERROR: "ON"
@@ -33,7 +37,7 @@ jobs:
           testPresetAdditionalArgs: "['--config Release']"
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: build-artifacts
           path: build/
