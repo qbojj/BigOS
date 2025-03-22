@@ -38,14 +38,14 @@
   ],
   "buildPresets": [
     {
-      "name": "ninja-multi",
-      "configurePreset": "ninja-multi"
+      "name": "release",
+      "configurePreset": "release"
     }
   ],
   "testPresets": [
     {
-      "name": "ninja-multi",
-      "configurePreset": "ninja-multi"
+      "name": "release",
+      "configurePreset": "release"
     }
   ]
 }
