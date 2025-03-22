@@ -23,7 +23,7 @@ jobs:
 
       - uses: lukka/get-cmake@latest
         with:
-          cmakeVersion: '~3.21.0' # newest 3.21.x version
+          cmakeVersion: '~3.24.0'
 
       - name: Install dependencies
         run: |
