@@ -5,7 +5,9 @@ set(BIGOS_WARNINGS_AS_ERRORS OFF CACHE BOOL "Treat warnings as errors")
 function(SETUP_COMMON name)
     target_compile_features( ${name} PUBLIC c_std_23 )
     set_target_properties( ${name} PROPERTIES
-         VISIBILITY_INLINES_HIDDEN true
+        VISIBILITY_INLINES_HIDDEN true
+        C_EXTENSIONS ON
+        COMPILE_WARNING_AS_ERROR ${BIGOS_WARNINGS_AS_ERRORS}
     )
 
     target_compile_options(${name} PRIVATE -Wall -Wextra -Wno-ignored-qualifiers)
