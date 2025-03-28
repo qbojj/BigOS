@@ -116,6 +116,10 @@
       "inherits": ["build-dirs", "cross-compile", "warnings-as-errors"],
       "displayName": "CI Ninja Configuration",
       "description": "CI configuration using Ninja with warnings as errors."
+    },
+    {
+      "name": "ci-ninja-lto",
+      "inherits": ["release-lto", "ci-ninja"]
     }
   ],
   "buildPresets": [
@@ -124,6 +128,10 @@
       "configurePreset": "ci-ninja",
       "displayName": "CI Ninja Build",
       "description": "Build using CI Ninja configuration."
+    },
+    {
+      "name": "ci-ninja-lto",
+      "configurePreset": "ci-ninja-lto"
     }
   ],
   "testPresets": [
