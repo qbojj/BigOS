@@ -32,6 +32,43 @@
       }
     },
     {
+      "name": "ninja-multi",
+      "inherits": "base",
+      "generator": "Ninja Multi-Config"
+    },
+    {
+      "name": "debug",
+      "inherits": "base",
+      "environment": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "release",
+      "inherits": "base",
+      "environment": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "release-lto",
+      "inherits": "release",
+      "cacheVariables": {
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON"
+      }
+    },
+    {
+      "name": "ninja",
+      "inherits": "base",
+      "generator": "Ninja"
+    },
+    {
+      "name": "ci-ninja",
+      "inherits": "ninja",
+      "environment": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "OFF"
+      },
+    {
       "name": "debug",
       "inherits": ["build-dirs", "cross-compile", "compile-commands"],
       "environment": {
