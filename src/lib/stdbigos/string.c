@@ -4,7 +4,7 @@
 
 /* This file contains low level library functions such as memcpy. As such it is
  * optimized for speed. We also define no-tree-loop-distribute-patterns to
- * prevent compiler from "optimize" those functions into a recursive call
+ * prevent compiler from "optimizing" those functions into a recursive call
  */
 #pragma GCC optimize("O3", "no-tree-loop-distribute-patterns")
 
@@ -92,14 +92,12 @@ int memcmp(const void* lhs_, const void* rhs_, size_t n) {
 	const u8* lhs = lhs_;
 	const u8* rhs = rhs_;
 
-	while(n--) {
-		if(*lhs < *rhs) return -1;
-		if(*lhs > *rhs) return 1;
-		lhs++;
-		rhs++;
+	int ret = 0;
+	while(n-- && !ret) {
+		ret = (int)*lhs++ - (int)*rhs++;
 	}
 
-	return 0;
+	return ret;
 }
 
 void* memchr(const void* src_, int ch, size_t n) {
