@@ -37,6 +37,14 @@
       "generator": "Ninja Multi-Config"
     },
     {
+      "name": "ninja-multi-lto",
+      "inherits": "base",
+      "generator": "Ninja Multi-Config",
+      "cacheVariables": {
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE": "ON"
+      }
+    },
+    {
       "name": "debug",
       "inherits": "base",
       "environment": {

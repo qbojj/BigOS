@@ -14,7 +14,7 @@ SECTIONS
 {
     __stack_size = DEFINED(__stack_size) ? __stack_size : 32M;
 
-    .init 0x80200000 : {
+    .init 0x80400000 : {
         *(.init.enter)
         *(SORT_NONE(.init))
     } :text
