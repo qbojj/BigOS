@@ -1,0 +1,50 @@
+cmake_minimum_required(VERSION 3.13)
+
+if(RISCV_TOOLCHAIN_INCLUDED)
+  return()
+endif()
+
+set(RISCV_TOOLCHAIN_INCLUDED true)
+
+set(CMAKE_SYSTEM_NAME Generic)
+set(CMAKE_SYSTEM_PROCESSOR riscv64)
+set(CMAKE_CROSSCOMPILING 1)
+
+set(RISCV_ARCH "rv64ima_zicsr_zifencei" CACHE STRING "RISC-V instruction set")
+set(RISCV_ABI "lp64" CACHE STRING "RISC-V abi")
+set(RISCV_CMODEL "medany" CACHE STRING "RISC-V cmodel")
+
+set(DEFAULT_RISCV_TOOLCHAIN_PREFIX "riscv64-linux-gnu-")
+
+set(RISCV_TOOLCHAIN_PREFIX "${DEFAULT_RISCV_TOOLCHAIN_PREFIX}" CACHE STRING "RISC-V toolchain prefix")
+
+if (NOT RISCV_TOOLCHAIN_PREFIX)
+    message(SEND_ERROR "Toolchain prefix is not specified")
+endif()
+
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE NEVER)
+
+find_program(RISCV_C_COMPILER "${RISCV_TOOLCHAIN_PREFIX}gcc" REQUIRED)
+
+<<<<<<< HEAD:CMake/riscv64-cmake-toolchain.cmake
+set(RISCV_COMPILER_FLAGS "${RISCV_COMPILER_FLAGS} \
+    -march=${RISCV_ARCH} -mabi=${RISCV_ABI} -mcmodel=${RISCV_CMODEL} \
+    -ffreestanding -fPIC -pie"
+    )
+=======
+set(RISCV_COMPILER_FLAGS ${RISCV_COMPILER_FLAGS}
+    -march=${RISCV_ARCH} -mabi=${RISCV_ABI} -mcmodel=${RISCV_CMODEL}
+    -ffreestanding)
+>>>>>>> 9eb60e8 (add clang toolchain and clang-tidy support):CMake/toolchains/riscv64-gcc.cmake
+
+set(RISCV_LINKER_FLAGS "-nostdlib -Wl,--build-id=none")
+
+set(CMAKE_C_COMPILER_TARGET riscv64-unknown-none-elf)
+set(CMAKE_C_COMPILER ${RISCV_C_COMPILER} ${RISCV_COMPILER_FLAGS})
+
+set(CMAKE_SHARED_LINKER_FLAGS "${RISCV_LINKER_FLAGS} ${CMAKE_SHARED_LINKER_FLAGS}")
+set(CMAKE_MODULE_LINKER_FLAGS "${RISCV_LINKER_FLAGS} ${CMAKE_MODULE_LINKER_FLAGS}")
+set(CMAKE_EXE_LINKER_FLAGS    "${RISCV_LINKER_FLAGS} ${RISCV_LINKER_FLAGS_EXE} ${CMAKE_EXE_LINKER_FLAGS}")
