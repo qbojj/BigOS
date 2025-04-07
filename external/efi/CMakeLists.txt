@@ -16,6 +16,6 @@ target_compile_options(gnu-efi INTERFACE
 	 -fshort-wchar -mabi=lp64d -march=rv64g
 )
 
-target_include_directories(gnu-efi INTERFACE ${EFI_DIR}/include/efi)
+target_include_directories(gnu-efi SYSTEM INTERFACE ${EFI_DIR}/include/efi)
 target_link_directories(gnu-efi INTERFACE ${EFI_DIR}/lib)
 target_link_libraries(gnu-efi INTERFACE efi gnuefi)
