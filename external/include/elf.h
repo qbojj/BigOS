@@ -9,18 +9,18 @@
 typedef u32	Elf32_Addr;
 typedef u16	Elf32_Half;
 typedef u32	Elf32_Off;
-typedef s32	Elf32_Sword;
+typedef i32	Elf32_Sword;
 typedef u32	Elf32_Word;
 
 /* 64-bit ELF base types. */
 typedef u64	Elf64_Addr;
 typedef u16	Elf64_Half;
-typedef s16	Elf64_SHalf;
+typedef i16	Elf64_SHalf;
 typedef u64	Elf64_Off;
-typedef s32	Elf64_Sword;
+typedef i32	Elf64_Sword;
 typedef u32	Elf64_Word;
 typedef u64	Elf64_Xword;
-typedef s64	Elf64_Sxword;
+typedef i64	Elf64_Sxword;
 
 /* These constants are for the segment types stored in the image headers */
 #define PT_NULL    0
