@@ -6,14 +6,8 @@ endif()
 
 set(RISCV_TOOLCHAIN_INCLUDED true)
 
-foreach(PREFIX "riscv64-linux-gnu" "riscv64-unknown-elf" "riscv64-elf" "riscv64-none-elf" "riscv64-unknown-none-elf")
-    find_program(PREFIX_TOOLCHAIN_GCC "${PREFIX}-gcc")
-    if (PREFIX_TOOLCHAIN_GCC)
-        set(DEFAULT_RISCV_TOOLCHAIN_PREFIX "${PREFIX}-")
-        set(DEFAULT_RISCV_TOOLCHAIN_ROOT "/usr/${PREFIX}/")
-        break()
-    endif()
-endforeach()
+set(DEFAULT_RISCV_TOOLCHAIN_PREFIX "riscv64-linux-gnu-")
+set(DEFAULT_RISCV_TOOLCHAIN_ROOT "/usr/riscv64-linux-gnu/")
 
 set(RISCV_TOOLCHAIN_PREFIX "${DEFAULT_RISCV_TOOLCHAIN_PREFIX}" CACHE STRING "RISC-V toolchain prefix")
 set(RISCV_TOOLCHAIN_ROOT "${DEFAULT_RISCV_TOOLCHAIN_ROOT}" CACHE PATH "RISC-V toolchain path")
@@ -54,7 +48,7 @@ set(RISCV_COMPILER_FLAGS "${RISCV_COMPILER_FLAGS} \
     -ffreestanding -fPIC -pie"
     )
 
-set(RISCV_LINKER_FLAGS "-nostdlib")
+set(RISCV_LINKER_FLAGS "-nostdlib -Wl,--build-id=none")
 
 set(CMAKE_C_FLAGS             "${RISCV_COMPILER_FLAGS} ${CMAKE_C_FLAGS}")
 set(CMAKE_ASM_FLAGS           "${RISCV_COMPILER_FLAGS} ${CMAKE_ASM_FLAGS}")
