@@ -8,4 +8,4 @@ set(RISCV_GCC_TOOLCHAIN_INCLUDED true)
 
 include(${CMAKE_CURRENT_LIST_DIR}/riscv64-common.cmake)
 
-find_program(RISCV_C_COMPILER "riscv64-linux-gnu-gcc" REQUIRED)
+find_program(CMAKE_C_COMPILER "riscv64-linux-gnu-gcc" REQUIRED)
