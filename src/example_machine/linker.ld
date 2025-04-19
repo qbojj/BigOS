@@ -23,8 +23,9 @@ SECTIONS {
 	.data : ALIGN(4K) {
 		*(.data);
 	}
-	/DISCARD/ : {
-		*(.interp)
-		*(.note .note.*)
-	}
+
+    /DISCARD/ : {
+        *(.eh_frame .eh_frame.*)
+        *(.note .note.*)
+    }
 }
