@@ -1,4 +1,4 @@
-project(gnu-efi)
+project(gnu-efi LANGUAGES NONE)
 
 add_library(gnu-efi INTERFACE)
 
