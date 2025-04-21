@@ -9,3 +9,4 @@ set(RISCV_LINKER_FLAGS "${RISCV_LINKER_FLAGS} -fuse-ld=lld")
 include(${CMAKE_CURRENT_LIST_DIR}/riscv64-common.cmake)
 
 set(CMAKE_C_COMPILER clang)
+set(CMAKE_OBJCOPY riscv64-linux-gnu-objcopy)
