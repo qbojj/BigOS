@@ -5,9 +5,10 @@
 
 #ifndef NDEBUG
 
-	#define DEBUG_PUTC(c)		   fputc(c, stderr)
-	#define DEBUG_PUTS(s)		   fputs(s, stderr)
-	#define DEBUG_PRINTF(fmt, ...) fprintf(stderr, fmt __VA_OPT__(, ) __VA_ARGS__)
+	#define DEBUG_PUTC(c) fputc(c, stderr)
+	#define DEBUG_PUTS(s) fputs(s, stderr)
+	#define DEBUG_PRINTF(fmt, ...)                      \
+		fprintf(stderr, fmt __VA_OPT__(, ) __VA_ARGS__)
 
 #else
 

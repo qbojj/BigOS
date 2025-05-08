@@ -7,9 +7,9 @@
 */
 
 #include <stdbigos/csr.h>
-#include <string.h>
-#include <stdlib.h>
 #include <stdbigos/types.h>
+#include <stdlib.h>
+#include <string.h>
 
 extern u8 __bss_start [[gnu::weak]];
 extern u8 __bss_end [[gnu::weak]];

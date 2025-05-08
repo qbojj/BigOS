@@ -1,9 +1,9 @@
-#include <stdbigos/debug_stdio.h>
 #include <stdbigos/csr.h>
-#include <string.h>
+#include <stdbigos/debug_stdio.h>
 #include <stdbigos/trap.h>
 #include <stdbigos/types.h>
 #include <stdlib.h>
+#include <string.h>
 
 static const u64 clint_base = 0x02000000;
 
@@ -20,7 +20,6 @@ extern u8 __global_pointer$;
 
 extern void __libc_init_array();
 extern void __libc_fini_array();
-
 
 [[gnu::interrupt("machine")]]
 void int_handler() {
