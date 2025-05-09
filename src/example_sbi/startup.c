@@ -21,12 +21,12 @@ extern int main(u32 hartid, const void* fdt);
 
 [[gnu::section(".init.enter"), gnu::naked]]
 void _enter(void) {
-	__asm__ volatile(".option push\n\t"
-					 ".option norelax\n\t"
-					 "la    gp, __global_pointer$\n\t"
-					 ".option pop\n\t"
-					 "la    sp, _sp\n\t"
-					 "jal   zero, _start");
+	__asm__(".option push\n\t"
+			".option norelax\n\t"
+			"la    gp, __global_pointer$\n\t"
+			".option pop");
+	__asm__("la    sp, _sp");
+	__asm__("j     _start");
 }
 
 void __llvm_libc_exit(int) {
