@@ -12,7 +12,7 @@ SECTIONS {
 	.bss : ALIGN(4K) {
 		PROVIDE(__bss_start = .);
 		*(.bss);
-	  *(COMMON);
+		*(COMMON);
 		PROVIDE(__global_pointer$ = .);
 		PROVIDE(__bss_end = .);
 	}
