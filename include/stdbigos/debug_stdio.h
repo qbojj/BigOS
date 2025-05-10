@@ -22,8 +22,8 @@ static inline void dprintf(char* fmt, ...) {
 
 #else
 
-static inline void dputc(int c) {}
-static inline void dputs(char* s) {}
+static inline void dputc(int) {}
+static inline void dputs(char*) {}
 [[gnu::format(printf, 1, 2)]]
 static inline void dprintf(char*, ...) {}
 
