@@ -32,50 +32,11 @@
       }
     },
     {
-      "name": "ninja-multi",
-      "inherits": "base",
-      "generator": "Ninja Multi-Config"
-    },
-    {
-      "name": "ninja-multi-lto",
-      "inherits": "base",
-      "generator": "Ninja Multi-Config",
-      "cacheVariables": {
+      "name": "build-release-lto",
+      "environment": {
         "CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE": "ON"
       }
     },
-    {
-      "name": "debug",
-      "inherits": "base",
-      "environment": {
-        "CMAKE_BUILD_TYPE": "Debug"
-      }
-    },
-    {
-      "name": "release",
-      "inherits": "base",
-      "environment": {
-        "CMAKE_BUILD_TYPE": "Release"
-      }
-    },
-    {
-      "name": "release-lto",
-      "inherits": "release",
-      "cacheVariables": {
-        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON"
-      }
-    },
-    {
-      "name": "ninja",
-      "inherits": "base",
-      "generator": "Ninja"
-    },
-    {
-      "name": "ci-ninja",
-      "inherits": "ninja",
-      "environment": {
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "OFF"
-      },
     {
       "name": "debug",
       "inherits": ["build-dirs", "cross-compile", "compile-commands"],
@@ -120,6 +81,10 @@
       "description": "Configuration using Ninja Multi-Config generator. (add --config <CONFIG> to build)"
     },
     {
+      "name": "ninja-multi-lto",
+      "inherits": ["ninja-multi", "build-release-lto"]
+    },
+    {
       "name": "ci-ninja",
       "inherits": ["build-dirs", "cross-compile", "warnings-as-errors"],
       "displayName": "CI Ninja Configuration",
@@ -127,7 +92,7 @@
     },
     {
       "name": "ci-ninja-lto",
-      "inherits": ["release-lto", "ci-ninja"]
+      "inherits": ["ci-ninja", "build-release-lto"]
     }
   ],
   "buildPresets": [
