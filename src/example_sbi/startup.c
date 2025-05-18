@@ -32,21 +32,21 @@ extern int main(u32 hartid, const void* fdt);
 [[gnu::section(".init.enter"), gnu::naked]]
 void _enter(void) {
 	__asm__ volatile(".option push\n\t"
-					 ".option norelax\n\t"
-					 "la    gp, __global_pointer$\n\t"
-					 ".option pop\n\t"
-					 "la    sp, __stack_start\n\t"
-					 "jal   zero, _start");
+	                 ".option norelax\n\t"
+	                 "la    gp, __global_pointer$\n\t"
+	                 ".option pop\n\t"
+	                 "la    sp, __stack_start\n\t"
+	                 "jal   zero, _start");
 }
 
 [[gnu::section(".fini"), noreturn, gnu::noinline]]
 static void _Exit(int) {
-	while(1) wfi();
+	while (1) wfi();
 }
 
 [[gnu::section(".init")]]
 static void _call_constructors() {
-	for(const function_t* entry = &__preinit_array_start; entry < &__preinit_array_end; ++entry) {
+	for (const function_t* entry = &__preinit_array_start; entry < &__preinit_array_end; ++entry) {
 		(*entry)();
 	}
 
@@ -57,8 +57,7 @@ static void _call_constructors() {
 
 [[gnu::section(".fini")]]
 static void _call_destructors() {
-	for(const function_t* entry = &__fini_array_start;
-		entry < &__fini_array_end; ++entry) {
+	for (const function_t* entry = &__fini_array_start; entry < &__fini_array_end; ++entry) {
 		(*entry)();
 	}
 }

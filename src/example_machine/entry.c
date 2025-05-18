@@ -62,9 +62,9 @@ void start() {
 [[gnu::section(".init"), gnu::naked]]
 void _start() {
 	__asm__(".option push\n\t"
-			".option norelax\n\t"
-			"la    gp, __global_pointer$\n\t"
-			".option pop\n\t"
-			"la    sp, __stack_top\n\t"
-			"j start");
+	        ".option norelax\n\t"
+	        "la    gp, __global_pointer$\n\t"
+	        ".option pop\n\t"
+	        "la    sp, __stack_top\n\t"
+	        "j start");
 }
