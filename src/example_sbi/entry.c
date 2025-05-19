@@ -5,6 +5,6 @@ static void sbi_puts(const char* str) {
 	while (*str) sbi_debug_console_write_byte(*str++);
 }
 
-void main(u32, const void*) {
+void main([[maybe_unused]] u32 hartid, [[maybe_unused]] const void* fdt) {
 	sbi_puts("Hello world\n");
 }
