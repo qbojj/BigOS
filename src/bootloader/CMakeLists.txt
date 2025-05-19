@@ -35,6 +35,8 @@ add_custom_command(
 set(EFI_DIR "${CMAKE_BINARY_DIR}/efidir")
 set(EFI_BOOT_DIR "${EFI_DIR}/EFI/BOOT")
 set(BOOTRISCV64_EFI "${EFI_BOOT_DIR}/BOOTRISCV64.EFI")
+set(EXT2_BINARY_SRC "${PROJECT_SOURCE_DIR}/external/ext2efi/ext2_riscv64.efi")
+set(EXT2_BINARY_EFI "${EFI_BOOT_DIR}/ext2.efi")
 
 file(MAKE_DIRECTORY "${EFI_BOOT_DIR}")
 
@@ -46,9 +48,17 @@ add_custom_command(
     VERBATIM
 )
 
+add_custom_command(
+    OUTPUT ${EXT2_BINARY_EFI}
+    COMMAND ${CMAKE_COMMAND} -E copy "${EXT2_BINARY_SRC}" "${EXT2_BINARY_EFI}"
+    DEPENDS "${EXT2_BINARY_SRC}"
+    COMMENT "Copying ext2 EFI driver to ${EXT2_BINARY_EFI}"
+    VERBATIM
+)
+
 add_custom_target(
     efi-partition-structure ALL
-    DEPENDS ${BOOTRISCV64_EFI}
+    DEPENDS ${BOOTRISCV64_EFI} ${EXT2_BINARY_EFI}
 )
 
 add_custom_target(run-bootloader
