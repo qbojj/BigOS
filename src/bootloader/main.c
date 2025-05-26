@@ -21,6 +21,23 @@
 	{ 0xb1b621d5, 0xf19c, 0x41a5, \
 	{ 0x83, 0x0b, 0xd9, 0x15, 0x2c, 0x69, 0xaa, 0xe0 } }
 
+typedef struct {
+	unsigned char ident[16];
+	UINT16 type;
+	UINT16 machine;
+	UINT16 version;
+	UINT16 entry;
+	UINT16 phoff;
+	UINT16 shoff;
+	UINT16 flags;
+	UINT16 ehsize;
+	UINT16 phentsize;
+	UINT16 phnum;
+	UINT16 shentsize;
+	UINT16 shnum;
+	UINT16 shstrndx;
+} elf64_header;
+
 // FDT is created by u-boot and then passed into UEFI system table
 void* getFDT(EFI_SYSTEM_TABLE* system_table) {
 	EFI_GUID fdt_guid = EFI_FDT_GUID;
@@ -34,6 +51,54 @@ void* getFDT(EFI_SYSTEM_TABLE* system_table) {
 	}
 
 	return NULL;
+}
+
+// TODO: return something more meaningful
+EFI_STATUS read_file(EFI_FILE_PROTOCOL* file, UINT64 offset, UINT64 size, void* buffer) {
+	EFI_STATUS status;
+	unsigned char* buf = buffer;
+
+	status = file->SetPosition(file, offset);
+	if(EFI_ERROR(status)) 
+		return status;
+
+	for(UINT64 read = 0; read < size;) {
+		UINT64 remains = size - read;
+		status = file->Read(file, &remains, (void*)(buf + read));
+		if(EFI_ERROR(status))
+			return status;
+		read += remains;
+	}
+
+	return EFI_SUCCESS;
+}
+
+// TODO: return something more meaningful
+EFI_STATUS read_elf_header(EFI_FILE_PROTOCOL* file, elf64_header* header) {
+	return read_file(file, 0, sizeof(elf64_header), header);
+}
+
+// TODO: return something more meaningful
+UINTN verify_elf_header(elf64_header* header) {
+	if( header->ident[0] != 0x7f ||
+		header->ident[1] != 'E' ||
+		header->ident[2] != 'L' ||
+		header->ident[3] != 'F')
+		return 1; // No ELF signature
+
+	if(header->type != 2)
+		return 2; // Unsupported elf type
+
+	if(header->ident[4] != 2)
+		return 3; // Unsupported elf class
+
+	if(header->phnum == 0)
+		return 4; // Elf doesn't contain any program headers
+
+	if(header->phentsize != sizeof(elf64_header))
+		return 5; // Unexpected header size
+
+	return 0;
 }
 
 EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
