@@ -11,6 +11,6 @@
 
 #include <efi.h>
 
-EFI_STATUS ext2_driver_start(EFI_HANDLE image_handle);
+void ext2_driver_start(EFI_HANDLE image_handle);
 
 #endif // !BIGOS_BOOTLOADER_EXT2

@@ -19,7 +19,7 @@ typedef struct {
 	EFI_DEVICE_PATH_PROTOCOL* device_path;
 } partition_t;
 
-EFI_STATUS partition_table_create();
+void partition_table_create();
 void partition_table_free();
 
 void partition_print(partition_t* partition);

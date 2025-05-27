@@ -1,15 +1,16 @@
 /******************************************************************************
  *
- *  File:			bootloader/fdt.h
- *  Description:	FDT manipulation functions.
+ *  File:			bootloader/fdt.c
  *  Author:			Maciej Zgierski
  *
  ******************************************************************************/
 
 #include "fdt.h"
 
+#include <efierr.h>
 #include <efilib.h>
 #include "common.h"
+#include "exit.h"
 
 #define EFI_FDT_GUID \
 	{ 0xb1b621d5, 0xf19c, 0x41a5, \
@@ -29,5 +30,6 @@ void* get_FDT() {
 	}
 
 	Print(L"[X] Failed to get FDT");
+	exit(EFI_LOAD_ERROR);
 	return NULL;
 }
