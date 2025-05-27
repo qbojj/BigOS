@@ -1,0 +1,150 @@
+/******************************************************************************
+ *
+ *  File:			bootloader/ext2.h
+ *  Description:	Partition manipulation functions.
+ *  Author:			Maciej Zgierski
+ *
+ ******************************************************************************/
+
+#include "partition.h"
+
+#include <efi.h>
+#include <efilib.h>
+
+#include "common.h"
+
+partition_t* g_partition_table;
+UINTN g_partition_table_count;
+
+static void partition_create(partition_t* partition, EFI_HANDLE handle) {
+	EFI_STATUS status;
+
+	partition->file_system = NULL;
+	partition->root = NULL;
+	partition->file_system_info = NULL;
+	partition->file_system_info_size = 0;
+	partition->device_path = NULL;
+
+	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* file_system;
+	EFI_GUID file_system_protocol = SIMPLE_FILE_SYSTEM_PROTOCOL;
+	status = g_system_table->BootServices->HandleProtocol(
+		handle,
+		&file_system_protocol,
+		(void**)&file_system
+	);
+	if(EFI_ERROR(status)) return;
+
+	EFI_FILE_PROTOCOL* root;
+	status = file_system->OpenVolume(file_system, &root);
+	if(EFI_ERROR(status)) return;
+
+	EFI_FILE_SYSTEM_INFO* file_system_info = NULL;
+	UINTN file_system_info_size = 0;
+	EFI_GUID file_system_info_guid = EFI_FILE_SYSTEM_INFO_ID;
+	status = root->GetInfo(
+		root, 
+		&file_system_info_guid,
+		&file_system_info_size,
+		file_system_info
+	);
+	file_system_info = AllocatePool(file_system_info_size);
+	if(file_system_info == NULL) {
+		root->Close(root);
+		return;
+	}
+
+	status = root->GetInfo(
+		root, 
+		&file_system_info_guid,
+		&file_system_info_size,
+		file_system_info
+	);
+	if(EFI_ERROR(status)) {
+		FreePool(file_system_info);
+		root->Close(root);
+		return;
+	}
+
+	EFI_DEVICE_PATH_PROTOCOL* device_path;
+	EFI_GUID device_path_guid = EFI_DEVICE_PATH_PROTOCOL_GUID;
+	status = g_system_table->BootServices->HandleProtocol(
+		handle,
+		&device_path_guid,
+		(void**)&device_path
+	);
+	if(EFI_ERROR(status)) {
+		FreePool(file_system_info);
+		root->Close(root);
+		return;
+	}
+
+	partition->file_system = file_system;
+	partition->root = root;
+	partition->file_system_info = file_system_info;
+	partition->file_system_info_size = file_system_info_size;
+	partition->device_path = device_path;
+}
+
+EFI_STATUS partition_table_create() {
+	EFI_STATUS status;
+
+	Print(L"[ ] Locating file system handles...\n");
+	EFI_HANDLE* file_systems_table;
+	UINTN file_systems_count;
+	EFI_GUID file_system_protocol = SIMPLE_FILE_SYSTEM_PROTOCOL;
+	status = g_system_table->BootServices->LocateHandleBuffer(
+		ByProtocol,
+		&file_system_protocol,
+		NULL,
+		&file_systems_count,
+		&file_systems_table
+	);
+	if(EFI_ERROR(status)) {
+		Print(L"[X] Failed to locate file system handles. Error code: %u\n", status);
+		return status;
+	}
+
+	g_partition_table = AllocatePool(sizeof(partition_t) * file_systems_count);
+	if(EFI_ERROR(status)) {
+		Print(L"[X] Failed to allocate memory for partition data. Error code: %u\n", status);
+		return status;
+	}
+
+	Print(L"[ ] Located file system handles:\n");
+	for(UINTN index = 0; index < file_systems_count; ++index) {
+		partition_create(file_systems_table[index]);
+	}
+	FreePool(file_systems_table);
+
+	return EFI_SUCCESS;
+}
+
+void partition_table_free() {
+	for(UINTN i = 0; i < g_partition_table_count; ++i) {
+
+	}
+
+	FreePool(g_partition_table);
+}
+
+void partition_data_print(partition_t* partition) {
+	EFI_STATUS status;
+
+	Print(L"\t   [ ] Volume Label:'%s'\n", file_system_info->VolumeLabel);
+	Print(L"\t   [ ] Volume Size:%llu\n", file_system_info->VolumeSize);
+
+	EFI_DEVICE_PATH_PROTOCOL* node = device_path;
+	while(!IsDevicePathEnd(node)) {
+		if(DevicePathType(node) == MEDIA_DEVICE_PATH && DevicePathSubType(node) == MEDIA_HARDDRIVE_DP) {
+			HARDDRIVE_DEVICE_PATH* harddrive_path = (HARDDRIVE_DEVICE_PATH*)node;
+			if(harddrive_path->SignatureType == SIGNATURE_TYPE_GUID) {
+				EFI_GUID* part_guid = (EFI_GUID*) harddrive_path->Signature;
+				Print(L"\t   [ ] GPT UUID\n", part_guid);
+				break;
+			}
+		}
+		node = NextDevicePathNode(node);
+	}
+
+	Print(L"\t   [ ] Device avaible\n");
+}
