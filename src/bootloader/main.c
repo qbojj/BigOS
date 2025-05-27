@@ -47,8 +47,9 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
 	status = partition_table_create();
 	if(EFI_ERROR(status)) return status;
 
+	partition_table_print();
+
 	partition_table_free();
 
-	// Kernel shouldn't return
-	while(1);
+	while(1); // Kernel shouldn't return
 }

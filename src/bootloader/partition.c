@@ -19,10 +19,10 @@ UINTN g_partition_table_count;
 static void partition_create(partition_t* partition, EFI_HANDLE handle) {
 	EFI_STATUS status;
 
+	partition->flags = 0;
 	partition->file_system = NULL;
 	partition->root = NULL;
 	partition->file_system_info = NULL;
-	partition->file_system_info_size = 0;
 	partition->device_path = NULL;
 
 	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* file_system;
@@ -78,10 +78,10 @@ static void partition_create(partition_t* partition, EFI_HANDLE handle) {
 		return;
 	}
 
+	partition->flags = 1;
 	partition->file_system = file_system;
 	partition->root = root;
 	partition->file_system_info = file_system_info;
-	partition->file_system_info_size = file_system_info_size;
 	partition->device_path = device_path;
 }
 
@@ -104,47 +104,60 @@ EFI_STATUS partition_table_create() {
 		return status;
 	}
 
+	g_partition_table_count = file_systems_count;
 	g_partition_table = AllocatePool(sizeof(partition_t) * file_systems_count);
 	if(EFI_ERROR(status)) {
 		Print(L"[X] Failed to allocate memory for partition data. Error code: %u\n", status);
 		return status;
 	}
 
-	Print(L"[ ] Located file system handles:\n");
-	for(UINTN index = 0; index < file_systems_count; ++index) {
-		partition_create(file_systems_table[index]);
+	Print(L"[ ] Creating partition table...\n");
+	for(UINTN i = 0; i < g_partition_table_count; ++i) {
+		partition_create(&g_partition_table[i], file_systems_table[i]);
 	}
+
 	FreePool(file_systems_table);
 
 	return EFI_SUCCESS;
 }
 
 void partition_table_free() {
+	Print(L"[ ] Deleting partition table...\n");
 	for(UINTN i = 0; i < g_partition_table_count; ++i) {
-
+		FreePool(g_partition_table[i].file_system_info);
+		g_partition_table[i].root->Close(g_partition_table[i].root);
 	}
-
 	FreePool(g_partition_table);
 }
 
-void partition_data_print(partition_t* partition) {
-	EFI_STATUS status;
+void partition_print(partition_t* partition) {
+	if(partition->flags == 0) {
+		Print(L"\tPartition unavaible\n");
+		return;
+	}
 
-	Print(L"\t   [ ] Volume Label:'%s'\n", file_system_info->VolumeLabel);
-	Print(L"\t   [ ] Volume Size:%llu\n", file_system_info->VolumeSize);
+	Print(L"\tPartition avaible:\n");
+	Print(L"\t - Volume Label: '%s'\n", partition->file_system_info->VolumeLabel);
+	Print(L"\t - Volume Size: %llu\n", partition->file_system_info->VolumeSize);
 
-	EFI_DEVICE_PATH_PROTOCOL* node = device_path;
+	EFI_DEVICE_PATH_PROTOCOL* node = partition->device_path;
 	while(!IsDevicePathEnd(node)) {
 		if(DevicePathType(node) == MEDIA_DEVICE_PATH && DevicePathSubType(node) == MEDIA_HARDDRIVE_DP) {
 			HARDDRIVE_DEVICE_PATH* harddrive_path = (HARDDRIVE_DEVICE_PATH*)node;
 			if(harddrive_path->SignatureType == SIGNATURE_TYPE_GUID) {
 				EFI_GUID* part_guid = (EFI_GUID*) harddrive_path->Signature;
-				Print(L"\t   [ ] GPT UUID\n", part_guid);
-				break;
+				Print(L"\t - GPT UUID: %g\n", part_guid);
+				return;
 			}
 		}
 		node = NextDevicePathNode(node);
 	}
+}
 
-	Print(L"\t   [ ] Device avaible\n");
+void partition_table_print() {
+	Print(L"Listing all partitions:\n");
+	for(UINTN i = 0; i < g_partition_table_count; ++i) {
+		Print(L" (%u)", i);
+		partition_print(&g_partition_table[i]);
+	}
 }
