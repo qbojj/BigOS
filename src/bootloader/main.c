@@ -10,130 +10,23 @@
  ******************************************************************************/
 
 #include <efi.h>
+#include <efilib.h>
 #include <efiapi.h>
 #include <efidef.h>
 #include <efidevp.h>
-#include <efilib.h>
 
-#define EXT2_DRIVER_PATH L"EFI\\BOOT\\ext2.efi"
+#include "common.h"
+#include "ext2.h"
+#include "fdt.h"
+#include "elf.h"
+#include "partition.h"
 
-#define EFI_FDT_GUID \
-	{ 0xb1b621d5, 0xf19c, 0x41a5, \
-	{ 0x83, 0x0b, 0xd9, 0x15, 0x2c, 0x69, 0xaa, 0xe0 } }
-
-typedef struct {
-	unsigned char ident[16];
-	UINT16 type;
-	UINT16 machine;
-	UINT32 version;
-	UINT64 entry;
-	UINT64 phoff;
-	UINT64 shoff;
-	UINT32 flags;
-	UINT16 ehsize;
-	UINT16 phentsize;
-	UINT16 phnum;
-	UINT16 shentsize;
-	UINT16 shnum;
-	UINT16 shstrndx;
-} elf64_header;
-
-typedef struct {
-	UINT32 type;
-	UINT32 flags;
-	UINT64 offset;
-	UINT64 vaddr;
-	UINT64 paddr;
-	UINT64 filesz;
-	UINT64 memsz;
-	UINT64 align;
-} elf_program_header;
-
-typedef struct {
-	elf64_header header;
-	elf_program_header* program_headers;
-	uint64_t image_begin;
-	uint64_t image_end;
-	uint64_t page_size;
-
-	uint64_t image_pages;
-	uint64_t image_addr;
-	uint64_t image_entry;
-} elf_application;
-
-// FDT is created by u-boot and then passed into UEFI system table
-void* getFDT(EFI_SYSTEM_TABLE* system_table) {
-	EFI_GUID fdt_guid = EFI_FDT_GUID;
-	EFI_CONFIGURATION_TABLE* fdt;
-
-	for(UINTN index = 0; index < system_table->NumberOfTableEntries; ++index) {
-		fdt = &system_table->ConfigurationTable[index];
-		if(CompareGuid(&fdt->VendorGuid, &fdt_guid)) {
-			return fdt->VendorTable;
-		}
-	}
-
-	return NULL;
-}
-
-// TODO: return something more meaningful
-EFI_STATUS read_file(EFI_FILE_PROTOCOL* file, UINT64 offset, UINT64 size, void* buffer) {
-	EFI_STATUS status;
-	unsigned char* buf = buffer;
-
-	status = file->SetPosition(file, offset);
-	if(EFI_ERROR(status))
-		return status;
-
-	for(UINT64 read = 0; read < size;) {
-		UINT64 remains = size - read;
-		status = file->Read(file, &remains, (void*)(buf + read));
-		if(EFI_ERROR(status))
-			return status;
-		read += remains;
-	}
-
-	return EFI_SUCCESS;
-}
-
-// TODO: return something more meaningful
-EFI_STATUS read_elf_header(EFI_FILE_PROTOCOL* file, elf64_header* header) {
-	return read_file(file, 0, sizeof(elf64_header), header);
-}
-
-// TODO: return something more meaningful
-UINTN verify_elf_header(elf64_header* header) {
-	if( header->ident[0] != 0x7f ||
-		header->ident[1] != 'E' ||
-		header->ident[2] != 'L' ||
-		header->ident[3] != 'F')
-		return 1; // No ELF signature
-
-	if(header->type != 2)
-		return 2; // Unsupported elf type
-
-	if(header->ident[4] != 2)
-		return 3; // Unsupported elf class
-
-	if(header->phnum == 0)
-		return 4; // Elf doesn't contain any program headers
-
-	if(header->phentsize != sizeof(elf64_header))
-		return 5; // Unexpected header size
-
-	return 0;
-}
-
-EFI_STATUS load_elf(elf_application* app) {
-	UINT64 size = app->page_size + (app->image_end - app->image_begin);
-	UINT64 addr;
-	EFI_STATUS status;
-
-	Print(L"Loading ELF file...\n");
-}
+EFI_SYSTEM_TABLE* g_system_table;
 
 EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
-	InitializeLib(image_handle, system_table);
+	EFI_STATUS status;
+	g_system_table = system_table;
+	InitializeLib(image_handle, g_system_table);
 
 	Print(L"GRUB for Academic System v0.1\n");
 	Print(L"\n");
@@ -143,199 +36,18 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
 	Print(L" / /_/ // _, _// /_/ // /_/ // ___ | ___/ / \n");
 	Print(L" \\____//_/ |_| \\____//_____//_/  |_|/____/  \n");
 	Print(L"\n\n");
-
 	Print(L"[ ] UEFI-boot running...\n");
 
-	EFI_STATUS status;
+	void* fdt = get_FDT();
+	if(fdt == NULL) return EFI_LOAD_ERROR;
 
-	// TEST:
-	Print(L"[ ] Getting FDT...\n");
-	void* fdt = getFDT(system_table);
-	if(fdt == NULL) {
-		Print(L"[X] Failed to get FDT");
-		return EFI_LOAD_ERROR;
-	}
+	status = ext2_driver_start(image_handle);
+	if(EFI_ERROR(status)) return status;
 
-	Print(L"[ ] Getting LoadedImageProtocol...\n");
-	EFI_LOADED_IMAGE_PROTOCOL* loaded_image;
-	EFI_GUID loaded_image_protocol = LOADED_IMAGE_PROTOCOL;
-	status = system_table->BootServices->HandleProtocol(
-		image_handle,
-		&loaded_image_protocol,
-		(void**)&loaded_image
-	);
-	if(EFI_ERROR(status)) {
-		Print(L"[X] Failed to get UEFI LoadedImageProtocol. Error code: %u\n", status);
-		return status;
-	}
+	status = partition_table_create();
+	if(EFI_ERROR(status)) return status;
 
-	Print(L"[ ] Getting FileSystemProtocol...\n");
-	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* file_system;
-	EFI_GUID file_system_protocol = SIMPLE_FILE_SYSTEM_PROTOCOL;
-	status = system_table->BootServices->HandleProtocol(
-		loaded_image->DeviceHandle,
-		&file_system_protocol,
-		(void**)&file_system
-	);
-	if(EFI_ERROR(status)) {
-		Print(L"[X] Failed to get UEFI FileSystemProtocol. Error code: %u\n", status);
-		return status;
-	}
-
-	Print(L"[ ] Opening boot volume...\n");
-	EFI_FILE_PROTOCOL* boot_part_root;
-	status = file_system->OpenVolume(
-		file_system,
-		&boot_part_root
-	);
-	if(EFI_ERROR(status)) {
-		Print(L"[X] Failed to open volume. Error code: %u\n", status);
-		return status;
-	}
-
-	Print(L"[ ] Opening ext2 driver file...\n");
-	EFI_FILE_PROTOCOL* ext2_file;
-	status = boot_part_root->Open(
-		boot_part_root,
-		&ext2_file,
-		EXT2_DRIVER_PATH,
-		EFI_FILE_MODE_READ,
-		0
-	);
-	if(EFI_ERROR(status)) {
-		Print(L"[X] Failed to open ext2 driver file. Error code: %u\n", status);
-		return status;
-	}
-
-	Print(L"[ ] Loading ext2 driver image...\n");
-	EFI_DEVICE_PATH_PROTOCOL* ext2_driver_path = FileDevicePath(loaded_image->DeviceHandle, EXT2_DRIVER_PATH);
-	EFI_HANDLE ext2_driver_handle;
-	status = system_table->BootServices->LoadImage(
-		FALSE,
-		image_handle,
-		ext2_driver_path,
-		NULL,
-		0,
-		&ext2_driver_handle
-	);
-	if(EFI_ERROR(status)) {
-		Print(L"[X] Failed to load ext2 driver image. Error code: %u\n", status);
-		return status;
-	}
-
-	Print(L"[ ] Starting ext2 driver...\n");
-	status = system_table->BootServices->StartImage(
-		ext2_driver_handle,
-		NULL,
-		NULL
-	);
-	if(EFI_ERROR(status)) {
-		Print(L"[X] Failed to start ext2 driver. Error code: %u\n", status);
-		return status;
-	}
-
-	Print(L"[ ] Locating file system handles...\n");
-	EFI_HANDLE* file_systems_table;
-	UINTN file_systems_count;
-	status = system_table->BootServices->LocateHandleBuffer(
-		ByProtocol,
-		&file_system_protocol,
-		NULL,
-		&file_systems_count,
-		&file_systems_table
-	);
-	if(EFI_ERROR(status)) {
-		Print(L"[X] Failed to locate file system handles. Error code: %u\n", status);
-		return status;
-	}
-
-	Print(L"[ ] Located file system handles:\n");
-	for(UINTN index = 0; index < file_systems_count; ++index) {
-		EFI_HANDLE handle = file_systems_table[index];
-
-		Print(L"\t(%u) - 0x%p:\n", index, handle);
-
-		EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* file_system;
-		EFI_GUID file_system_protocol = SIMPLE_FILE_SYSTEM_PROTOCOL;
-		status = system_table->BootServices->HandleProtocol(
-			handle,
-			&file_system_protocol,
-			(void**)&file_system
-		);
-		if(EFI_ERROR(status)) {
-			Print(L"\t   [X] Failed to open protocol. Error code: %u\n", status);
-			continue;
-		}
-
-		EFI_FILE_PROTOCOL* root;
-		status = file_system->OpenVolume(file_system, &root);
-		if(EFI_ERROR(status)) {
-			Print(L"\t   [X] Failed to open root directory. Error code: %u\n", status);
-			continue;
-		}
-
-		EFI_FILE_SYSTEM_INFO* file_system_info = NULL;
-		UINTN file_system_info_size = 0;
-		EFI_GUID file_system_info_guid = EFI_FILE_SYSTEM_INFO_ID;
-		status = root->GetInfo(
-			root,
-			&file_system_info_guid,
-			&file_system_info_size,
-			file_system_info
-		);
-		file_system_info = AllocatePool(file_system_info_size);
-		if(file_system_info == NULL) {
-			Print(L"\t   [X] Failed to allocate %llu bytes for file system info\n", file_system_info_size);
-			root->Close(root);
-			continue;
-		}
-		status = root->GetInfo(
-			root,
-			&file_system_info_guid,
-			&file_system_info_size,
-			file_system_info
-		);
-		if(EFI_ERROR(status)) {
-			Print(L"\t   [X] Failed to get file system info. Error code: %u\n", status);
-			FreePool(file_system_info);
-			root->Close(root);
-			continue;
-		}
-
-		Print(L"\t   [ ] Volume Label:'%s'\n", file_system_info->VolumeLabel);
-		Print(L"\t   [ ] Volume Size:%llu\n", file_system_info->VolumeSize);
-
-		FreePool(file_system_info);
-		root->Close(root);
-
-		EFI_DEVICE_PATH_PROTOCOL* device_path;
-		EFI_GUID device_path_guid = EFI_DEVICE_PATH_PROTOCOL_GUID;
-		status = system_table->BootServices->HandleProtocol(
-			handle,
-			&device_path_guid,
-			(void**)&device_path
-		);
-		if(EFI_ERROR(status)) {
-			Print(L"\t   [X] Failed to get device path. Error code: %u\n", status);
-			continue;
-		}
-
-		EFI_DEVICE_PATH_PROTOCOL* node = device_path;
-		while(!IsDevicePathEnd(node)) {
-			if(DevicePathType(node) == MEDIA_DEVICE_PATH && DevicePathSubType(node) == MEDIA_HARDDRIVE_DP) {
-				HARDDRIVE_DEVICE_PATH* harddrive_path = (HARDDRIVE_DEVICE_PATH*)node;
-				if(harddrive_path->SignatureType == SIGNATURE_TYPE_GUID) {
-					EFI_GUID* part_guid = (EFI_GUID*) harddrive_path->Signature;
-					Print(L"\t   [ ] GPT UUID\n", part_guid);
-					break;
-				}
-			}
-			node = NextDevicePathNode(node);
-		}
-
-		Print(L"\t   [ ] Device avaible\n");
-	}
-	FreePool(file_systems_table);
+	partition_table_free();
 
 	// Kernel shouldn't return
 	while(1);
