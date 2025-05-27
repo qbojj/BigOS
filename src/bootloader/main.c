@@ -25,11 +25,11 @@ typedef struct {
 	unsigned char ident[16];
 	UINT16 type;
 	UINT16 machine;
-	UINT16 version;
-	UINT16 entry;
-	UINT16 phoff;
-	UINT16 shoff;
-	UINT16 flags;
+	UINT32 version;
+	UINT64 entry;
+	UINT64 phoff;
+	UINT64 shoff;
+	UINT32 flags;
 	UINT16 ehsize;
 	UINT16 phentsize;
 	UINT16 phnum;
@@ -37,6 +37,29 @@ typedef struct {
 	UINT16 shnum;
 	UINT16 shstrndx;
 } elf64_header;
+
+typedef struct {
+	UINT32 type;
+	UINT32 flags;
+	UINT64 offset;
+	UINT64 vaddr;
+	UINT64 paddr;
+	UINT64 filesz;
+	UINT64 memsz;
+	UINT64 align;
+} elf_program_header;
+
+typedef struct {
+	elf64_header header;
+	elf_program_header* program_headers;
+	uint64_t image_begin;
+	uint64_t image_end;
+	uint64_t page_size;
+
+	uint64_t image_pages;
+	uint64_t image_addr;
+	uint64_t image_entry;
+} elf_application;
 
 // FDT is created by u-boot and then passed into UEFI system table
 void* getFDT(EFI_SYSTEM_TABLE* system_table) {
@@ -99,6 +122,14 @@ UINTN verify_elf_header(elf64_header* header) {
 		return 5; // Unexpected header size
 
 	return 0;
+}
+
+EFI_STATUS load_elf(elf_application* app) {
+	UINT64 size = app->page_size + (app->image_end - app->image_begin);
+	UINT64 addr;
+	EFI_STATUS status;
+
+	Print(L"Loading ELF file...\n");
 }
 
 EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
