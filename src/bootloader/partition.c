@@ -72,11 +72,25 @@ static void partition_create(partition_t* partition, EFI_HANDLE handle) {
 		return;
 	}
 
+	EFI_GUID* part_guid = NULL;
+	EFI_DEVICE_PATH_PROTOCOL* node = device_path;
+	while(!IsDevicePathEnd(node)) {
+		if(DevicePathType(node) == MEDIA_DEVICE_PATH && DevicePathSubType(node) == MEDIA_HARDDRIVE_DP) {
+			HARDDRIVE_DEVICE_PATH* harddrive_path = (HARDDRIVE_DEVICE_PATH*)node;
+			if(harddrive_path->SignatureType == SIGNATURE_TYPE_GUID) {
+				part_guid = (EFI_GUID*) harddrive_path->Signature;
+				break;
+			}
+		}
+		node = NextDevicePathNode(node);
+	}
+
 	partition->flags = 1;
 	partition->file_system = file_system;
 	partition->root = root;
 	partition->file_system_info = file_system_info;
 	partition->device_path = device_path;
+	partition->guid = part_guid;
 }
 
 void partition_table_create() {
@@ -134,18 +148,17 @@ void partition_print(partition_t* partition) {
 	Print(L"\tPartition avaible:\n");
 	Print(L"\t - Volume Label: '%s'\n", partition->file_system_info->VolumeLabel);
 	Print(L"\t - Volume Size: %llu\n", partition->file_system_info->VolumeSize);
-
-	EFI_DEVICE_PATH_PROTOCOL* node = partition->device_path;
-	while(!IsDevicePathEnd(node)) {
-		if(DevicePathType(node) == MEDIA_DEVICE_PATH && DevicePathSubType(node) == MEDIA_HARDDRIVE_DP) {
-			HARDDRIVE_DEVICE_PATH* harddrive_path = (HARDDRIVE_DEVICE_PATH*)node;
-			if(harddrive_path->SignatureType == SIGNATURE_TYPE_GUID) {
-				EFI_GUID* part_guid = (EFI_GUID*) harddrive_path->Signature;
-				Print(L"\t - GPT UUID: %g\n", part_guid);
-				return;
-			}
-		}
-		node = NextDevicePathNode(node);
+	if(partition->guid != NULL) {
+		Print(
+			L"\t - GPT UUID: %08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x\n",
+			partition->guid->Data1, partition->guid->Data2, partition->guid->Data3,
+			partition->guid->Data4[0], partition->guid->Data4[1],
+			partition->guid->Data4[2], partition->guid->Data4[3],
+			partition->guid->Data4[4], partition->guid->Data4[5],
+			partition->guid->Data4[6], partition->guid->Data4[7]
+		);
+	} else {
+		Print( L"\t - GPT UUID: (missing)\n");
 	}
 }
 
