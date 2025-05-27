@@ -17,10 +17,13 @@ typedef struct {
 	EFI_FILE_PROTOCOL* root;
 	EFI_FILE_SYSTEM_INFO* file_system_info;
 	EFI_DEVICE_PATH_PROTOCOL* device_path;
+	EFI_GUID* guid;
 } partition_t;
 
 void partition_table_create();
 void partition_table_free();
+
+
 
 void partition_print(partition_t* partition);
 void partition_table_print();
