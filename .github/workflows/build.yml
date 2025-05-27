@@ -28,6 +28,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update -y
+          sudo apt-get upgrade -y
           sudo apt-get install -y \
             gcc-riscv64-linux-gnu dosfstools e2fsprogs mtools \
             qemu-system-misc
@@ -59,6 +60,8 @@ jobs:
 
       - name: Install dependencies
         run: |
+          sudo apt-get update -y
+          sudo apt-get upgrade -y
           sudo apt-get install -y \
             clang llvm \
             iwyu \
