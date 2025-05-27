@@ -1,7 +1,6 @@
 /******************************************************************************
  *
- *  File:			bootloader/elf.h
- *  Description:	ELF file manipulation functions.
+ *  File:			bootloader/elf.c
  *  Author:			Maciej Zgierski
  *
  ******************************************************************************/

@@ -1,7 +1,6 @@
 /******************************************************************************
  *
- *  File:			bootloader/ext2.h
- *  Description:	Ext2 efi driver loader.
+ *  File:			bootloader/ext2.c
  *  Author:			Maciej Zgierski
  *
  ******************************************************************************/
@@ -13,12 +12,12 @@
 #include <efiapi.h>
 #include <efidef.h>
 #include <efidevp.h>
-
 #include "common.h"
+#include "exit.h"
 
 #define EXT2_DRIVER_PATH L"EFI\\BOOT\\ext2.efi"
 
-EFI_STATUS ext2_driver_start(EFI_HANDLE image_handle) {
+void ext2_driver_start(EFI_HANDLE image_handle) {
 	EFI_STATUS status;
 
 	Print(L"[ ] Getting LoadedImageProtocol...\n");
@@ -31,7 +30,7 @@ EFI_STATUS ext2_driver_start(EFI_HANDLE image_handle) {
 	);
 	if(EFI_ERROR(status)) {
 		Print(L"[X] Failed to get UEFI LoadedImageProtocol. Error code: %u\n", status);
-		return status;
+		exit(status);
 	}
 
 	Print(L"[ ] Getting FileSystemProtocol...\n");
@@ -44,7 +43,7 @@ EFI_STATUS ext2_driver_start(EFI_HANDLE image_handle) {
 	);
 	if(EFI_ERROR(status)) {
 		Print(L"[X] Failed to get UEFI FileSystemProtocol. Error code: %u\n", status);
-		return status;
+		exit(status);
 	}
 
 	Print(L"[ ] Opening boot volume...\n");
@@ -55,7 +54,7 @@ EFI_STATUS ext2_driver_start(EFI_HANDLE image_handle) {
 	);
 	if(EFI_ERROR(status)) {
 		Print(L"[X] Failed to open volume. Error code: %u\n", status);
-		return status;
+		exit(status);
 	}
 
 	Print(L"[ ] Opening ext2 driver file...\n");
@@ -69,7 +68,7 @@ EFI_STATUS ext2_driver_start(EFI_HANDLE image_handle) {
 	);
 	if(EFI_ERROR(status)) {
 		Print(L"[X] Failed to open ext2 driver file. Error code: %u\n", status);
-		return status;
+		exit(status);
 	}
 
 	Print(L"[ ] Loading ext2 driver image...\n");
@@ -85,7 +84,7 @@ EFI_STATUS ext2_driver_start(EFI_HANDLE image_handle) {
 	);
 	if(EFI_ERROR(status)) {
 		Print(L"[X] Failed to load ext2 driver image. Error code: %u\n", status);
-		return status;
+		exit(status);
 	}
 
 	Print(L"[ ] Starting ext2 driver...\n");
@@ -96,8 +95,6 @@ EFI_STATUS ext2_driver_start(EFI_HANDLE image_handle) {
 	);
 	if(EFI_ERROR(status)) {
 		Print(L"[X] Failed to start ext2 driver. Error code: %u\n", status);
-		return status;
+		exit(status);
 	}
-
-	return EFI_SUCCESS;
 }

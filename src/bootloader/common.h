@@ -13,6 +13,7 @@
 
 #include "partition.h"
 
+extern EFI_HANDLE g_image_handle;
 extern EFI_SYSTEM_TABLE* g_system_table;
 extern partition_t* g_partition_table;
 extern UINTN g_partition_table_count;

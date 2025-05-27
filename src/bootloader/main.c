@@ -16,19 +16,21 @@
 #include <efidevp.h>
 
 #include "common.h"
+#include "exit.h"
 #include "ext2.h"
 #include "fdt.h"
 #include "elf.h"
 #include "partition.h"
 
+EFI_HANDLE g_image_handle;
 EFI_SYSTEM_TABLE* g_system_table;
 
 EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
-	EFI_STATUS status;
+	g_image_handle = image_handle;
 	g_system_table = system_table;
 	InitializeLib(image_handle, g_system_table);
 
-	Print(L"GRUB for Academic System v0.1\n");
+	Print(L"GRUB for Academic Systems v0.1\n");
 	Print(L"\n");
 	Print(L"    ______ ____   __  __ ____   ___    _____\n");
 	Print(L"   / ____// __ \\ / / / // __ ) /   |  / ___/\n");
@@ -39,17 +41,13 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
 	Print(L"[ ] UEFI-boot running...\n");
 
 	void* fdt = get_FDT();
-	if(fdt == NULL) return EFI_LOAD_ERROR;
 
-	status = ext2_driver_start(image_handle);
-	if(EFI_ERROR(status)) return status;
+	ext2_driver_start(image_handle);
 
-	status = partition_table_create();
-	if(EFI_ERROR(status)) return status;
+	partition_table_create();
 
 	partition_table_print();
 
-	partition_table_free();
-
+	exit_boot();
 	while(1); // Kernel shouldn't return
 }

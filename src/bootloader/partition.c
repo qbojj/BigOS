@@ -1,7 +1,6 @@
 /******************************************************************************
  *
- *  File:			bootloader/ext2.h
- *  Description:	Partition manipulation functions.
+ *  File:			bootloader/partition.c
  *  Author:			Maciej Zgierski
  *
  ******************************************************************************/
@@ -12,18 +11,13 @@
 #include <efilib.h>
 
 #include "common.h"
+#include "exit.h"
 
 partition_t* g_partition_table;
 UINTN g_partition_table_count;
 
 static void partition_create(partition_t* partition, EFI_HANDLE handle) {
 	EFI_STATUS status;
-
-	partition->flags = 0;
-	partition->file_system = NULL;
-	partition->root = NULL;
-	partition->file_system_info = NULL;
-	partition->device_path = NULL;
 
 	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* file_system;
 	EFI_GUID file_system_protocol = SIMPLE_FILE_SYSTEM_PROTOCOL;
@@ -85,7 +79,7 @@ static void partition_create(partition_t* partition, EFI_HANDLE handle) {
 	partition->device_path = device_path;
 }
 
-EFI_STATUS partition_table_create() {
+void partition_table_create() {
 	EFI_STATUS status;
 
 	Print(L"[ ] Locating file system handles...\n");
@@ -101,14 +95,14 @@ EFI_STATUS partition_table_create() {
 	);
 	if(EFI_ERROR(status)) {
 		Print(L"[X] Failed to locate file system handles. Error code: %u\n", status);
-		return status;
+		exit(status);
 	}
 
 	g_partition_table_count = file_systems_count;
-	g_partition_table = AllocatePool(sizeof(partition_t) * file_systems_count);
+	g_partition_table = AllocateZeroPool(sizeof(partition_t) * file_systems_count);
 	if(EFI_ERROR(status)) {
 		Print(L"[X] Failed to allocate memory for partition data. Error code: %u\n", status);
-		return status;
+		exit(status);
 	}
 
 	Print(L"[ ] Creating partition table...\n");
@@ -118,12 +112,13 @@ EFI_STATUS partition_table_create() {
 
 	FreePool(file_systems_table);
 
-	return EFI_SUCCESS;
+	exit_procedure_register(partition_table_free);
 }
 
 void partition_table_free() {
 	Print(L"[ ] Deleting partition table...\n");
 	for(UINTN i = 0; i < g_partition_table_count; ++i) {
+		if(g_partition_table[i].flags == 0) continue;
 		FreePool(g_partition_table[i].file_system_info);
 		g_partition_table[i].root->Close(g_partition_table[i].root);
 	}
