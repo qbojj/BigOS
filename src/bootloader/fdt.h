@@ -10,7 +10,8 @@
 #define BIGOS_BOOTLOADER_FDT
 
 #include <efi.h>
+#include "error.h"
 
-void* get_FDT();
+[[nodiscard]] error_t get_FDT();
 
 #endif // !BIGOS_BOOTLOADER_FDT

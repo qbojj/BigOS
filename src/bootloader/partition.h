@@ -10,6 +10,7 @@
 #define BIGOS_BOOTLOADER_PARTITION
 
 #include <efi.h>
+#include "error.h"
 
 typedef struct {
 	UINTN flags;
@@ -20,10 +21,8 @@ typedef struct {
 	EFI_GUID* guid;
 } partition_t;
 
-void partition_table_create();
+[[nodiscard]] error_t partition_table_create();
 void partition_table_free();
-
-
 
 void partition_print(partition_t* partition);
 void partition_table_print();

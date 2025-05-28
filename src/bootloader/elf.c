@@ -8,8 +8,10 @@
 #include "elf.h"
 
 #include <efi.h>
+#include <efilib.h>
 #include <efidef.h>
 #include "common.h"
+#include "log.h"
 
 EFI_STATUS read_file(EFI_FILE_PROTOCOL* file, UINT64 offset, UINT64 size, void* buffer) {
 	EFI_STATUS status;
@@ -57,7 +59,7 @@ UINTN verify_elf_header(elf64_header_t* header) {
 }
 
 EFI_STATUS load_elf(elf_application_t* app) {
-	Print(L"Loading ELF file...\n");
+	log(L"Loading ELF file...");
 
 	EFI_STATUS status;
 

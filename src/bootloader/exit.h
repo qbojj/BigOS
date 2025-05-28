@@ -13,7 +13,7 @@
 #include <efidef.h>
 
 // Exit EFI loader with error
-void exit(EFI_STATUS status);
+void exit();
 
 // Prepare for EFI loader exit
 void exit_boot();
