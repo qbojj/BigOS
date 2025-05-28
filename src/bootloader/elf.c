@@ -8,6 +8,8 @@
 #include "elf.h"
 
 #include <efi.h>
+#include <efidef.h>
+#include "common.h"
 
 EFI_STATUS read_file(EFI_FILE_PROTOCOL* file, UINT64 offset, UINT64 size, void* buffer) {
 	EFI_STATUS status;
@@ -55,9 +57,42 @@ UINTN verify_elf_header(elf64_header_t* header) {
 }
 
 EFI_STATUS load_elf(elf_application_t* app) {
-	UINT64 size = app->page_size + (app->image_end - app->image_begin);
-	UINT64 addr;
+	Print(L"Loading ELF file...\n");
+
 	EFI_STATUS status;
 
-	Print(L"Loading ELF file...\n");
+	UINT64 addr;
+	UINT64 size = app->page_size + (app->image_end - app->image_begin);
+	app->image_pages = size / app->page_size;
+
+	status = g_system_table->BootServices->AllocatePages(
+		AllocateAnyPages,
+		EfiLoaderData,
+		app->image_pages,
+		&addr
+	);
+	if(EFI_ERROR(status)) return status;
+
+	app->image_addr = addr;
+
+	app->image_entry = app->image_addr + app->page_size + app->header.entry - app->image_begin;
+
+	for(UINTN i = 0; i < size; ++i) {
+		((char*)addr)[i] = 0;
+	}
+
+	for(UINTN i = 0; i < app->header.phnum; ++i) {
+		elf_program_header_t* prog_header = &app->program_headers[i];
+		if(prog_header->type != 1 /* LOAD */) continue;
+
+		UINT64 prog_header_addr;
+		prog_header_addr = app->image_addr + app->page_size + prog_header->vaddr - app->image_begin;
+		status = read_file(app->file, prog_header->offset, prog_header->filesz, (void*)prog_header_addr);
+		if(EFI_ERROR(status)) {
+			// TODO: handle error
+			return status;
+		}
+	}
+
+	return status;
 }
