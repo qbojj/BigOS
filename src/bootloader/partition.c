@@ -17,6 +17,18 @@
 partition_t* g_partition_table;
 UINTN g_partition_table_count;
 
+void partition_table_free() {
+	START;
+	log(L"Deleting partition table...");
+	for(UINTN i = 0; i < g_partition_table_count; ++i) {
+		if(g_partition_table[i].flags == 0) continue;
+		FreePool(g_partition_table[i].file_system_info);
+		g_partition_table[i].root->Close(g_partition_table[i].root);
+	}
+	FreePool(g_partition_table);
+	END;
+}
+
 static void partition_create(partition_t* partition, EFI_HANDLE handle) {
 	EFI_STATUS status;
 
@@ -42,6 +54,10 @@ static void partition_create(partition_t* partition, EFI_HANDLE handle) {
 		&file_system_info_size,
 		file_system_info
 	);
+	if(EFI_ERROR(status)) {
+		root->Close(root);
+		return;
+	}
 	file_system_info = AllocatePool(file_system_info_size);
 	if(file_system_info == NULL) {
 		root->Close(root);
@@ -111,7 +127,7 @@ error_t partition_table_create() {
 	);
 	if(EFI_ERROR(status)) {
 		err(L"Failed to locate file system handles. Error code: %u", status);
-		RETURN(ERR_PARTITION_TABLE_CREATE);
+		RETURN(ERR_PARTITION_TABLE_CREATE_FAILURE);
 	}
 
 	g_partition_table_count = file_systems_count;
@@ -119,7 +135,7 @@ error_t partition_table_create() {
 	if(EFI_ERROR(status)) {
 		err(L"Failed to allocate memory for partition data. Error code: %u", status);
 		FreePool(file_systems_table);
-		RETURN(ERR_PARTITION_TABLE_CREATE);
+		RETURN(ERR_PARTITION_TABLE_CREATE_FAILURE);
 	}
 
 	log(L"Creating partition table...");
@@ -131,16 +147,6 @@ error_t partition_table_create() {
 
 	FreePool(file_systems_table);
 	RETURN(ERR_NONE);
-}
-
-void partition_table_free() {
-	log(L"Deleting partition table...");
-	for(UINTN i = 0; i < g_partition_table_count; ++i) {
-		if(g_partition_table[i].file_system_info == NULL) continue;
-		FreePool(g_partition_table[i].file_system_info);
-		g_partition_table[i].root->Close(g_partition_table[i].root);
-	}
-	FreePool(g_partition_table);
 }
 
 void partition_print(partition_t* partition) {

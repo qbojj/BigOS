@@ -17,15 +17,17 @@
 
 #include "common.h"
 #include "error.h"
+#include "loader.h"
 #include "log.h"
 #include "exit.h"
 #include "ext2.h"
 #include "fdt.h"
-#include "elf.h"
 #include "partition.h"
 
 EFI_HANDLE g_image_handle;
 EFI_SYSTEM_TABLE* g_system_table;
+
+#define PRE_CONFIG_PATH L"EFI\\BOOT\\pre.conf"
 
 EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
 	error_t status;
@@ -41,6 +43,13 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
 	Print(L" \\____//_/ |_| \\____//_____//_/  |_|/____/  \n");
 	Print(L"\n");
 	log(L"UEFI-boot running...");
+
+	log(L"Initializing loader...");
+	status = initialize_loader();
+	if(status != ERR_NONE) {
+		err(L"Failed to initialize_loader");
+		exit();
+	}
 
 	log(L"Getting FDT...");
 	status = get_FDT();
@@ -60,6 +69,13 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
 	status = partition_table_create();
 	if(status != ERR_NONE) {
 		err(L"Failed to create partition table");
+		exit();
+	}
+
+	log(L"Loading config...");
+	status = config_load(PRE_CONFIG_PATH);
+	if(status != ERR_NONE) {
+		err(L"Failed to load config");
 		exit();
 	}
 

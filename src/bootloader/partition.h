@@ -22,7 +22,6 @@ typedef struct {
 } partition_t;
 
 [[nodiscard]] error_t partition_table_create();
-void partition_table_free();
 
 void partition_print(partition_t* partition);
 void partition_table_print();

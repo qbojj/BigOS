@@ -1,35 +1,36 @@
 /******************************************************************************
  *
- *  File:			bootloader/elf.c
+ *  File:			bootloader/io.c
  *  Author:			Maciej Zgierski
  *
  ******************************************************************************/
 
-#include "elf.h"
+#include "io.h"
 
 #include <efi.h>
 #include <efilib.h>
 #include <efidef.h>
 #include "common.h"
 #include "log.h"
+#include "error.h"
 
-EFI_STATUS read_file(EFI_FILE_PROTOCOL* file, UINT64 offset, UINT64 size, void* buffer) {
+error_t read_file(EFI_FILE_PROTOCOL* file, UINTN offset, UINTN size, void* buffer) {
 	EFI_STATUS status;
 	unsigned char* buf = buffer;
 
 	status = file->SetPosition(file, offset);
 	if(EFI_ERROR(status)) 
-		return status;
+		return ERR_FILE_LOAD_FAILURE;
 
 	for(UINT64 read = 0; read < size;) {
 		UINT64 remains = size - read;
 		status = file->Read(file, &remains, (void*)(buf + read));
 		if(EFI_ERROR(status))
-			return status;
+			return ERR_FILE_LOAD_FAILURE;
 		read += remains;
 	}
 
-	return EFI_SUCCESS;
+	return ERR_NONE;
 }
 
 EFI_STATUS read_elf_header(EFI_FILE_PROTOCOL* file, elf64_header_t* header) {

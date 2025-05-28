@@ -1,7 +1,7 @@
 /******************************************************************************
  *
- *  File:			bootloader/elf.h
- *  Description:	Interface for ELF file manipulation.
+ *  File:			bootloader/io.h
+ *  Description:	Interface for file manipulation.
  *  Author:			Maciej Zgierski
  *
  ******************************************************************************/
@@ -11,6 +11,7 @@
 
 #include <efi.h>
 #include <efilib.h>
+#include "error.h"
 
 typedef struct {
 	unsigned char ident[16];
@@ -54,7 +55,7 @@ typedef struct {
 } elf_application_t;
 
 // TODO: return something more meaningful
-EFI_STATUS read_file(EFI_FILE_PROTOCOL* file, UINT64 offset, UINT64 size, void* buffer);
+error_t read_file(EFI_FILE_PROTOCOL* file, UINTN offset, UINTN size, void* buffer);
 
 // TODO: return something more meaningful
 EFI_STATUS read_elf_header(EFI_FILE_PROTOCOL* file, elf64_header_t* header);
