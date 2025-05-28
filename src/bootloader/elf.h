@@ -41,6 +41,7 @@ typedef struct {
 } elf_program_header_t;
 
 typedef struct {
+	EFI_FILE_PROTOCOL* file;
 	elf64_header_t header;
 	elf_program_header_t* program_headers;
 	uint64_t image_begin;
