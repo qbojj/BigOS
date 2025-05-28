@@ -9,8 +9,9 @@
 
 #include <efi.h>
 #include <efilib.h>
-
 #include "common.h"
+#include "error.h"
+#include "log.h"
 #include "exit.h"
 
 partition_t* g_partition_table;
@@ -93,10 +94,11 @@ static void partition_create(partition_t* partition, EFI_HANDLE handle) {
 	partition->guid = part_guid;
 }
 
-void partition_table_create() {
+error_t partition_table_create() {
+	START;
 	EFI_STATUS status;
 
-	Print(L"[ ] Locating file system handles...\n");
+	log(L"Locating file system handles...");
 	EFI_HANDLE* file_systems_table;
 	UINTN file_systems_count;
 	EFI_GUID file_system_protocol = SIMPLE_FILE_SYSTEM_PROTOCOL;
@@ -108,31 +110,33 @@ void partition_table_create() {
 		&file_systems_table
 	);
 	if(EFI_ERROR(status)) {
-		Print(L"[X] Failed to locate file system handles. Error code: %u\n", status);
-		exit(status);
+		err(L"Failed to locate file system handles. Error code: %u", status);
+		RETURN(ERR_PARTITION_TABLE_CREATE);
 	}
 
 	g_partition_table_count = file_systems_count;
 	g_partition_table = AllocateZeroPool(sizeof(partition_t) * file_systems_count);
 	if(EFI_ERROR(status)) {
-		Print(L"[X] Failed to allocate memory for partition data. Error code: %u\n", status);
-		exit(status);
+		err(L"Failed to allocate memory for partition data. Error code: %u", status);
+		FreePool(file_systems_table);
+		RETURN(ERR_PARTITION_TABLE_CREATE);
 	}
 
-	Print(L"[ ] Creating partition table...\n");
+	log(L"Creating partition table...");
 	for(UINTN i = 0; i < g_partition_table_count; ++i) {
 		partition_create(&g_partition_table[i], file_systems_table[i]);
 	}
 
-	FreePool(file_systems_table);
-
 	exit_procedure_register(partition_table_free);
+
+	FreePool(file_systems_table);
+	RETURN(ERR_NONE);
 }
 
 void partition_table_free() {
-	Print(L"[ ] Deleting partition table...\n");
+	log(L"Deleting partition table...");
 	for(UINTN i = 0; i < g_partition_table_count; ++i) {
-		if(g_partition_table[i].flags == 0) continue;
+		if(g_partition_table[i].file_system_info == NULL) continue;
 		FreePool(g_partition_table[i].file_system_info);
 		g_partition_table[i].root->Close(g_partition_table[i].root);
 	}
@@ -140,17 +144,19 @@ void partition_table_free() {
 }
 
 void partition_print(partition_t* partition) {
+	START;
 	if(partition->flags == 0) {
-		Print(L"\tPartition unavaible\n");
+		err(L"Partition unavaible");
+		END;
 		return;
 	}
 
-	Print(L"\tPartition avaible:\n");
-	Print(L"\t - Volume Label: '%s'\n", partition->file_system_info->VolumeLabel);
-	Print(L"\t - Volume Size: %llu\n", partition->file_system_info->VolumeSize);
+	log(L"Partition avaible:");
+	log(L" - Volume Label: '%s'", partition->file_system_info->VolumeLabel);
+	log(L" - Volume Size: %llu", partition->file_system_info->VolumeSize);
 	if(partition->guid != NULL) {
-		Print(
-			L"\t - GPT UUID: %08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x\n",
+		log(
+			L" - GPT UUID: %08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
 			partition->guid->Data1, partition->guid->Data2, partition->guid->Data3,
 			partition->guid->Data4[0], partition->guid->Data4[1],
 			partition->guid->Data4[2], partition->guid->Data4[3],
@@ -158,14 +164,16 @@ void partition_print(partition_t* partition) {
 			partition->guid->Data4[6], partition->guid->Data4[7]
 		);
 	} else {
-		Print( L"\t - GPT UUID: (missing)\n");
+		err( L" - GPT UUID: (missing)");
 	}
+	END;
 }
 
 void partition_table_print() {
-	Print(L"Listing all partitions:\n");
+	START;
 	for(UINTN i = 0; i < g_partition_table_count; ++i) {
-		Print(L" (%u)", i);
+		log(L"Partition (%u):", i);
 		partition_print(&g_partition_table[i]);
 	}
+	END;
 }

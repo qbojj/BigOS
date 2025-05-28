@@ -10,7 +10,8 @@
 #define BIGOS_BOOTLOADER_EXT2
 
 #include <efi.h>
+#include "error.h"
 
-void ext2_driver_start(EFI_HANDLE image_handle);
+[[nodiscard]] error_t ext2_driver_start();
 
 #endif // !BIGOS_BOOTLOADER_EXT2
