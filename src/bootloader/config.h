@@ -17,8 +17,8 @@ typedef struct {
 	EFI_GUID partition;
 	CHAR16* path;
 	UINTN path_size;
-} config_t;
+} meta_config_t;
 
-error_t config_load();
+error_t meta_config_load();
 
 #endif // !BIGOS_BOOTLOADER_CONFIG
