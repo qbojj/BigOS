@@ -54,10 +54,11 @@ static void partition_create(partition_t* partition, EFI_HANDLE handle) {
 		&file_system_info_size,
 		file_system_info
 	);
-	if(EFI_ERROR(status)) {
+	if(status != EFI_BUFFER_TOO_SMALL) {
 		root->Close(root);
 		return;
 	}
+
 	file_system_info = AllocatePool(file_system_info_size);
 	if(file_system_info == NULL) {
 		root->Close(root);
