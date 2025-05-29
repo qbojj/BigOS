@@ -15,22 +15,27 @@
 #include "error.h"
 
 error_t read_file(EFI_FILE_PROTOCOL* file, UINTN offset, UINTN size, void* buffer) {
+	START;
 	EFI_STATUS status;
 	unsigned char* buf = buffer;
 
+	log(L"Set read position to %llu...", offset);
 	status = file->SetPosition(file, offset);
-	if(EFI_ERROR(status))
-		return ERR_FILE_LOAD_FAILURE;
+	if(EFI_ERROR(status)) {
+		err(L"Failed to set read offset. Error code: %u", status);
+		RETURN(ERR_FILE_LOAD_FAILURE);
+	}
 
+	log(L"Reading %llu bytes...", size);
 	for(UINT64 read = 0; read < size;) {
 		UINT64 remains = size - read;
 		status = file->Read(file, &remains, (void*)(buf + read));
 		if(EFI_ERROR(status))
-			return ERR_FILE_LOAD_FAILURE;
+			RETURN(ERR_FILE_LOAD_FAILURE);
 		read += remains;
 	}
 
-	return ERR_NONE;
+	RETURN(ERR_NONE);
 }
 
 EFI_STATUS read_elf_header(EFI_FILE_PROTOCOL* file, elf64_header_t* header) {

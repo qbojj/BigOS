@@ -27,8 +27,6 @@
 EFI_HANDLE g_image_handle;
 EFI_SYSTEM_TABLE* g_system_table;
 
-#define PRE_CONFIG_PATH L"EFI\\BOOT\\pre.conf"
-
 EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
 	error_t status;
 	g_image_handle = image_handle;
@@ -73,7 +71,7 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
 	}
 
 	log(L"Loading config...");
-	status = config_load(PRE_CONFIG_PATH);
+	status = config_load();
 	if(status != ERR_NONE) {
 		err(L"Failed to load config");
 		exit();

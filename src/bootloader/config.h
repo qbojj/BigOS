@@ -19,6 +19,6 @@ typedef struct {
 	UINTN path_size;
 } config_t;
 
-error_t config_load(const CHAR16* pre_config_file_path);
+error_t config_load();
 
 #endif // !BIGOS_BOOTLOADER_CONFIG
