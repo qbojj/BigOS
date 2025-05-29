@@ -22,7 +22,7 @@ error_t ext2_driver_start() {
 	START;
 	error_t status;
 
-	log(L"Opening ext2 driver file...");
+	log(L"Opening file...");
 	EFI_FILE_PROTOCOL* ext2_file;
 	status = g_loader.root->Open(
 		g_loader.root, 
@@ -36,7 +36,7 @@ error_t ext2_driver_start() {
 		RETURN(ERR_EXT2_DRIVER_START_FAILURE);
 	}
 
-	log(L"Loading ext2 driver image...");
+	log(L"Loading driver image...");
 	EFI_DEVICE_PATH_PROTOCOL* ext2_driver_path = FileDevicePath(g_loader.image->DeviceHandle, EXT2_DRIVER_PATH);
 	EFI_HANDLE ext2_driver_handle;
 	status = g_system_table->BootServices->LoadImage(
@@ -52,7 +52,7 @@ error_t ext2_driver_start() {
 		RETURN(ERR_EXT2_DRIVER_START_FAILURE);
 	}
 
-	log(L"Starting ext2 driver...");
+	log(L"Starting driver...");
 	status = g_system_table->BootServices->StartImage(
 		ext2_driver_handle, 
 		NULL, 
@@ -62,6 +62,9 @@ error_t ext2_driver_start() {
 		err(L"Failed to start ext2 driver. Error code: %u", status);
 		RETURN(ERR_EXT2_DRIVER_START_FAILURE);
 	}
+
+	log(L"Closing file...");
+	ext2_file->Close(ext2_file);
 
 	RETURN(ERR_NONE);
 }

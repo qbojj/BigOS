@@ -22,6 +22,7 @@
 #include "exit.h"
 #include "ext2.h"
 #include "fdt.h"
+#include "config.h"
 #include "partition.h"
 
 EFI_HANDLE g_image_handle;
@@ -49,10 +50,10 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
 		exit();
 	}
 
-	log(L"Getting FDT...");
-	status = get_FDT();
+	log(L"Loading config...");
+	status = meta_config_load();
 	if(status != ERR_NONE) {
-		err(L"Failed to get FDT");
+		err(L"Failed to load config");
 		exit();
 	}
 
@@ -70,10 +71,10 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
 		exit();
 	}
 
-	log(L"Loading config...");
-	status = config_load();
+	log(L"Getting FDT...");
+	status = get_FDT();
 	if(status != ERR_NONE) {
-		err(L"Failed to load config");
+		err(L"Failed to get FDT");
 		exit();
 	}
 

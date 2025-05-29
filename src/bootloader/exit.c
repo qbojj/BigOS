@@ -43,16 +43,29 @@ void exit_boot() {
 }
 
 void exit_procedure_register(exit_procedure_t function) {
+	START;
 	if(exit_procedure_buffer_size == 0) {
 		exit_procedures = AllocatePool(sizeof(exit_procedure_t) * BUFFER_CHUNK_SIZE);
+		if(exit_procedures == NULL) {
+			err(L"Failed to register cleanup function");
+			END;
+			return;
+		}
+		exit_procedure_buffer_size = BUFFER_CHUNK_SIZE;
 	}
 
 	exit_procedure_count++;
 
 	if(exit_procedure_count > exit_procedure_buffer_size) {
-		ReallocatePool(exit_procedures, exit_procedure_buffer_size, exit_procedure_buffer_size * 2);
+		ReallocatePool(exit_procedures, exit_procedure_buffer_size, exit_procedure_buffer_size + BUFFER_CHUNK_SIZE);
+		if(exit_procedures == NULL) {
+			err(L"Failed to register cleanup function");
+			END;
+			return;
+		}
 		exit_procedure_buffer_size += BUFFER_CHUNK_SIZE;
 	}
 
 	exit_procedures[exit_procedure_count - 1] = function;
+	END;
 }
