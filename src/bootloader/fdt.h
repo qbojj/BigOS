@@ -1,8 +1,8 @@
 /******************************************************************************
  *
+ *  Project:		BigOS
  *  File:			bootloader/fdt.h
- *  Description:	Interface for FDT manipulation.
- *  Author:			Maciej Zgierski
+ *  Description:	FDT handling module.
  *
  ******************************************************************************/
 
@@ -12,6 +12,12 @@
 #include <efi.h>
 #include "error.h"
 
-[[nodiscard]] error_t get_FDT();
+/**
+ * @brief	Read FDT from EFI system table and store it in g_fdt
+ *
+ * @return	ERR_NONE - success
+ *			ERR_PARTITION_TABLE_CREATE_FAILURE - failure
+ */
+[[nodiscard]] error_t get_FDT(void);
 
 #endif // !BIGOS_BOOTLOADER_FDT

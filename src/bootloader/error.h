@@ -1,8 +1,8 @@
 /******************************************************************************
  *
+ *  Project:		BigOS
  *  File:			bootloader/error.h
- *  Description:	Error handling module
- *  Author:			Maciej Zgierski
+ *  Description:	Bootloader error type.
  *
  ******************************************************************************/
 

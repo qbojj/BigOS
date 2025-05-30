@@ -1,8 +1,13 @@
 /******************************************************************************
  *
+ *  Project:		BigOS
  *  File:			bootloader/config.h
- *  Description:	Structure for bootloader configuration data.
- *  Author:			Maciej Zgierski
+ *  Description:	Bootloader configuration data handling.
+ *
+ *  Note:
+ *  GRUBAS config may be located on a different partition than the bootloader
+ *  itself. For this reason, the localization of the config is stored in
+ *  conf.meta (meta config) file on boot partition.
  *
  ******************************************************************************/
 
@@ -19,6 +24,14 @@ typedef struct {
 	UINTN path_size;
 } meta_config_t;
 
-error_t meta_config_load();
+/**
+ * @brief	Reads conf.meta file and stores data in g_meta_config
+ *
+ * @return	ERR_NONE - success
+ *			ERR_PRE_CONFIG_LOAD_FAILURE - failure
+ *
+ * @note	conf.meta has to be located on boot partition
+ */
+[[nodiscard]] error_t meta_config_load(void);
 
 #endif // !BIGOS_BOOTLOADER_CONFIG

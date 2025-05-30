@@ -1,8 +1,8 @@
 /******************************************************************************
  *
+ *  Project:		BigOS
  *  File:			bootloader/loader.h
- *  Description:	Structure for bootloader data.
- *  Author:			Maciej Zgierski
+ *  Description:	Structure for bootloader filesystem data.
  *
  ******************************************************************************/
 
@@ -18,6 +18,12 @@ typedef struct {
 	EFI_FILE_PROTOCOL* root;
 } loader_t;
 
+/**
+ * @brief	Get bootloader image and partition filesystem
+ *
+ * @return	ERR_NONE - success
+ *			ERR_LOADER_INIT_FAILURE - failure
+ */
 error_t initialize_loader(void);
 
 #endif // !BIGOS_BOOTLOADER_LOADER

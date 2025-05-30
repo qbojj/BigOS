@@ -1,7 +1,7 @@
 /******************************************************************************
  *
+ *  Project:		BigOS
  *  File:			bootloader/partition.c
- *  Author:			Maciej Zgierski
  *
  ******************************************************************************/
 
@@ -17,7 +17,7 @@
 partition_t* g_partition_table;
 UINTN g_partition_table_count;
 
-void partition_table_free() {
+void partition_table_free(void) {
 	START;
 	log(L"Deleting partition table...");
 	for(UINTN i = 0; i < g_partition_table_count; ++i) {
@@ -111,7 +111,7 @@ static void partition_create(partition_t* partition, EFI_HANDLE handle) {
 	partition->guid = part_guid;
 }
 
-error_t partition_table_create() {
+error_t partition_table_create(void) {
 	START;
 	EFI_STATUS status;
 
@@ -176,7 +176,7 @@ void partition_print(partition_t* partition) {
 	END;
 }
 
-void partition_table_print() {
+void partition_table_print(void) {
 	START;
 	for(UINTN i = 0; i < g_partition_table_count; ++i) {
 		log(L"Partition (%u):", i);

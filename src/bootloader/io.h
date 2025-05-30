@@ -1,8 +1,8 @@
 /******************************************************************************
  *
+ *  Project:		BigOS
  *  File:			bootloader/io.h
- *  Description:	Interface for file manipulation.
- *  Author:			Maciej Zgierski
+ *  Description:	File handling module.
  *
  ******************************************************************************/
 
@@ -54,7 +54,19 @@ typedef struct {
 	uint64_t image_entry;
 } elf_application_t;
 
-// TODO: return something more meaningful
+/**
+ * @brief	Read from file
+ *
+ * @param	file - Open file to read from
+ * @param	offset - Offset in bytes from the beginning of the file
+ * @param	size - Number of bytes to read
+ * @param	buffer - Buffer to read to
+ *
+ * @return	ERR_NONE - success
+ *			ERR_FILE_LOAD_FAILURE - failure
+ *
+ * @note	Buffer is expected to be at least size bytes big
+ */
 error_t read_file(EFI_FILE_PROTOCOL* file, UINTN offset, UINTN size, void* buffer);
 
 // TODO: return something more meaningful

@@ -1,8 +1,8 @@
 /******************************************************************************
  *
+ *  Project:		BigOS
  *  File:			bootloader/ext2.h
- *  Description:	Interface for loading ext2 efi driver.
- *  Author:			Maciej Zgierski
+ *  Description:	Ext2 efi driver load handling.
  *
  ******************************************************************************/
 
@@ -12,6 +12,12 @@
 #include <efi.h>
 #include "error.h"
 
-[[nodiscard]] error_t ext2_driver_start();
+/**
+ * @brief	Start ext2 driver to make ext2 partitions visible
+ *
+ * @return	ERR_NONE - success
+ *			ERR_EXT2_DRIVER_START_FAILURE - failure
+ */
+[[nodiscard]] error_t ext2_driver_start(void);
 
 #endif // !BIGOS_BOOTLOADER_EXT2

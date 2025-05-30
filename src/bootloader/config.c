@@ -1,7 +1,7 @@
 /******************************************************************************
  *
+ *  Project:		BigOS
  *  File:			bootloader/config.c
- *  Author:			Maciej Zgierski
  *
  ******************************************************************************/
 
@@ -16,18 +16,18 @@
 #include "log.h"
 #include "io.h"
 
-#define META_CONFIG_PATH L"EFI\\BOOT\\pre.conf"
+#define META_CONFIG_PATH L"EFI\\BOOT\\conf.meta"
 
-meta_config_t g_config;
+meta_config_t g_meta_config;
 
-void meta_config_unload() {
+void meta_config_unload(void) {
 	START;
 	log(L"Deleting config data...");
-	FreePool(g_config.path);
+	FreePool(g_meta_config.path);
 	END;
 }
 
-error_t meta_config_load() {
+error_t meta_config_load(void) {
 	START;
 	EFI_STATUS status;
 	error_t read_status;
@@ -88,7 +88,7 @@ error_t meta_config_load() {
 	}
 
 	log(L"Reading file contents...");
-	read_status = read_file(meta_config_file, 0, sizeof(EFI_GUID), (void*)&g_config);
+	read_status = read_file(meta_config_file, 0, sizeof(EFI_GUID), (void*)&g_meta_config);
 	if(read_status != ERR_NONE) {
 		FreePool(file_info);
 		err(L"Failed to read GUID. Error code: %u", status);
@@ -114,8 +114,8 @@ error_t meta_config_load() {
 	FreePool(file_info);
 
 	path[path_size / 2] = L'\0';
-	g_config.path = path;
-	g_config.path_size = path_size + 2;
+	g_meta_config.path = path;
+	g_meta_config.path_size = path_size + 2;
 	exit_procedure_register(meta_config_unload);
 
 	log(L"Closing file...");
@@ -125,13 +125,13 @@ error_t meta_config_load() {
 	START;
 	log(
 		L" - Partition GUID: %08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
-		g_config.partition.Data1, g_config.partition.Data2, g_config.partition.Data3,
-		g_config.partition.Data4[0], g_config.partition.Data4[1],
-		g_config.partition.Data4[2], g_config.partition.Data4[3],
-		g_config.partition.Data4[4], g_config.partition.Data4[5],
-		g_config.partition.Data4[6], g_config.partition.Data4[7]
+		g_meta_config.partition.Data1, g_meta_config.partition.Data2, g_meta_config.partition.Data3,
+		g_meta_config.partition.Data4[0], g_meta_config.partition.Data4[1],
+		g_meta_config.partition.Data4[2], g_meta_config.partition.Data4[3],
+		g_meta_config.partition.Data4[4], g_meta_config.partition.Data4[5],
+		g_meta_config.partition.Data4[6], g_meta_config.partition.Data4[7]
 	);
-	log(L" - Path: %s", g_config.path);
+	log(L" - Path: %s", g_meta_config.path);
 	END;
 
 	RETURN(ERR_NONE);
