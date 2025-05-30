@@ -1,8 +1,12 @@
 /******************************************************************************
  *
+ *  Project:		BigOS
  *  File:			bootloader/partition.h
- *  Description:	Interface for partition access.
- *  Author:			Maciej Zgierski
+ *  Description:	Interface for filesystems access.
+ *
+ *  Note:
+ *  The name "partition" might be misleading since not all filesystems live
+ *  on disk partitions. It is however safe to disregard this naming detail.
  *
  ******************************************************************************/
 
@@ -21,9 +25,24 @@ typedef struct {
 	EFI_GUID* guid;
 } partition_t;
 
-[[nodiscard]] error_t partition_table_create();
+/**
+ * @brief	Search for all avaible partitions and store their handles and data in g_partition_table
+ *
+ * @return	ERR_NONE - success
+ *			ERR_PARTITION_TABLE_CREATE_FAILURE - failure
+ */
+[[nodiscard]] error_t partition_table_create(void);
 
+/**
+ * @brief	Print partition data
+ *
+ * @param	partition - Partition to print the data of
+ */
 void partition_print(partition_t* partition);
-void partition_table_print();
+
+/**
+ * @brief	Print all partition data
+ */
+void partition_table_print(void);
 
 #endif // !BIGOS_BOOTLOADER_PARTITION

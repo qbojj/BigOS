@@ -1,8 +1,8 @@
 /******************************************************************************
  *
- *  File:			bootloader/elf.h
- *  Description:	Header for commonly used values/functions.
- *  Author:			Maciej Zgierski
+ *  Project:		BigOS
+ *  File:			bootloader/common.h
+ *  Description:	Commonly used global values.
  *
  ******************************************************************************/
 
@@ -18,7 +18,7 @@
 extern EFI_HANDLE g_image_handle;
 extern EFI_SYSTEM_TABLE* g_system_table;
 extern loader_t g_loader;
-extern meta_config_t g_config;
+extern meta_config_t g_meta_config;
 extern partition_t* g_partition_table;
 extern UINTN g_partition_table_count;
 extern void* g_fdt;

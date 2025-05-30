@@ -1,8 +1,8 @@
 /******************************************************************************
  *
+ *  Project:		BigOS
  *  File:			bootloader/main.c
  *  Description:	Entry point for GRUBAS bootloader.
- *  Author:			Maciej Zgierski
  *
  *  Note:
  *  It's best to have UEFI documentation on hand when reading this code.

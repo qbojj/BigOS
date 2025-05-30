@@ -1,7 +1,7 @@
 /******************************************************************************
  *
+ *  Project:		BigOS
  *  File:			bootloader/exit.c
- *  Author:			Maciej Zgierski
  *
  ******************************************************************************/
 
@@ -20,7 +20,7 @@ static exit_procedure_t* exit_procedures;
 
 #define BUFFER_CHUNK_SIZE 64
 
-static void exit_procedures_call() {
+static void exit_procedures_call(void) {
 	log(L"Calling exit procedures...");
 	for(UINTN i = 0; i < exit_procedure_count; ++i) {
 		exit_procedures[i]();
@@ -28,13 +28,14 @@ static void exit_procedures_call() {
 	FreePool(exit_procedures);
 }
 
-void exit() {
+void exit(void) {
+	log_set_depth(0);
 	exit_procedures_call();
 	log(L"Exiting UEFI-boot...");
 	g_system_table->BootServices->Exit(g_image_handle, 1, 0, NULL);
 }
 
-void exit_boot() {
+void exit_boot(void) {
 	exit_procedures_call();
 
 	log(L"Passing control to kernel...");

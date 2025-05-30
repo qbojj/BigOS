@@ -1,7 +1,7 @@
 /******************************************************************************
  *
+ *  Project:		BigOS
  *  File:			bootloader/fdt.c
- *  Author:			Maciej Zgierski
  *
  ******************************************************************************/
 
@@ -20,7 +20,7 @@
 void* g_fdt;
 
 // FDT is created by u-boot and then passed into UEFI system table
-error_t get_FDT() {
+error_t get_FDT(void) {
 	START;
 	EFI_GUID fdt_guid = EFI_FDT_GUID;
 	EFI_CONFIGURATION_TABLE* entry;

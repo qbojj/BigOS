@@ -1,7 +1,7 @@
 /******************************************************************************
  *
+ *  Project:		BigOS
  *  File:			bootloader/ext2.c
- *  Author:			Maciej Zgierski
  *
  ******************************************************************************/
 
@@ -18,7 +18,7 @@
 
 #define EXT2_DRIVER_PATH L"EFI\\BOOT\\ext2.efi"
 
-error_t ext2_driver_start() {
+error_t ext2_driver_start(void) {
 	START;
 	error_t status;
 

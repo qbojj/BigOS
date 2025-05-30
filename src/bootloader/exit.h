@@ -1,8 +1,8 @@
 /******************************************************************************
  *
+ *  Project:		BigOS
  *  File:			bootloader/exit.h
  *  Description:	Helper module for ensuring proper boot exit.
- *  Author:			Maciej Zgierski
  *
  ******************************************************************************/
 
@@ -12,13 +12,28 @@
 #include <efi.h>
 #include <efidef.h>
 
-// Exit EFI loader with error
-void exit();
+/**
+ * @brief	Exit EFI loader with error
+ *
+ * @note	It is reccomended to only call this function inside main
+ *			in order to make debbuging easier.
+ */
+void exit(void);
 
-// Prepare for EFI loader exit
-void exit_boot();
+/**
+ * @brief	Prepare to pass control to the kernel
+ *
+ * @note	EFI boot services become unavaible after calling this function
+ */
+void exit_boot(void);
 
-// Add function to run when exit_boot() is called
+/**
+ * @brief	Add function to run when bootloader exits
+ *
+ * @param	function - Pointer to a function meant to be called when bootloader exits
+ *
+ * @note	Exit procedures are called when exit() or exit_boot() are called
+ */
 void exit_procedure_register(void (*function)(void));
 
 #endif // !BIGOS_BOOTLOADER_EXIT
