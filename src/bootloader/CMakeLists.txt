@@ -37,8 +37,8 @@ set(EFI_BOOT_DIR "${EFI_DIR}/EFI/BOOT")
 set(BOOTRISCV64_EFI "${EFI_BOOT_DIR}/BOOTRISCV64.EFI")
 set(EXT2_BINARY_SRC "${PROJECT_SOURCE_DIR}/external/ext2efi/ext2_riscv64.efi")
 set(EXT2_BINARY_EFI "${EFI_BOOT_DIR}/ext2.efi")
-set(PRE_CONF_SRC "${CMAKE_CURRENT_LIST_DIR}/data/pre.conf")
-set(PRE_CONF "${EFI_BOOT_DIR}/pre.conf")
+set(META_CONF_SRC "${CMAKE_CURRENT_LIST_DIR}/data/conf.meta")
+set(META_CONF "${EFI_BOOT_DIR}/conf.meta")
 
 file(MAKE_DIRECTORY "${EFI_BOOT_DIR}")
 
@@ -59,15 +59,15 @@ add_custom_command(
 )
 
 add_custom_command(
-	OUTPUT ${PRE_CONF}
-	COMMAND ${CMAKE_COMMAND} -E copy "${PRE_CONF_SRC}" "${PRE_CONF}"
-	COMMENT "Creating default pre-config file at ${PRE_CONF}"
+	OUTPUT ${META_CONF}
+	COMMAND ${CMAKE_COMMAND} -E copy "${META_CONF_SRC}" "${META_CONF}"
+	COMMENT "Creating default pre-config file at ${META_CONF}"
     VERBATIM
 )
 
 add_custom_target(
     efi-partition-structure ALL
-    DEPENDS ${BOOTRISCV64_EFI} ${EXT2_BINARY_EFI} ${PRE_CONF}
+    DEPENDS ${BOOTRISCV64_EFI} ${EXT2_BINARY_EFI} ${META_CONF}
 )
 
 add_custom_target(run-bootloader
