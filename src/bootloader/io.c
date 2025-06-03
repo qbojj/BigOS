@@ -23,7 +23,7 @@ error_t read_file(EFI_FILE_PROTOCOL* file, UINTN offset, UINTN size, void* buffe
 	status = file->SetPosition(file, offset);
 	if(EFI_ERROR(status)) {
 		err(L"Failed to set read offset. Error code: %u", status);
-		RETURN(ERR_FILE_LOAD_FAILURE);
+		RETURN(ERR_FILE_READ_FAILURE);
 	}
 
 	log(L"Reading %llu bytes...", size);
@@ -31,8 +31,46 @@ error_t read_file(EFI_FILE_PROTOCOL* file, UINTN offset, UINTN size, void* buffe
 		UINT64 remains = size - read;
 		status = file->Read(file, &remains, (void*)(buf + read));
 		if(EFI_ERROR(status))
-			RETURN(ERR_FILE_LOAD_FAILURE);
+			RETURN(ERR_FILE_READ_FAILURE);
 		read += remains;
+	}
+
+	RETURN(ERR_NONE);
+}
+
+error_t read_file_info(EFI_FILE_PROTOCOL* file,EFI_FILE_INFO** file_info) {
+	START;
+	EFI_STATUS status;
+	UINTN size = 0;
+
+	EFI_GUID file_info_guid = EFI_FILE_INFO_ID;
+	status = file->GetInfo(
+		file,
+		&file_info_guid,
+		&size,
+		*file_info
+	);
+	if(status != EFI_BUFFER_TOO_SMALL) {
+		err(L"Failed to get file info size. Error code: %u", status);
+		RETURN(ERR_FILE_INFO_READ_FAILURE);
+	}
+
+	*file_info = AllocateZeroPool(size);
+	if(*file_info == NULL) {
+		err(L"Failed to allocate buffer for file info. Error code: %u", status);
+		RETURN(ERR_FILE_INFO_READ_FAILURE);
+	}
+
+	status = file->GetInfo(
+		file,
+		&file_info_guid,
+		&size,
+		*file_info
+	);
+	if(EFI_ERROR(status)) {
+		FreePool(*file_info);
+		err(L"Failed to get file info. Error code: %u", status);
+		RETURN(ERR_FILE_INFO_READ_FAILURE);
 	}
 
 	RETURN(ERR_NONE);
