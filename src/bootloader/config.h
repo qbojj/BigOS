@@ -19,7 +19,7 @@
 #include "error.h"
 
 typedef struct {
-	EFI_GUID partition;
+	EFI_GUID partition_guid;
 	CHAR16* path;
 	UINTN path_size;
 } meta_config_t;
@@ -33,5 +33,7 @@ typedef struct {
  * @note	conf.meta has to be located on boot partition
  */
 [[nodiscard]] error_t meta_config_load(void);
+
+[[nodiscard]] error_t config_load(void);
 
 #endif // !BIGOS_BOOTLOADER_CONFIG

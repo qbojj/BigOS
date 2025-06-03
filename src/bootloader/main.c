@@ -50,10 +50,10 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
 		exit();
 	}
 
-	log(L"Loading config...");
+	log(L"Loading meta config...");
 	status = meta_config_load();
 	if(status != ERR_NONE) {
-		err(L"Failed to load config");
+		err(L"Failed to load meta config");
 		exit();
 	}
 
@@ -68,6 +68,13 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
 	status = partition_table_create();
 	if(status != ERR_NONE) {
 		err(L"Failed to create partition table");
+		exit();
+	}
+
+	log(L"Loading config...");
+	status = config_load();
+	if(status != ERR_NONE) {
+		err(L"Failed to load config");
 		exit();
 	}
 
