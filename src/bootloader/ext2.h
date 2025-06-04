@@ -18,6 +18,6 @@
  * @return	ERR_NONE - success
  *			ERR_EXT2_DRIVER_START_FAILURE - failure
  */
-[[nodiscard]] error_t ext2_driver_start(void);
+[[nodiscard]] status_t ext2_driver_start(void);
 
 #endif // !BIGOS_BOOTLOADER_EXT2

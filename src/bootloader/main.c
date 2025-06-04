@@ -29,7 +29,7 @@ EFI_HANDLE g_image_handle;
 EFI_SYSTEM_TABLE* g_system_table;
 
 EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
-	error_t status;
+	status_t status;
 	g_image_handle = image_handle;
 	g_system_table = system_table;
 	InitializeLib(image_handle, g_system_table);
@@ -45,42 +45,42 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
 
 	log(L"Initializing loader...");
 	status = initialize_loader();
-	if(status != ERR_NONE) {
-		err(L"Failed to initialize_loader");
+	if(status != BOOT_SUCCESS) {
+		err(L"Failed to initialize loader");
 		exit();
 	}
 
 	log(L"Loading meta config...");
 	status = meta_config_load();
-	if(status != ERR_NONE) {
+	if(status != BOOT_SUCCESS) {
 		err(L"Failed to load meta config");
 		exit();
 	}
 
 	log(L"Starting ext2 driver...");
 	status = ext2_driver_start();
-	if(status != ERR_NONE) {
+	if(status != BOOT_SUCCESS) {
 		err(L"Failed to run ext2 driver");
 		exit();
 	}
 
 	log(L"Creating partition table...");
 	status = partition_table_create();
-	if(status != ERR_NONE) {
+	if(status != BOOT_SUCCESS) {
 		err(L"Failed to create partition table");
 		exit();
 	}
 
 	log(L"Loading config...");
 	status = config_load();
-	if(status != ERR_NONE) {
+	if(status != BOOT_SUCCESS) {
 		err(L"Failed to load config");
 		exit();
 	}
 
 	log(L"Getting FDT...");
 	status = get_FDT();
-	if(status != ERR_NONE) {
+	if(status != BOOT_SUCCESS) {
 		err(L"Failed to get FDT");
 		exit();
 	}

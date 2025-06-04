@@ -67,10 +67,10 @@ typedef struct {
  *
  * @note	Buffer is expected to be at least size bytes big
  */
-error_t read_file(EFI_FILE_PROTOCOL* file, UINTN offset, UINTN size, void* buffer);
+status_t read_file(EFI_FILE_PROTOCOL* file, UINTN offset, UINTN size, void* buffer);
 
 // TODO: balls
-error_t read_file_info(EFI_FILE_PROTOCOL* file,EFI_FILE_INFO** file_info);
+status_t read_file_info(EFI_FILE_PROTOCOL* file,EFI_FILE_INFO** file_info);
 
 // TODO: return something more meaningful
 EFI_STATUS read_elf_header(EFI_FILE_PROTOCOL* file, elf64_header_t* header);

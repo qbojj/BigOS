@@ -14,7 +14,7 @@
 #include "log.h"
 #include "error.h"
 
-error_t read_file(EFI_FILE_PROTOCOL* file, UINTN offset, UINTN size, void* buffer) {
+status_t read_file(EFI_FILE_PROTOCOL* file, UINTN offset, UINTN size, void* buffer) {
 	START;
 	EFI_STATUS status;
 	unsigned char* buf = buffer;
@@ -22,8 +22,8 @@ error_t read_file(EFI_FILE_PROTOCOL* file, UINTN offset, UINTN size, void* buffe
 	log(L"Set read position to %llu...", offset);
 	status = file->SetPosition(file, offset);
 	if(EFI_ERROR(status)) {
-		err(L"Failed to set read offset. Error code: %u", status);
-		RETURN(ERR_FILE_READ_FAILURE);
+		err(L"Failed to set read offset. EFI_FILE_PROTOCOL.SetPosition() return code: %u", status);
+		RETURN(BOOT_ERROR);
 	}
 
 	log(L"Reading %llu bytes...", size);
@@ -31,14 +31,14 @@ error_t read_file(EFI_FILE_PROTOCOL* file, UINTN offset, UINTN size, void* buffe
 		UINT64 remains = size - read;
 		status = file->Read(file, &remains, (void*)(buf + read));
 		if(EFI_ERROR(status))
-			RETURN(ERR_FILE_READ_FAILURE);
+			RETURN(BOOT_ERROR);
 		read += remains;
 	}
 
-	RETURN(ERR_NONE);
+	RETURN(BOOT_SUCCESS);
 }
 
-error_t read_file_info(EFI_FILE_PROTOCOL* file,EFI_FILE_INFO** file_info) {
+status_t read_file_info(EFI_FILE_PROTOCOL* file,EFI_FILE_INFO** file_info) {
 	START;
 	EFI_STATUS status;
 	UINTN size = 0;
@@ -51,14 +51,14 @@ error_t read_file_info(EFI_FILE_PROTOCOL* file,EFI_FILE_INFO** file_info) {
 		*file_info
 	);
 	if(status != EFI_BUFFER_TOO_SMALL) {
-		err(L"Failed to get file info size. Error code: %u", status);
-		RETURN(ERR_FILE_INFO_READ_FAILURE);
+		err(L"Failed to get file info size. EFI_FILE_PROTOCOL.GetInfo() return code: %u", status);
+		RETURN(BOOT_ERROR);
 	}
 
 	*file_info = AllocateZeroPool(size);
 	if(*file_info == NULL) {
-		err(L"Failed to allocate buffer for file info. Error code: %u", status);
-		RETURN(ERR_FILE_INFO_READ_FAILURE);
+		err(L"Failed to allocate buffer for file info");
+		RETURN(BOOT_ERROR);
 	}
 
 	status = file->GetInfo(
@@ -69,11 +69,11 @@ error_t read_file_info(EFI_FILE_PROTOCOL* file,EFI_FILE_INFO** file_info) {
 	);
 	if(EFI_ERROR(status)) {
 		FreePool(*file_info);
-		err(L"Failed to get file info. Error code: %u", status);
-		RETURN(ERR_FILE_INFO_READ_FAILURE);
+		err(L"Failed to get file info. EFI_FILE_PROTOCOL.GetInfo() return code: %u", status);
+		RETURN(BOOT_ERROR);
 	}
 
-	RETURN(ERR_NONE);
+	RETURN(BOOT_SUCCESS);
 }
 
 EFI_STATUS read_elf_header(EFI_FILE_PROTOCOL* file, elf64_header_t* header) {

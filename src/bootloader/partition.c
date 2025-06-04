@@ -111,7 +111,7 @@ static void partition_create(partition_t* partition, EFI_HANDLE handle) {
 	partition->guid = part_guid;
 }
 
-error_t partition_table_create(void) {
+status_t partition_table_create(void) {
 	START;
 	EFI_STATUS status;
 
@@ -127,16 +127,16 @@ error_t partition_table_create(void) {
 		&file_systems_table
 	);
 	if(EFI_ERROR(status)) {
-		err(L"Failed to locate file system handles. Error code: %u", status);
-		RETURN(ERR_PARTITION_TABLE_CREATE_FAILURE);
+		err(L"Failed to locate file system handles. BootServices.LocateHandleBuffer() return code: %u", status);
+		RETURN(BOOT_ERROR);
 	}
 
 	g_partition_table_count = file_systems_count;
 	g_partition_table = AllocateZeroPool(sizeof(partition_t) * file_systems_count);
 	if(EFI_ERROR(status)) {
-		err(L"Failed to allocate memory for partition data. Error code: %u", status);
+		err(L"Failed to allocate memory for partition data");
 		FreePool(file_systems_table);
-		RETURN(ERR_PARTITION_TABLE_CREATE_FAILURE);
+		RETURN(BOOT_ERROR);
 	}
 
 	log(L"Creating partition table...");
@@ -147,7 +147,7 @@ error_t partition_table_create(void) {
 	exit_procedure_register(partition_table_free);
 
 	FreePool(file_systems_table);
-	RETURN(ERR_NONE);
+	RETURN(BOOT_SUCCESS);
 }
 
 void partition_print(partition_t* partition) {

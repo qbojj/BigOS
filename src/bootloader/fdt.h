@@ -18,6 +18,6 @@
  * @return	ERR_NONE - success
  *			ERR_PARTITION_TABLE_CREATE_FAILURE - failure
  */
-[[nodiscard]] error_t get_FDT(void);
+[[nodiscard]] status_t get_FDT(void);
 
 #endif // !BIGOS_BOOTLOADER_FDT

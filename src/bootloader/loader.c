@@ -14,7 +14,7 @@
 
 loader_t g_loader;
 
-error_t initialize_loader(void) {
+status_t initialize_loader(void) {
 	START;
 	EFI_STATUS status;
 
@@ -26,8 +26,8 @@ error_t initialize_loader(void) {
 		(void**)&g_loader.image
 	);
 	if(EFI_ERROR(status)) {
-		err(L"Failed to get UEFI LoadedImageProtocol. Error code: %u", status);
-		RETURN(ERR_LOADER_INIT_FAILURE);
+		err(L"Failed to get image. BootServices.HandleProtocol() return code: %u", status);
+		RETURN(BOOT_ERROR);
 	}
 
 	log(L"Getting FileSystemProtocol...");
@@ -38,8 +38,8 @@ error_t initialize_loader(void) {
 		(void**)&g_loader.file_system
 	);
 	if(EFI_ERROR(status)) {
-		err(L"Failed to get UEFI FileSystemProtocol. Error code: %u", status);
-		RETURN(ERR_LOADER_INIT_FAILURE);
+		err(L"Failed to get file system. BootServices.HandleProtocol() return code: %u", status);
+		RETURN(BOOT_ERROR);
 	}
 
 	log(L"Opening boot volume...");
@@ -48,9 +48,9 @@ error_t initialize_loader(void) {
 		&g_loader.root
 	);
 	if(EFI_ERROR(status)) {
-		err(L"Failed to open volume. Error code: %u", status);
-		RETURN(ERR_LOADER_INIT_FAILURE);
+		err(L"Failed to open volume. EFI_FILE_SYSTEM_PROTOCOL.OpenVolume() return code: %u", status);
+		RETURN(BOOT_ERROR);
 	}
 
-	RETURN(ERR_NONE);
+	RETURN(BOOT_SUCCESS);
 }

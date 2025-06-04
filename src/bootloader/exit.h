@@ -14,9 +14,6 @@
 
 /**
  * @brief	Exit EFI loader with error
- *
- * @note	It is reccomended to only call this function inside main
- *			in order to make debbuging easier.
  */
 void exit(void);
 
