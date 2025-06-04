@@ -12,6 +12,7 @@
 #include <efi.h>
 
 #include "config.h"
+#include "io.h"
 #include "loader.h"
 #include "partition.h"
 
@@ -21,6 +22,7 @@ extern loader_t g_loader;
 extern meta_config_t g_meta_config;
 extern partition_t* g_partition_table;
 extern UINTN g_partition_table_count;
+extern elf_application_t g_kernel; 
 extern void* g_fdt;
 
 #endif // !BIGOS_BOOTLOADER_COMMON

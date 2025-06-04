@@ -45,13 +45,16 @@ typedef struct {
 	EFI_FILE_PROTOCOL* file;
 	elf64_header_t header;
 	elf_program_header_t* program_headers;
-	uint64_t image_begin;
-	uint64_t image_end;
-	uint64_t page_size;
 
-	uint64_t image_pages;
-	uint64_t image_addr;
-	uint64_t image_entry;
+	UINT64 entry_address;
+
+	UINT64 img_begin;
+	UINT64 img_end;
+	UINT64 base_vaddr;
+	UINT64 top_vaddr;
+	UINT64 page_count;
+	UINT64 size;
+	UINT64 physical_base;
 } elf_application_t;
 
 /**
@@ -72,13 +75,6 @@ status_t read_file(EFI_FILE_PROTOCOL* file, UINTN offset, UINTN size, void* buff
 // TODO: balls
 status_t read_file_info(EFI_FILE_PROTOCOL* file,EFI_FILE_INFO** file_info);
 
-// TODO: return something more meaningful
-EFI_STATUS read_elf_header(EFI_FILE_PROTOCOL* file, elf64_header_t* header);
-
-// TODO: return something more meaningful
-UINTN verify_elf_header(elf64_header_t* header);
-
-// TODO: return something more meaningful
-EFI_STATUS load_elf(elf_application_t* app);
+status_t load_elf(elf_application_t* app);
 
 #endif // !BIGOS_BOOTLOADER_ELF

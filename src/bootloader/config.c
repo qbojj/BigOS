@@ -41,7 +41,7 @@ void meta_config_unload(void) {
 status_t meta_config_load(void) {
 	START;
 	EFI_STATUS status;
-	status_t read_status;
+	status_t boot_status;
 
 	EFI_FILE_PROTOCOL* meta_config_file;
 
@@ -60,8 +60,8 @@ status_t meta_config_load(void) {
 
 	log(L"Reading file info...");
 	EFI_FILE_INFO* file_info = NULL;
-	read_status = read_file_info(meta_config_file, &file_info);
-	if(read_status != BOOT_SUCCESS) {
+	boot_status = read_file_info(meta_config_file, &file_info);
+	if(boot_status != BOOT_SUCCESS) {
 		err(L"Failed to read GUID");
 		RETURN(BOOT_ERROR);
 	}
@@ -74,8 +74,8 @@ status_t meta_config_load(void) {
 	}
 
 	log(L"Reading file contents...");
-	read_status = read_file(meta_config_file, 0, sizeof(EFI_GUID), (void*)&g_meta_config);
-	if(read_status != BOOT_SUCCESS) {
+	boot_status = read_file(meta_config_file, 0, sizeof(EFI_GUID), (void*)&g_meta_config);
+	if(boot_status != BOOT_SUCCESS) {
 		FreePool(file_info);
 		err(L"Failed to read GUID");
 		RETURN(BOOT_ERROR);
@@ -89,8 +89,8 @@ status_t meta_config_load(void) {
 		RETURN(BOOT_ERROR);
 	}
 
-	read_status = read_file(meta_config_file, sizeof(EFI_GUID), path_size, (void*)path);
-	if(read_status != BOOT_SUCCESS) {
+	boot_status = read_file(meta_config_file, sizeof(EFI_GUID), path_size, (void*)path);
+	if(boot_status != BOOT_SUCCESS) {
 		FreePool(path);
 		err(L"Failed to read path");
 		RETURN(BOOT_ERROR);
@@ -110,7 +110,7 @@ status_t meta_config_load(void) {
 status_t config_load(void) {
 	START;
 	EFI_STATUS status;
-	status_t read_status;
+	status_t boot_status;
 
 	partition_t* partition = NULL;
 	for(UINTN i = 0; i < g_partition_table_count; ++i) {
@@ -144,8 +144,8 @@ status_t config_load(void) {
 
 	log(L"Reading file info...");
 	EFI_FILE_INFO* test_file_info = NULL;
-	read_status = read_file_info(test_file, &test_file_info);
-	if(read_status != BOOT_SUCCESS) {
+	boot_status = read_file_info(test_file, &test_file_info);
+	if(boot_status != BOOT_SUCCESS) {
 		err(L"Failed to read file");
 		RETURN(BOOT_ERROR);
 	}
@@ -153,8 +153,8 @@ status_t config_load(void) {
 	CHAR8* text = AllocateZeroPool(test_file_info->FileSize + 1);
 
 	log(L"Reading file contents...");
-	read_status = read_file(test_file, 0, test_file_info->FileSize, (void*)text);
-	if(read_status != BOOT_SUCCESS) {
+	boot_status = read_file(test_file, 0, test_file_info->FileSize, (void*)text);
+	if(boot_status != BOOT_SUCCESS) {
 		FreePool(test_file_info);
 		err(L"Failed to read contents");
 		RETURN(BOOT_ERROR);
