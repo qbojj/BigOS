@@ -31,7 +31,7 @@ typedef struct {
  * @return	ERR_NONE - success
  *			ERR_PARTITION_TABLE_CREATE_FAILURE - failure
  */
-[[nodiscard]] error_t partition_table_create(void);
+[[nodiscard]] status_t partition_table_create(void);
 
 /**
  * @brief	Print partition data

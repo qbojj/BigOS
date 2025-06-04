@@ -20,7 +20,7 @@
 void* g_fdt;
 
 // FDT is created by u-boot and then passed into UEFI system table
-error_t get_FDT(void) {
+status_t get_FDT(void) {
 	START;
 	EFI_GUID fdt_guid = EFI_FDT_GUID;
 	EFI_CONFIGURATION_TABLE* entry;
@@ -29,9 +29,9 @@ error_t get_FDT(void) {
 		entry = &g_system_table->ConfigurationTable[index];
 		if(CompareGuid(&entry->VendorGuid, &fdt_guid)) {
 			g_fdt = entry->VendorTable;
-			RETURN(ERR_NONE);
+			RETURN(BOOT_SUCCESS);
 		}
 	}
 
-	RETURN(ERR_NONE);
+	RETURN(BOOT_ERROR);
 }

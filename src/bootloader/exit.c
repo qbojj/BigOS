@@ -8,8 +8,8 @@
 #include "exit.h"
 
 #include <efi.h>
+#include <efierr.h>
 #include <efilib.h>
-#include "common.h"
 #include "log.h"
 
 typedef void (*exit_procedure_t)(void);
@@ -32,7 +32,7 @@ void exit(void) {
 	log_set_depth(0);
 	exit_procedures_call();
 	log(L"Exiting UEFI-boot...");
-	g_system_table->BootServices->Exit(g_image_handle, 1, 0, NULL);
+	Exit(EFI_LOAD_ERROR, 0, NULL);
 }
 
 void exit_boot(void) {

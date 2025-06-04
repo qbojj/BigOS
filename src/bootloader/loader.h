@@ -24,6 +24,6 @@ typedef struct {
  * @return	ERR_NONE - success
  *			ERR_LOADER_INIT_FAILURE - failure
  */
-error_t initialize_loader(void);
+status_t initialize_loader(void);
 
 #endif // !BIGOS_BOOTLOADER_LOADER

@@ -18,9 +18,9 @@
 
 #define EXT2_DRIVER_PATH L"EFI\\BOOT\\ext2.efi"
 
-error_t ext2_driver_start(void) {
+status_t ext2_driver_start(void) {
 	START;
-	error_t status;
+	status_t status;
 
 	log(L"Opening file...");
 	EFI_FILE_PROTOCOL* ext2_file;
@@ -32,8 +32,8 @@ error_t ext2_driver_start(void) {
 		EFI_FILE_READ_ONLY
 	);
 	if(EFI_ERROR(status)) {
-		err(L"Failed to open ext2 driver file. Error code: %u", status);
-		RETURN(ERR_EXT2_DRIVER_START_FAILURE);
+		err(L"Failed to open file. EFI_FILE_PROTOCOL.Open() return code: %u", status);
+		RETURN(BOOT_ERROR);
 	}
 
 	log(L"Loading driver image...");
@@ -48,8 +48,8 @@ error_t ext2_driver_start(void) {
 		&ext2_driver_handle
 	);
 	if(EFI_ERROR(status)) {
-		err(L"Failed to load ext2 driver image. Error code: %u", status);
-		RETURN(ERR_EXT2_DRIVER_START_FAILURE);
+		err(L"Failed to load driver image. BootServices.LoadImage() return code: %u", status);
+		RETURN(BOOT_ERROR);
 	}
 
 	log(L"Starting driver...");
@@ -59,12 +59,12 @@ error_t ext2_driver_start(void) {
 		NULL
 	);
 	if(EFI_ERROR(status)) {
-		err(L"Failed to start ext2 driver. Error code: %u", status);
-		RETURN(ERR_EXT2_DRIVER_START_FAILURE);
+		err(L"Failed to start ext2 driver. BootServices.StartImage() return code: %u", status);
+		RETURN(BOOT_ERROR);
 	}
 
 	log(L"Closing file...");
 	ext2_file->Close(ext2_file);
 
-	RETURN(ERR_NONE);
+	RETURN(BOOT_SUCCESS);
 }

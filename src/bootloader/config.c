@@ -38,10 +38,10 @@ void meta_config_unload(void) {
 	END;
 }
 
-error_t meta_config_load(void) {
+status_t meta_config_load(void) {
 	START;
 	EFI_STATUS status;
-	error_t read_status;
+	status_t read_status;
 
 	EFI_FILE_PROTOCOL* meta_config_file;
 
@@ -54,46 +54,46 @@ error_t meta_config_load(void) {
 		EFI_FILE_READ_ONLY
 	);
 	if(EFI_ERROR(status)) {
-		err(L"Failed to open file. Error code: %u", status);
-		RETURN(ERR_PRE_CONFIG_LOAD_FAILURE);
+		err(L"Failed to open file. EFI_FILE_PROTOCOL.Open() return code: %u", status);
+		RETURN(BOOT_ERROR);
 	}
 
 	log(L"Reading file info...");
 	EFI_FILE_INFO* file_info = NULL;
 	read_status = read_file_info(meta_config_file, &file_info);
-	if(read_status != ERR_NONE) {
-		err(L"Failed to read GUID. Error code: %u", status);
-		RETURN(ERR_PRE_CONFIG_LOAD_FAILURE);
+	if(read_status != BOOT_SUCCESS) {
+		err(L"Failed to read GUID");
+		RETURN(BOOT_ERROR);
 	}
 
 	log(L"Verifying file size...");
 	if(file_info->FileSize < sizeof(EFI_GUID)) {
 		FreePool(file_info);
-		err(L"Invalid pre-config file data. Error code: %u", status);
-		RETURN(ERR_PRE_CONFIG_LOAD_FAILURE);
+		err(L"Invalid pre-config file data");
+		RETURN(BOOT_ERROR);
 	}
 
 	log(L"Reading file contents...");
 	read_status = read_file(meta_config_file, 0, sizeof(EFI_GUID), (void*)&g_meta_config);
-	if(read_status != ERR_NONE) {
+	if(read_status != BOOT_SUCCESS) {
 		FreePool(file_info);
-		err(L"Failed to read GUID. Error code: %u", status);
-		RETURN(ERR_PRE_CONFIG_LOAD_FAILURE);
+		err(L"Failed to read GUID");
+		RETURN(BOOT_ERROR);
 	}
 
 	UINTN path_size = file_info->FileSize - sizeof(EFI_GUID);
 	FreePool(file_info);
 	CHAR16* path = AllocatePool(path_size + 2);
 	if(path == NULL) {
-		err(L"Failed to allocate buffer for file data. Error code: %u", status);
-		RETURN(ERR_PRE_CONFIG_LOAD_FAILURE);
+		err(L"Failed to allocate buffer for file data");
+		RETURN(BOOT_ERROR);
 	}
 
 	read_status = read_file(meta_config_file, sizeof(EFI_GUID), path_size, (void*)path);
-	if(read_status != ERR_NONE) {
+	if(read_status != BOOT_SUCCESS) {
 		FreePool(path);
-		err(L"Failed to read path. Error code: %u", status);
-		RETURN(ERR_PRE_CONFIG_LOAD_FAILURE);
+		err(L"Failed to read path");
+		RETURN(BOOT_ERROR);
 	}
 	path[path_size / 2] = L'\0';
 
@@ -104,13 +104,13 @@ error_t meta_config_load(void) {
 	log(L"Closing file...");
 	meta_config_file->Close(meta_config_file);
 
-	RETURN(ERR_NONE);
+	RETURN(BOOT_SUCCESS);
 }
 
-error_t config_load(void) {
+status_t config_load(void) {
 	START;
 	EFI_STATUS status;
-	error_t read_status;
+	status_t read_status;
 
 	partition_t* partition = NULL;
 	for(UINTN i = 0; i < g_partition_table_count; ++i) {
@@ -118,14 +118,13 @@ error_t config_load(void) {
 		if(current->guid == NULL) continue;
 		// HACK: CompareGuid always returns 0 here for some reason
 		if(guid_compare(current->guid, &g_meta_config.partition_guid)) {
-			log(L"found");
 			partition = current;
 			break;
 		}
 	}
 	if(partition == NULL) {
 		err(L"Failed to find config partition");
-		RETURN(ERR_CONFIG_LOAD_FAILURE);
+		RETURN(BOOT_ERROR);
 	}
 
 	log(L"Opening file...");
@@ -139,26 +138,26 @@ error_t config_load(void) {
 		EFI_FILE_READ_ONLY
 	);
 	if(EFI_ERROR(status)) {
-		err(L"Failed to open file. Error code: %u", status);
-		RETURN(ERR_CONFIG_LOAD_FAILURE);
+		err(L"Failed to open file. EFI_FILE_PROTOCOL.Open() return code: %u", status);
+		RETURN(BOOT_ERROR);
 	}
 
 	log(L"Reading file info...");
 	EFI_FILE_INFO* test_file_info = NULL;
 	read_status = read_file_info(test_file, &test_file_info);
-	if(read_status != ERR_NONE) {
-		err(L"Failed to read file. Error code: %u", status);
-		RETURN(ERR_CONFIG_LOAD_FAILURE);
+	if(read_status != BOOT_SUCCESS) {
+		err(L"Failed to read file");
+		RETURN(BOOT_ERROR);
 	}
 
 	CHAR8* text = AllocateZeroPool(test_file_info->FileSize + 1);
 
 	log(L"Reading file contents...");
 	read_status = read_file(test_file, 0, test_file_info->FileSize, (void*)text);
-	if(read_status != ERR_NONE) {
+	if(read_status != BOOT_SUCCESS) {
 		FreePool(test_file_info);
-		err(L"Failed to read GUID. Error code: %u", status);
-		RETURN(ERR_PRE_CONFIG_LOAD_FAILURE);
+		err(L"Failed to read contents");
+		RETURN(BOOT_ERROR);
 	}
 
 	for(UINTN i = 0; i < test_file_info->FileSize; ++i) {
@@ -166,5 +165,5 @@ error_t config_load(void) {
 		log(L"%c", text[i]);
 	}
 
-	RETURN(ERR_NONE);
+	RETURN(BOOT_ERROR);
 }
