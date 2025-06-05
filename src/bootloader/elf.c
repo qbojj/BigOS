@@ -10,25 +10,35 @@
 #define PAGE_SIZE 4096
 
 static status_t verify_elf_header(elf64_header_t* header) {
+	START;
 	if( header->ident[0] != 0x7f ||
 		header->ident[1] != 'E' ||
 		header->ident[2] != 'L' ||
-		header->ident[3] != 'F')
-		return BOOT_ERROR; // No ELF signature
+		header->ident[3] != 'F') {
+		err(L"No ELF signature: %u %c%c%c", (UINT8)header->ident[0], header->ident[1], header->ident[2], header->ident[3]);
+		RETURN(BOOT_ERROR);
+	}
 
-	if(header->type != 2)
-		return BOOT_ERROR; // Unsupported elf type
+	if(header->type != 2) {
+		err(L"Unsupported ELF type: %u", header->type);
+		RETURN(BOOT_ERROR);
+	}
 
-	if(header->ident[4] != 2)
-		return BOOT_ERROR; // Unsupported elf class
+	if(header->ident[4] != 2) {
+		err(L"Unsupported ELF class: %u", (UINT8)header->ident[4]);
+		RETURN(BOOT_ERROR);
+	}
 
-	if(header->phnum == 0)
-		return BOOT_ERROR; // Elf doesn't contain any program headers
+	if(header->phnum == 0) {
+		err(L"No program headers");
+		RETURN(BOOT_ERROR);
+	}
+	if(header->phentsize != sizeof(elf_program_header_t)) {
+		err(L"Unexpected program header size: %llu", header->phentsize);
+		RETURN(BOOT_ERROR);
+	}
 
-	if(header->phentsize != sizeof(elf64_header_t))
-		return BOOT_ERROR; // Unexpected header size
-
-	return BOOT_SUCCESS;
+	RETURN(BOOT_SUCCESS);
 }
 
 static status_t read_elf_program_headers(elf_application_t* app) {
@@ -45,7 +55,7 @@ static status_t read_elf_program_headers(elf_application_t* app) {
 		app->file,
 		app->header.phoff,
 		app->header.phnum * app->header.phentsize,
-		&app->program_headers
+		app->program_headers
 	);
 	if(boot_status != BOOT_SUCCESS) {
 		err(L"Failed to read file");
