@@ -23,10 +23,12 @@
 #include "ext2.h"
 #include "fdt.h"
 #include "config.h"
+#include "elf.h"
 #include "partition.h"
 
 EFI_HANDLE g_image_handle;
 EFI_SYSTEM_TABLE* g_system_table;
+elf_application_t g_kernel_app;
 
 EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
 	status_t status;
@@ -47,6 +49,13 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
 	status = initialize_loader();
 	if(status != BOOT_SUCCESS) {
 		err(L"Failed to initialize loader");
+		exit();
+	}
+
+	log(L"Getting FDT...");
+	status = get_FDT();
+	if(status != BOOT_SUCCESS) {
+		err(L"Failed to get FDT");
 		exit();
 	}
 
@@ -78,10 +87,12 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
 		exit();
 	}
 
-	log(L"Getting FDT...");
-	status = get_FDT();
+	g_kernel_app.file = g_config.kernel;
+
+	log(L"Loading kernel...");
+	status = elf_load(&g_kernel_app);
 	if(status != BOOT_SUCCESS) {
-		err(L"Failed to get FDT");
+		err(L"Failed to load kernel");
 		exit();
 	}
 

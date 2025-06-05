@@ -24,6 +24,13 @@ typedef struct {
 	UINTN path_size;
 } meta_config_t;
 
+typedef struct {
+	EFI_FILE_PROTOCOL* directory;
+	EFI_FILE_PROTOCOL* kernel;
+	// EFI_FILE_PROTOCOL** required;
+	// UINTN required_count;
+} config_t;
+
 /**
  * @brief	Reads conf.meta file and stores data in g_meta_config
  *
