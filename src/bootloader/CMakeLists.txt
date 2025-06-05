@@ -39,6 +39,8 @@ set(EXT2_BINARY_SRC "${PROJECT_SOURCE_DIR}/external/ext2efi/ext2_riscv64.efi")
 set(EXT2_BINARY_EFI "${EFI_BOOT_DIR}/ext2.efi")
 set(META_CONF_SRC "${CMAKE_CURRENT_LIST_DIR}/data/conf.meta")
 set(META_CONF "${EFI_BOOT_DIR}/conf.meta")
+set(TEST_SRC "${CMAKE_CURRENT_LIST_DIR}/data/test.img")
+set(TEST_IMAGE "${CMAKE_BINARY_DIR}/test.img")
 
 file(MAKE_DIRECTORY "${EFI_BOOT_DIR}")
 
@@ -65,15 +67,23 @@ add_custom_command(
     VERBATIM
 )
 
+add_custom_command(
+	OUTPUT ${TEST_IMAGE}
+	COMMAND ${CMAKE_COMMAND} -E copy "${TEST_SRC}" "${TEST_IMAGE}"
+	COMMENT "TEST image file at ${TEST_IMAGE}"
+    VERBATIM
+)
+
 add_custom_target(
     efi-partition-structure ALL
-    DEPENDS ${BOOTRISCV64_EFI} ${EXT2_BINARY_EFI} ${META_CONF}
+	DEPENDS ${BOOTRISCV64_EFI} ${EXT2_BINARY_EFI} ${META_CONF} ${TEST_IMAGE}
 )
 
 add_custom_target(run-bootloader
     COMMAND "${BIGOS_QEMU_PATH}" ${BIGOS_QEMU_OPTIONS_LIST}
             -kernel "${PROJECT_SOURCE_DIR}/external/u-boot/u-boot.bin"
             -hda fat:rw:${EFI_DIR}
+			-drive file=${TEST_IMAGE},format=raw,if=virtio
     DEPENDS efi-partition-structure
     VERBATIM
     USES_TERMINAL

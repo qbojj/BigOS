@@ -22,7 +22,7 @@ static exit_procedure_t* exit_procedures;
 
 static void exit_procedures_call(void) {
 	log(L"Calling exit procedures...");
-	for(UINTN i = 0; i < exit_procedure_count; ++i) {
+	for(INTN i = exit_procedure_count - 1; i >= 0; --i) {
 		exit_procedures[i]();
 	}
 	FreePool(exit_procedures);

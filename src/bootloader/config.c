@@ -20,6 +20,7 @@
 #define META_CONFIG_PATH L"EFI\\BOOT\\conf.meta"
 
 meta_config_t g_meta_config;
+config_t g_config;
 
 static INTN guid_compare(EFI_GUID* a, EFI_GUID* b) {
 	if(a->Data1 != b->Data1) return 0;
@@ -33,7 +34,7 @@ static INTN guid_compare(EFI_GUID* a, EFI_GUID* b) {
 
 void meta_config_unload(void) {
 	START;
-	log(L"Deleting config data...");
+	log(L"Deleting meta config data...");
 	FreePool(g_meta_config.path);
 	END;
 }
@@ -107,11 +108,20 @@ status_t meta_config_load(void) {
 	RETURN(BOOT_SUCCESS);
 }
 
+void config_unload(void) {
+	START;
+	log(L"Deleting config data...");
+	g_config.kernel->Close(g_config.kernel);
+	g_config.directory->Close(g_config.directory);
+	END;
+}
+
 status_t config_load(void) {
 	START;
 	EFI_STATUS status;
 	status_t boot_status;
 
+	log(L"Searching for config partition...");
 	partition_t* partition = NULL;
 	for(UINTN i = 0; i < g_partition_table_count; ++i) {
 		partition_t* current = &g_partition_table[i];
@@ -127,12 +137,10 @@ status_t config_load(void) {
 		RETURN(BOOT_ERROR);
 	}
 
-	log(L"Opening file...");
-	log(L"%s", g_meta_config.path);
-	EFI_FILE_PROTOCOL* test_file;
+	log(L"Opening config at %s...", g_meta_config.path);
 	status = partition->root->Open(
 		partition->root,
-		&test_file,
+		&g_config.directory,
 		g_meta_config.path,
 		EFI_FILE_MODE_READ,
 		EFI_FILE_READ_ONLY
@@ -143,27 +151,76 @@ status_t config_load(void) {
 	}
 
 	log(L"Reading file info...");
-	EFI_FILE_INFO* test_file_info = NULL;
-	boot_status = read_file_info(test_file, &test_file_info);
+	EFI_FILE_INFO* config_dir_info = NULL;
+	boot_status = read_file_info(g_config.directory, &config_dir_info);
 	if(boot_status != BOOT_SUCCESS) {
+		g_config.directory->Close(g_config.directory);
 		err(L"Failed to read file");
 		RETURN(BOOT_ERROR);
 	}
 
-	CHAR8* text = AllocateZeroPool(test_file_info->FileSize + 1);
-
-	log(L"Reading file contents...");
-	boot_status = read_file(test_file, 0, test_file_info->FileSize, (void*)text);
-	if(boot_status != BOOT_SUCCESS) {
-		FreePool(test_file_info);
-		err(L"Failed to read contents");
+	if(!(config_dir_info->Attribute & EFI_FILE_DIRECTORY)) {
+		g_config.directory->Close(g_config.directory);
+		FreePool(config_dir_info);
+		err(L"Config path does not lead to directory");
 		RETURN(BOOT_ERROR);
 	}
+	FreePool(config_dir_info);
 
-	for(UINTN i = 0; i < test_file_info->FileSize; ++i) {
-		if(text[i] == '\0') break;
-		log(L"%c", text[i]);
+	log(L"Reading config dir contents...");
+	START;
+	while(1) {
+		EFI_FILE_INFO* entry_info;
+		UINTN entry_size;
+		boot_status = read_directory_entry(g_config.directory, &entry_size, (void**)&entry_info);
+		if(boot_status != BOOT_SUCCESS) {
+			g_config.directory->Close(g_config.directory);
+			err(L"Failed to read directory contents");
+			END;
+			RETURN(BOOT_ERROR);
+		}
+
+		if(entry_size == 0) break;
+
+		if( StrLen(entry_info->FileName) == 0 ||
+			StrCmp(entry_info->FileName, L".") == 0 ||
+			StrCmp(entry_info->FileName, L"..") == 0) {
+			FreePool(entry_info);
+			continue;
+		}
+
+		EFI_FILE_PROTOCOL* entry;
+		status = g_config.directory->Open(
+			g_config.directory,
+			&entry,
+			entry_info->FileName,
+			EFI_FILE_MODE_READ,
+			EFI_FILE_READ_ONLY
+		);
+		if(EFI_ERROR(status)) {
+			FreePool(entry_info);
+			err(L"Failed to open entry %s. EFI_FILE_PROTOCOL.Open() return code: %u", entry_info->FileName, status);
+			continue;
+		}
+
+		if(entry_info->Attribute & EFI_FILE_DIRECTORY) {
+			log(L"Found directory %s", entry_info->FileName);
+			entry->Close(entry);
+		} else {
+			if(StrCmp(entry_info->FileName, L"kernel") == 0) {
+				log(L"Found kernel binary", entry_info->FileName);
+				g_config.kernel = entry;
+			} else {
+				log(L"Found file %s", entry_info->FileName);
+				entry->Close(entry);
+			}
+		}
+
+		FreePool(entry_info);
 	}
+	END;
 
-	RETURN(BOOT_ERROR);
+	exit_procedure_register(config_unload);
+
+	RETURN(BOOT_SUCCESS);
 }
