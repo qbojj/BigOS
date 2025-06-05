@@ -37,10 +37,6 @@ void exit(void) {
 
 void exit_boot(void) {
 	exit_procedures_call();
-
-	log(L"Passing control to kernel...");
-	log(L"Exiting UEFI-boot...");
-	// TODO: exit boot services
 }
 
 void exit_procedure_register(exit_procedure_t function) {

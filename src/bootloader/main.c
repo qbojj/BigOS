@@ -25,6 +25,7 @@
 #include "config.h"
 #include "elf.h"
 #include "partition.h"
+#include "kernel.h"
 
 EFI_HANDLE g_image_handle;
 EFI_SYSTEM_TABLE* g_system_table;
@@ -80,6 +81,9 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
 		exit();
 	}
 
+	log(L"Listing all partitions...");
+	partition_table_print();
+
 	log(L"Loading config...");
 	status = config_load();
 	if(status != BOOT_SUCCESS) {
@@ -96,9 +100,6 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
 		exit();
 	}
 
-	log(L"Listing all partitions...");
-	partition_table_print();
-
-	exit_boot();
+	kernel_start();
 	while(1); // Kernel shouldn't return
 }
