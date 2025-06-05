@@ -157,13 +157,6 @@ status_t elf_load(elf_application_t* app) {
 		RETURN(BOOT_ERROR);
 	}
 
-	log(L"Determining entry point address...");
-	if(app->header.entry < app->img_begin || app->header.entry >= app->img_end) {
-		err(L"Invalid entry point address");
-		RETURN(BOOT_ERROR);
-	}
-	app->entry_address = app->physical_base + (app->header.entry - app->base_vaddr);
-
 	log(L"Allocating pages...");
 	status = g_system_table->BootServices->AllocatePages(
 		AllocateAnyPages,
@@ -184,6 +177,21 @@ status_t elf_load(elf_application_t* app) {
 		err(L"Failed to load ELF segments");
 		RETURN(BOOT_ERROR);
 	}
+
+	log(L"Determining entry point address...");
+	if(app->header.entry < app->img_begin || app->header.entry >= app->img_end) {
+		err(L"Invalid entry point address");
+		RETURN(BOOT_ERROR);
+	}
+	app->entry_address = app->physical_base + (app->header.entry - app->base_vaddr);
+
+	log(L"app info:");
+	log(L"entry: %llu", app->entry_address);
+	log(L"img_begin: %llu", app->img_begin);
+	log(L"img_end: %llu", app->img_end);
+	log(L"base_vaddr: %llu", app->base_vaddr);
+	log(L"top_vaddr: %llu", app->top_vaddr);
+	log(L"physical_base: %llu", app->physical_base);
 
 	RETURN(BOOT_SUCCESS);
 }

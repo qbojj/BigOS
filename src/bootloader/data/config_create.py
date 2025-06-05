@@ -28,7 +28,7 @@ def create_config_file(guid_str: str, filepath: str, output_file: str):
         f.write(filepath_bytes)
 
 if __name__ == "__main__":
-    disk_guid = "2828D0EF-92C8-467F-959B-8699B6FCF0F8"
+    disk_guid = "9F260710-C337-487C-86FA-4F5D19C9BEB5"
     file_path = r"\boot\conf"
     output_path = "conf.meta"
 
