@@ -41,9 +41,49 @@ typedef struct {
 } elf_program_header_t;
 
 typedef struct {
+	UINT32 name;
+	UINT32 type;
+	UINT64 flags;
+	UINT64 addr;
+	UINT64 offset;
+	UINT64 size;
+	UINT32 link;
+	UINT32 info;
+	UINT64 addralign;
+	UINT64 entsize;
+} elf_section_header_t;
+
+typedef struct {
+	UINT32	name;
+	unsigned char info;
+	unsigned char other;
+	UINT16 shndx;
+	UINT64 value;
+	UINT64 size;
+} elf_symbol_table_t;
+
+typedef struct {
+	UINT64 offset;
+	UINT64 info;
+	INT64 addend;
+} elf_rela_t;
+
+typedef struct {
+	elf_section_header_t* symtab_hdr;
+	elf_section_header_t* rela_dyn_hdr;
+	elf_section_header_t* rela_plt_hdr;
+	elf_section_header_t* strtab_hdr;
+	char* strtab;
+	elf_symbol_table_t* symtab;
+} elf_relocations_t;
+
+typedef struct {
 	EFI_FILE_PROTOCOL* file;
 	elf64_header_t header;
 	elf_program_header_t* program_headers;
+	elf_section_header_t* section_headers;
+	CHAR8* section_headers_strings;
+	elf_relocations_t relocations;
 
 	UINT64 entry_address;
 
