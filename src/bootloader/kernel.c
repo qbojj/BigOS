@@ -1,3 +1,10 @@
+/******************************************************************************
+ *
+ *  Project:		BigOS
+ *  File:			bootloader/kernel.c
+ *
+ ******************************************************************************/
+
 #include "kernel.h"
 #include <efi.h>
 #include <efidef.h>
@@ -85,6 +92,7 @@ void kernel_start(void) {
 	typedef void (*kernel_entry_t)(void*);
 	kernel_entry_t entry = (kernel_entry_t)(UINTN)(g_kernel_app.entry_address);
 
+	// Manually jump to kernel entry point
 	__asm__ __volatile__ (
 		"mv a0, %[arg0]\n"
 		"mv sp, %[stack]\n"
@@ -97,4 +105,6 @@ void kernel_start(void) {
 		[entry] "r" (entry)
 		: "memory"
 	);
+
+	while(1); // Kernel shouldn't return
 }

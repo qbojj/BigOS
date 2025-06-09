@@ -14,9 +14,6 @@
 
 /**
  * @brief	Start ext2 driver to make ext2 partitions visible
- *
- * @return	ERR_NONE - success
- *			ERR_EXT2_DRIVER_START_FAILURE - failure
  */
 [[nodiscard]] status_t ext2_driver_start(void);
 

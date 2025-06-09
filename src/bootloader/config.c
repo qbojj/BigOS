@@ -61,7 +61,7 @@ status_t meta_config_load(void) {
 
 	log(L"Reading file info...");
 	EFI_FILE_INFO* file_info = NULL;
-	boot_status = read_file_info(meta_config_file, &file_info);
+	boot_status = get_file_info(meta_config_file, &file_info);
 	if(boot_status != BOOT_SUCCESS) {
 		err(L"Failed to read GUID");
 		RETURN(BOOT_ERROR);
@@ -152,7 +152,7 @@ status_t config_load(void) {
 
 	log(L"Reading file info...");
 	EFI_FILE_INFO* config_dir_info = NULL;
-	boot_status = read_file_info(g_config.directory, &config_dir_info);
+	boot_status = get_file_info(g_config.directory, &config_dir_info);
 	if(boot_status != BOOT_SUCCESS) {
 		g_config.directory->Close(g_config.directory);
 		err(L"Failed to read file");
@@ -172,7 +172,7 @@ status_t config_load(void) {
 	while(1) {
 		EFI_FILE_INFO* entry_info;
 		UINTN entry_size;
-		boot_status = read_directory_entry(g_config.directory, &entry_size, (void**)&entry_info);
+		boot_status = get_directory_entry(g_config.directory, &entry_size, (void**)&entry_info);
 		if(boot_status != BOOT_SUCCESS) {
 			g_config.directory->Close(g_config.directory);
 			err(L"Failed to read directory contents");
