@@ -179,7 +179,7 @@ static status_t identify_relocations(elf_application_t* app) {
 	START;
 	status_t boot_status;
 
-	log(L"Identifying relocation ans symbol sections...");
+	log(L"Identifying relocation sections...");
 	for(UINTN i = 0; i < app->header.shnum; ++i) {
 		elf_section_header_t* section_h = &app->section_headers[i];
 		const CHAR8* name = app->section_headers_strings + section_h->name;
@@ -252,9 +252,6 @@ static status_t apply_rela_section(elf_application_t* app, elf_section_header_t*
 	START;
 	status_t boot_status;
 
-	if(rela_hdr == NULL)
-		RETURN(EFI_SUCCESS);
-
 	UINTN rela_entries_count = (rela_hdr->size / sizeof(elf_rela_t));	
 
 	elf_rela_t* rela_buf = AllocatePool(rela_hdr->size);
@@ -312,16 +309,22 @@ static status_t apply_relocations(elf_application_t* app) {
 	START;
     status_t boot_status;
 
-	boot_status = apply_rela_section(app, app->relocations.rela_dyn_hdr);
-	if(boot_status != BOOT_SUCCESS) {
-		err(L"Failed to relocate .rela.dyn");
-		RETURN(BOOT_ERROR);
+	if(app->relocations.rela_dyn_hdr != NULL) {
+		log(L"Applying .rela.dyn relocation");
+		boot_status = apply_rela_section(app, app->relocations.rela_dyn_hdr);
+		if(boot_status != BOOT_SUCCESS) {
+			err(L"Failed to relocate .rela.dyn");
+			RETURN(BOOT_ERROR);
+		}
 	}
 
-	boot_status = apply_rela_section(app, app->relocations.rela_plt_hdr);
-	if(boot_status != BOOT_SUCCESS) {
-		err(L"Failed to relocate .rela.plt");
-		RETURN(BOOT_ERROR);
+	if(app->relocations.rela_plt_hdr != NULL) {
+		log(L"Applying .rela.plt relocation");
+		boot_status = apply_rela_section(app, app->relocations.rela_plt_hdr);
+		if(boot_status != BOOT_SUCCESS) {
+			err(L"Failed to relocate .rela.plt");
+			RETURN(BOOT_ERROR);
+		}
 	}
 
 	RETURN(BOOT_SUCCESS);
