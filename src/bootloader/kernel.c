@@ -86,12 +86,13 @@ void kernel_start(void) {
 	kernel_entry_t entry = (kernel_entry_t)(UINTN)(g_kernel_app.entry_address);
 
 	__asm__ __volatile__ (
-		// "mv a0, %[arg0]\n"
+		"mv a0, %[arg0]\n"
 		"mv sp, %[stack]\n"
 		"mv gp, %[stack]\n"
 		"jalr zero, %[entry], 0\n"
 		:
-		: // [arg0] "r" (some potential argument here),
+		:
+		[arg0] "r" (g_fdt),
 		[stack] "r" (stack_top),
 		[entry] "r" (entry)
 		: "memory"
