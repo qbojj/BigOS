@@ -14,9 +14,6 @@
 
 /**
  * @brief	Read FDT from EFI system table and store it in g_fdt
- *
- * @return	ERR_NONE - success
- *			ERR_PARTITION_TABLE_CREATE_FAILURE - failure
  */
 [[nodiscard]] status_t get_FDT(void);
 

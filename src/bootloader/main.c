@@ -102,5 +102,4 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE* system_table) {
 
 	log(L"Starting kernel...");
 	kernel_start();
-	while(1); // Kernel shouldn't return
 }

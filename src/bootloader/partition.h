@@ -27,9 +27,6 @@ typedef struct {
 
 /**
  * @brief	Search for all avaible partitions and store their handles and data in g_partition_table
- *
- * @return	ERR_NONE - success
- *			ERR_PARTITION_TABLE_CREATE_FAILURE - failure
  */
 [[nodiscard]] status_t partition_table_create(void);
 

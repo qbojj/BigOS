@@ -20,10 +20,7 @@ typedef struct {
 
 /**
  * @brief	Get bootloader image and partition filesystem
- *
- * @return	ERR_NONE - success
- *			ERR_LOADER_INIT_FAILURE - failure
  */
-status_t initialize_loader(void);
+[[nodiscard]] status_t initialize_loader(void);
 
 #endif // !BIGOS_BOOTLOADER_LOADER

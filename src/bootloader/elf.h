@@ -96,6 +96,6 @@ typedef struct {
 	UINT64 physical_base;
 } elf_application_t;
 
-status_t elf_load(elf_application_t* app);
+[[nodiscard]] status_t elf_load(elf_application_t* app);
 
 #endif // !BIGOS_BOOTLOADER_ELF

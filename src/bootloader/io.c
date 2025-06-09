@@ -37,7 +37,7 @@ status_t read_file(EFI_FILE_PROTOCOL* file, UINTN offset, UINTN size, void* buff
 	RETURN(BOOT_SUCCESS);
 }
 
-status_t read_file_info(EFI_FILE_PROTOCOL* file,EFI_FILE_INFO** file_info) {
+status_t get_file_info(EFI_FILE_PROTOCOL* file,EFI_FILE_INFO** file_info) {
 	START;
 	EFI_STATUS status;
 	UINTN size = 0;
@@ -75,7 +75,7 @@ status_t read_file_info(EFI_FILE_PROTOCOL* file,EFI_FILE_INFO** file_info) {
 	RETURN(BOOT_SUCCESS);
 }
 
-status_t read_directory_entry(EFI_FILE_PROTOCOL* file, UINTN* size, void** buffer) {
+status_t get_directory_entry(EFI_FILE_PROTOCOL* file, UINTN* size, void** buffer) {
 	START;
 	EFI_STATUS status;
 	*size = 0;

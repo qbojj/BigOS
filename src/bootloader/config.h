@@ -34,9 +34,6 @@ typedef struct {
 /**
  * @brief	Reads conf.meta file and stores data in g_meta_config
  *
- * @return	ERR_NONE - success
- *			ERR_PRE_CONFIG_LOAD_FAILURE - failure
- *
  * @note	conf.meta has to be located on boot partition
  */
 [[nodiscard]] status_t meta_config_load(void);
