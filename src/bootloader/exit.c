@@ -32,7 +32,7 @@ void exit(void) {
 	log_set_depth(0);
 	exit_procedures_call();
 	log(L"Exiting UEFI-boot...");
-	Exit(EFI_LOAD_ERROR, 0, NULL);
+	Exit(EFI_LOAD_ERROR, 0, nullptr);
 }
 
 void exit_boot(void) {
@@ -43,7 +43,7 @@ void exit_procedure_register(exit_procedure_t function) {
 	START;
 	if(exit_procedure_buffer_size == 0) {
 		exit_procedures = AllocatePool(sizeof(exit_procedure_t) * BUFFER_CHUNK_SIZE);
-		if(exit_procedures == NULL) {
+		if(exit_procedures == nullptr) {
 			err(L"Failed to register cleanup function");
 			END;
 			return;
@@ -55,7 +55,7 @@ void exit_procedure_register(exit_procedure_t function) {
 
 	if(exit_procedure_count > exit_procedure_buffer_size) {
 		ReallocatePool(exit_procedures, exit_procedure_buffer_size, exit_procedure_buffer_size + BUFFER_CHUNK_SIZE);
-		if(exit_procedures == NULL) {
+		if(exit_procedures == nullptr) {
 			err(L"Failed to register cleanup function");
 			END;
 			return;

@@ -62,7 +62,7 @@ static status_t read_elf_program_headers(elf_application_t* app) {
 	status_t boot_status;
 
 	app->program_headers = AllocatePool(app->header.phnum * app->header.phentsize);
-	if(app->program_headers == NULL) {
+	if(app->program_headers == nullptr) {
 		err(L"Failed to allocate memory for program headers");
 		RETURN(BOOT_ERROR);
 	}
@@ -86,7 +86,7 @@ static status_t read_elf_section_headers(elf_application_t* app) {
 	status_t boot_status;
 
 	app->section_headers = AllocatePool(app->header.shnum * app->header.shentsize);
-	if(app->section_headers == NULL) {
+	if(app->section_headers == nullptr) {
 		err(L"Failed to allocate memory for section headers");
 		RETURN(BOOT_ERROR);
 	}
@@ -104,7 +104,7 @@ static status_t read_elf_section_headers(elf_application_t* app) {
 
 	elf_section_header_t* string_table_header = &app->section_headers[app->header.shstrndx];
 	app->section_headers_strings = AllocatePool(string_table_header->size);
-	if(app->section_headers_strings == NULL) {
+	if(app->section_headers_strings == nullptr) {
 		err(L"Failed to allocate memory for section string table");
 		RETURN(BOOT_ERROR);
 	}
@@ -204,14 +204,14 @@ static status_t identify_relocations(elf_application_t* app) {
 		}
 	}
 
-	if(app->relocations.symtab_hdr == NULL) {
+	if(app->relocations.symtab_hdr == nullptr) {
 		err(L"No symbol table found");
 	}
 
 	log(L"Creating string table...");
-	if(app->relocations.strtab_hdr != NULL) {
+	if(app->relocations.strtab_hdr != nullptr) {
 		app->relocations.strtab = AllocatePool(app->relocations.strtab_hdr->size);
-		if(app->relocations.strtab == NULL) {
+		if(app->relocations.strtab == nullptr) {
 			err(L"Failed to allocate memory for string table");
 			RETURN(BOOT_ERROR);
 		}
@@ -229,9 +229,9 @@ static status_t identify_relocations(elf_application_t* app) {
 	}
 
 	log(L"Creating symbol table...");
-	if(app->relocations.symtab_hdr != NULL) {
+	if(app->relocations.symtab_hdr != nullptr) {
 		app->relocations.symtab = AllocatePool(app->relocations.symtab_hdr->size);
-		if(app->relocations.symtab == NULL) {
+		if(app->relocations.symtab == nullptr) {
 			err(L"Failed to allocate memory for symbol table");
 			RETURN(BOOT_ERROR);
 		}
@@ -262,7 +262,7 @@ static status_t apply_rela_section(elf_application_t* app, elf_section_header_t*
 	UINTN rela_entries_count = (rela_hdr->size / sizeof(elf_rela_t));	
 
 	elf_rela_t* rela_buf = AllocatePool(rela_hdr->size);
-	if(rela_buf == NULL) {
+	if(rela_buf == nullptr) {
 		err(L"Failed to allocate for relocation buffer");
 		RETURN(BOOT_ERROR);
 	}
@@ -316,7 +316,7 @@ static status_t apply_relocations(elf_application_t* app) {
 	START;
     status_t boot_status;
 
-	if(app->relocations.rela_dyn_hdr != NULL) {
+	if(app->relocations.rela_dyn_hdr != nullptr) {
 		log(L"Applying .rela.dyn relocation");
 		boot_status = apply_rela_section(app, app->relocations.rela_dyn_hdr);
 		if(boot_status != BOOT_SUCCESS) {
@@ -325,7 +325,7 @@ static status_t apply_relocations(elf_application_t* app) {
 		}
 	}
 
-	if(app->relocations.rela_plt_hdr != NULL) {
+	if(app->relocations.rela_plt_hdr != nullptr) {
 		log(L"Applying .rela.plt relocation");
 		boot_status = apply_rela_section(app, app->relocations.rela_plt_hdr);
 		if(boot_status != BOOT_SUCCESS) {

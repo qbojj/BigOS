@@ -43,7 +43,7 @@ status_t ext2_driver_start(void) {
 		FALSE, 
 		g_image_handle, 
 		ext2_driver_path, 
-		NULL, 
+		nullptr, 
 		0, 
 		&ext2_driver_handle
 	);
@@ -55,8 +55,8 @@ status_t ext2_driver_start(void) {
 	log(L"Starting driver...");
 	status = g_system_table->BootServices->StartImage(
 		ext2_driver_handle, 
-		NULL, 
-		NULL
+		nullptr, 
+		nullptr
 	);
 	if(EFI_ERROR(status)) {
 		err(L"Failed to start ext2 driver. BootServices.StartImage() return code: %u", status);

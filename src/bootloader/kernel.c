@@ -37,7 +37,7 @@ void kernel_start(void) {
 	UINT64 stack_top = stack_addr + STACK_SIZE;
 
 	UINTN map_size = 0;
-	EFI_MEMORY_DESCRIPTOR* mem_map = NULL;
+	EFI_MEMORY_DESCRIPTOR* mem_map = nullptr;
 	UINTN map_key;
 	UINTN desc_size;
 	UINT32 desc_version;
@@ -48,7 +48,7 @@ void kernel_start(void) {
 	log(L"Creating memory map...");
 	status = g_system_table->BootServices->GetMemoryMap(
 		&map_size,
-		NULL,
+		nullptr,
 		&map_key,
 		&desc_size,
 		&desc_version
@@ -62,7 +62,7 @@ void kernel_start(void) {
 	map_size += 8 * desc_size;
 
 	mem_map = AllocatePool(map_size);
-	if(mem_map == NULL) {
+	if(mem_map == nullptr) {
 		err(L"Failed to allocate memory map");
 		END;
 		return;
