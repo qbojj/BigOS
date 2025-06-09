@@ -55,7 +55,7 @@ status_t get_file_info(EFI_FILE_PROTOCOL* file,EFI_FILE_INFO** file_info) {
 	}
 
 	*file_info = AllocateZeroPool(size);
-	if(*file_info == NULL) {
+	if(*file_info == nullptr) {
 		err(L"Failed to allocate buffer for file info");
 		RETURN(BOOT_ERROR);
 	}
@@ -90,7 +90,7 @@ status_t get_directory_entry(EFI_FILE_PROTOCOL* file, UINTN* size, void** buffer
 	}
 
 	*buffer = AllocatePool(*size);
-	if(*buffer == NULL) {
+	if(*buffer == nullptr) {
 		err(L"Failed to allocate buffer for directory entry");
 		RETURN(BOOT_ERROR);
 	}

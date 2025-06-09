@@ -60,7 +60,7 @@ status_t meta_config_load(void) {
 	}
 
 	log(L"Reading file info...");
-	EFI_FILE_INFO* file_info = NULL;
+	EFI_FILE_INFO* file_info = nullptr;
 	boot_status = get_file_info(meta_config_file, &file_info);
 	if(boot_status != BOOT_SUCCESS) {
 		err(L"Failed to read GUID");
@@ -85,7 +85,7 @@ status_t meta_config_load(void) {
 	UINTN path_size = file_info->FileSize - sizeof(EFI_GUID);
 	FreePool(file_info);
 	CHAR16* path = AllocatePool(path_size + 2);
-	if(path == NULL) {
+	if(path == nullptr) {
 		err(L"Failed to allocate buffer for file data");
 		RETURN(BOOT_ERROR);
 	}
@@ -122,17 +122,17 @@ status_t config_load(void) {
 	status_t boot_status;
 
 	log(L"Searching for config partition...");
-	partition_t* partition = NULL;
+	partition_t* partition = nullptr;
 	for(UINTN i = 0; i < g_partition_table_count; ++i) {
 		partition_t* current = &g_partition_table[i];
-		if(current->guid == NULL) continue;
+		if(current->guid == nullptr) continue;
 		// HACK: CompareGuid always returns 0 here for some reason
 		if(guid_compare(current->guid, &g_meta_config.partition_guid)) {
 			partition = current;
 			break;
 		}
 	}
-	if(partition == NULL) {
+	if(partition == nullptr) {
 		err(L"Failed to find config partition");
 		RETURN(BOOT_ERROR);
 	}
@@ -151,7 +151,7 @@ status_t config_load(void) {
 	}
 
 	log(L"Reading file info...");
-	EFI_FILE_INFO* config_dir_info = NULL;
+	EFI_FILE_INFO* config_dir_info = nullptr;
 	boot_status = get_file_info(g_config.directory, &config_dir_info);
 	if(boot_status != BOOT_SUCCESS) {
 		g_config.directory->Close(g_config.directory);

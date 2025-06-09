@@ -45,7 +45,7 @@ static void partition_create(partition_t* partition, EFI_HANDLE handle) {
 	status = file_system->OpenVolume(file_system, &root);
 	if(EFI_ERROR(status)) return;
 
-	EFI_FILE_SYSTEM_INFO* file_system_info = NULL;
+	EFI_FILE_SYSTEM_INFO* file_system_info = nullptr;
 	UINTN file_system_info_size = 0;
 	EFI_GUID file_system_info_guid = EFI_FILE_SYSTEM_INFO_ID;
 	status = root->GetInfo(
@@ -60,7 +60,7 @@ static void partition_create(partition_t* partition, EFI_HANDLE handle) {
 	}
 
 	file_system_info = AllocatePool(file_system_info_size);
-	if(file_system_info == NULL) {
+	if(file_system_info == nullptr) {
 		root->Close(root);
 		return;
 	}
@@ -90,7 +90,7 @@ static void partition_create(partition_t* partition, EFI_HANDLE handle) {
 		return;
 	}
 
-	EFI_GUID* part_guid = NULL;
+	EFI_GUID* part_guid = nullptr;
 	EFI_DEVICE_PATH_PROTOCOL* node = device_path;
 	while(!IsDevicePathEnd(node)) {
 		if(DevicePathType(node) == MEDIA_DEVICE_PATH && DevicePathSubType(node) == MEDIA_HARDDRIVE_DP) {
@@ -122,7 +122,7 @@ status_t partition_table_create(void) {
 	status = g_system_table->BootServices->LocateHandleBuffer(
 		ByProtocol,
 		&file_system_protocol,
-		NULL,
+		nullptr,
 		&file_systems_count,
 		&file_systems_table
 	);
@@ -161,7 +161,7 @@ void partition_print(partition_t* partition) {
 	log(L"Partition avaible:");
 	log(L" - Volume Label: '%s'", partition->file_system_info->VolumeLabel);
 	log(L" - Volume Size: %llu", partition->file_system_info->VolumeSize);
-	if(partition->guid != NULL) {
+	if(partition->guid != nullptr) {
 		log(
 			L" - GPT UUID: %08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
 			partition->guid->Data1, partition->guid->Data2, partition->guid->Data3,
