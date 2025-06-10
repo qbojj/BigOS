@@ -83,17 +83,13 @@ void kernel_start(void) {
 	typedef void (*kernel_entry_t)(UINTN, const void*);
 	kernel_entry_t entry = (kernel_entry_t)(g_kernel_app.entry_address);
 
-	__asm__ volatile (
-		"mv ra, zero\n\t"
-		"mv a0, %[boot_hartid]\n\t"
-		"mv a1, %[g_fdt]\n\t"
-		"jr %[entry]"
-		:
-		: [boot_hartid]"r"(boot_hartid),
-		  [g_fdt]"r"(g_fdt),
-		  [entry]"r"(entry)
-		: "memory"
-	);
+	__asm__ volatile("mv ra, zero\n\t"
+	                 "mv a0, %[boot_hartid]\n\t"
+	                 "mv a1, %[g_fdt]\n\t"
+	                 "jr %[entry]"
+	                 :
+	                 : [boot_hartid] "r"(boot_hartid), [g_fdt] "r"(g_fdt), [entry] "r"(entry)
+	                 : "memory");
 
 	while (1); // Kernel shouldn't return
 }
