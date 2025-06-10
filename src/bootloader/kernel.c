@@ -53,6 +53,20 @@ void kernel_start(void) {
 		exit();
 	}
 
+	RISCV_EFI_BOOT_PROTOCOL* riscv_boot_protocol = nullptr;
+	UINTN boot_hartid = 0;
+	status = g_system_table->BootServices->LocateProtocol(&RISCV_EFI_BOOT_PROTOCOL_GUID, nullptr,
+	                                                      (void**)&riscv_boot_protocol);
+	if (EFI_ERROR(status) || !riscv_boot_protocol) {
+		err(L"Failed to locate RISCV_EFI_BOOT_PROTOCOL: %u", status);
+		exit();
+	}
+	status = riscv_boot_protocol->GetBootHartId(riscv_boot_protocol, &boot_hartid);
+	if (EFI_ERROR(status)) {
+		err(L"Failed to get boot hartid: %u", status);
+		exit();
+	}
+
 	status = g_system_table->BootServices->GetMemoryMap(&map_size, mem_map, &map_key, &desc_size, &desc_version);
 	if (EFI_ERROR(status)) {
 		err(L"Failed to create memory map. BootServices.GetMemoryMap() return code: %u", status);
@@ -63,21 +77,6 @@ void kernel_start(void) {
 	status = g_system_table->BootServices->ExitBootServices(g_image_handle, map_key);
 	if (EFI_ERROR(status)) {
 		err(L"Failed to exit boot services. BootServices.ExitBootServices() return code: %u", status);
-		exit();
-	}
-
-	// Locate RISCV_EFI_BOOT_PROTOCOL and get boot hartid
-	RISCV_EFI_BOOT_PROTOCOL* riscv_boot_proto = NULL;
-	UINTN boot_hartid = 0;
-	status =
-	    g_system_table->BootServices->LocateProtocol(&RISCV_EFI_BOOT_PROTOCOL_GUID, NULL, (void**)&riscv_boot_proto);
-	if (EFI_ERROR(status) || !riscv_boot_proto) {
-		err(L"Failed to locate RISCV_EFI_BOOT_PROTOCOL: %u", status);
-		exit();
-	}
-	status = riscv_boot_proto->GetBootHartId(riscv_boot_proto, &boot_hartid);
-	if (EFI_ERROR(status)) {
-		err(L"Failed to get boot hartid: %u", status);
 		exit();
 	}
 
