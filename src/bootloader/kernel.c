@@ -6,35 +6,28 @@
  ******************************************************************************/
 
 #include "kernel.h"
+
 #include <efi.h>
 #include <efidef.h>
 #include <efilib.h>
+
 #include "common.h"
 #include "exit.h"
 #include "log.h"
 
-#define STACK_SIZE (2 * 1024 * 1024)
-#define STACK_PAGES (STACK_SIZE / 4096)
+typedef struct _RISCV_EFI_BOOT_PROTOCOL RISCV_EFI_BOOT_PROTOCOL;
+typedef EFI_STATUS(EFIAPI* EFI_GET_BOOT_HARTID)(IN RISCV_EFI_BOOT_PROTOCOL* This, OUT UINTN* BootHartId);
+struct _RISCV_EFI_BOOT_PROTOCOL {
+	UINT64 Revision;
+	EFI_GET_BOOT_HARTID GetBootHartId;
+};
+static EFI_GUID RISCV_EFI_BOOT_PROTOCOL_GUID = {
+    0xccd15fec, 0x6f73, 0x4eec, {0x83, 0x95, 0x3e, 0x69, 0xe4, 0xb9, 0x40, 0xbf}
+};
 
 void kernel_start(void) {
 	START;
 	EFI_STATUS status;
-
-	log(L"Creating kernel stack");
-	UINT64 stack_addr = 0;
-	status = g_system_table->BootServices->AllocatePages(
-		AllocateAnyPages,
-		EfiLoaderData,
-		STACK_PAGES,
-		&stack_addr
-	);
-	if(EFI_ERROR(status)) {
-		err(L"Failed to allocate pages");
-		END;
-		return;
-	}
-
-	UINT64 stack_top = stack_addr + STACK_SIZE;
 
 	UINTN map_size = 0;
 	EFI_MEMORY_DESCRIPTOR* mem_map = nullptr;
@@ -46,65 +39,51 @@ void kernel_start(void) {
 	exit_boot();
 
 	log(L"Creating memory map...");
-	status = g_system_table->BootServices->GetMemoryMap(
-		&map_size,
-		nullptr,
-		&map_key,
-		&desc_size,
-		&desc_version
-	);
-	if(status != EFI_BUFFER_TOO_SMALL) {
+	status = g_system_table->BootServices->GetMemoryMap(&map_size, nullptr, &map_key, &desc_size, &desc_version);
+	if (status != EFI_BUFFER_TOO_SMALL) {
 		err(L"Failed to get memory map size. BootServices.GetMemoryMap() return code: %u", status);
-		END;
-		return;
+		exit();
 	}
 
 	map_size += 8 * desc_size;
 
 	mem_map = AllocatePool(map_size);
-	if(mem_map == nullptr) {
+	if (mem_map == nullptr) {
 		err(L"Failed to allocate memory map");
-		END;
-		return;
+		exit();
 	}
 
-	status = g_system_table->BootServices->GetMemoryMap(
-		&map_size,
-		mem_map,
-		&map_key,
-		&desc_size,
-		&desc_version
-	);
-	if(EFI_ERROR(status)) {
+	status = g_system_table->BootServices->GetMemoryMap(&map_size, mem_map, &map_key, &desc_size, &desc_version);
+	if (EFI_ERROR(status)) {
 		err(L"Failed to create memory map. BootServices.GetMemoryMap() return code: %u", status);
-		END;
-		return;
+		exit();
 	}
 
 	log(L"Starting BigOS...");
 	status = g_system_table->BootServices->ExitBootServices(g_image_handle, map_key);
-	if(EFI_ERROR(status)) {
+	if (EFI_ERROR(status)) {
 		err(L"Failed to exit boot services. BootServices.ExitBootServices() return code: %u", status);
-		END;
-		return;
+		exit();
 	}
 
-	typedef void (*kernel_entry_t)(void*);
-	kernel_entry_t entry = (kernel_entry_t)(UINTN)(g_kernel_app.entry_address);
+	// Locate RISCV_EFI_BOOT_PROTOCOL and get boot hartid
+	RISCV_EFI_BOOT_PROTOCOL* riscv_boot_proto = NULL;
+	UINTN boot_hartid = 0;
+	status =
+	    g_system_table->BootServices->LocateProtocol(&RISCV_EFI_BOOT_PROTOCOL_GUID, NULL, (void**)&riscv_boot_proto);
+	if (EFI_ERROR(status) || !riscv_boot_proto) {
+		err(L"Failed to locate RISCV_EFI_BOOT_PROTOCOL: %u", status);
+		exit();
+	}
+	status = riscv_boot_proto->GetBootHartId(riscv_boot_proto, &boot_hartid);
+	if (EFI_ERROR(status)) {
+		err(L"Failed to get boot hartid: %u", status);
+		exit();
+	}
 
-	// Manually jump to kernel entry point
-	__asm__ __volatile__ (
-		"mv a0, %[arg0]\n"
-		"mv sp, %[stack]\n"
-		"mv gp, %[stack]\n"
-		"jalr zero, %[entry], 0\n"
-		:
-		: 
-		[arg0] "r" (g_fdt),
-		[stack] "r" (stack_top),
-		[entry] "r" (entry)
-		: "memory"
-	);
+	typedef void (*kernel_entry_t)(UINTN, const void*);
+	kernel_entry_t entry = (kernel_entry_t)(g_kernel_app.entry_address);
 
-	while(1); // Kernel shouldn't return
+	entry(boot_hartid, g_fdt);
+	while (1); // Kernel shouldn't return
 }

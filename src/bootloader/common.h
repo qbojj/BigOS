@@ -23,7 +23,7 @@ extern partition_t* g_partition_table;
 extern UINTN g_partition_table_count;
 extern meta_config_t g_meta_config;
 extern config_t g_config;
-extern elf_application_t g_kernel_app; 
+extern elf_application_t g_kernel_app;
 extern void* g_fdt;
 
 #endif // !BIGOS_BOOTLOADER_COMMON

@@ -14,6 +14,7 @@
 #define BIGOS_BOOTLOADER_PARTITION
 
 #include <efi.h>
+
 #include "error.h"
 
 typedef struct {

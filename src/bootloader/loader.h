@@ -10,6 +10,7 @@
 #define BIGOS_BOOTLOADER_LOADER
 
 #include <efi.h>
+
 #include "error.h"
 
 typedef struct {

@@ -14,6 +14,7 @@
  *
  * @note	This function should not return if OS is loaded correctly
  */
+[[noreturn]]
 void kernel_start(void);
 
 #endif // !BIGOS_BOOTLOADER_KERNEL

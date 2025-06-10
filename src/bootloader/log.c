@@ -8,8 +8,8 @@
 #include "log.h"
 
 #include <efi.h>
-#include <efilib.h>
 #include <efidef.h>
+#include <efilib.h>
 #include <efistdarg.h>
 
 #define LOG_INDENT 4
@@ -17,8 +17,7 @@
 static UINTN procedure_depth = 0;
 
 void prefix(CHAR16 icon) {
-	for(UINTN i = 0; i < procedure_depth * LOG_INDENT; ++i)
-		Print(L" ");
+	for (UINTN i = 0; i < procedure_depth * LOG_INDENT; ++i) Print(L" ");
 	Print(L" [%lc] ", icon);
 }
 
