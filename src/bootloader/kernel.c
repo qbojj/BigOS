@@ -38,6 +38,20 @@ void kernel_start(void) {
 	log(L"Exiting UEFI-boot...");
 	exit_boot();
 
+	RISCV_EFI_BOOT_PROTOCOL* riscv_boot_proto = NULL;
+	UINTN boot_hartid = 0;
+	status =
+	    g_system_table->BootServices->LocateProtocol(&RISCV_EFI_BOOT_PROTOCOL_GUID, NULL, (void**)&riscv_boot_proto);
+	if (EFI_ERROR(status) || !riscv_boot_proto) {
+		err(L"Failed to locate RISCV_EFI_BOOT_PROTOCOL: %u", status);
+		exit();
+	}
+	status = riscv_boot_proto->GetBootHartId(riscv_boot_proto, &boot_hartid);
+	if (EFI_ERROR(status)) {
+		err(L"Failed to get boot hartid: %u", status);
+		exit();
+	}
+
 	log(L"Creating memory map...");
 	status = g_system_table->BootServices->GetMemoryMap(&map_size, nullptr, &map_key, &desc_size, &desc_version);
 	if (status != EFI_BUFFER_TOO_SMALL) {
@@ -83,6 +97,17 @@ void kernel_start(void) {
 	typedef void (*kernel_entry_t)(UINTN, const void*);
 	kernel_entry_t entry = (kernel_entry_t)(g_kernel_app.entry_address);
 
-	entry(boot_hartid, g_fdt);
+	__asm__ volatile (
+		"mv ra, zero\n\t"
+		"mv a0, %[boot_hartid]\n\t"
+		"mv a1, %[g_fdt]\n\t"
+		"jr %[entry]"
+		:
+		: [boot_hartid]"r"(boot_hartid),
+		  [g_fdt]"r"(g_fdt),
+		  [entry]"r"(entry)
+		: "memory"
+	);
+
 	while (1); // Kernel shouldn't return
 }
