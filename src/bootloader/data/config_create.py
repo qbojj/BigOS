@@ -3,7 +3,7 @@ import struct
 
 def uuid_to_windows_bytes(guid: uuid.UUID) -> bytes:
     fields = guid.fields
-    
+
     return struct.pack(
         '<IHH',
         fields[0],
