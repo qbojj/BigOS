@@ -24,7 +24,11 @@
 #define END log_procedure_end()
 
 // Stop indenting log messages coming after this line and return
-#define RETURN(x) do { log_procedure_end(); return (x); } while(1)
+#define RETURN(x)            \
+	do {                     \
+		log_procedure_end(); \
+		return (x);          \
+	} while (1)
 
 /**
  * @brief	Logging function

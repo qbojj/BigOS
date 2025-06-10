@@ -15,6 +15,7 @@
 /**
  * @brief	Exit EFI loader with error
  */
+[[noreturn]]
 void exit(void);
 
 /**

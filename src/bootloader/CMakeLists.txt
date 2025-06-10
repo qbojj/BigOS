@@ -71,18 +71,18 @@ add_custom_command(
 	OUTPUT ${TEST_IMAGE}
 	COMMAND ${CMAKE_COMMAND} -E copy "${TEST_SRC}" "${TEST_IMAGE}"
 	COMMENT "TEST image file at ${TEST_IMAGE}"
-    VERBATIM
+	VERBATIM
 )
 
 add_custom_target(
-    efi-partition-structure ALL
+	efi-partition-structure ALL
 	DEPENDS ${BOOTRISCV64_EFI} ${EXT2_BINARY_EFI} ${META_CONF} ${TEST_IMAGE}
 )
 
 add_custom_target(run-bootloader
-    COMMAND "${BIGOS_QEMU_PATH}" ${BIGOS_QEMU_OPTIONS_LIST}
-            -kernel "${PROJECT_SOURCE_DIR}/external/u-boot/u-boot.bin"
-            -hda fat:rw:${EFI_DIR}
+	COMMAND "${BIGOS_QEMU_PATH}" ${BIGOS_QEMU_OPTIONS_LIST}
+			-kernel "${PROJECT_SOURCE_DIR}/external/u-boot/u-boot.bin"
+			-hda fat:rw:${EFI_DIR}
 			-drive file=${TEST_IMAGE},format=raw,if=virtio
     DEPENDS efi-partition-structure
     VERBATIM

@@ -9,13 +9,15 @@
 
 #include <efierr.h>
 #include <efilib.h>
+
 #include "common.h"
 #include "error.h"
 #include "log.h"
 
-#define EFI_FDT_GUID \
-	{ 0xb1b621d5, 0xf19c, 0x41a5, \
-	{ 0x83, 0x0b, 0xd9, 0x15, 0x2c, 0x69, 0xaa, 0xe0 } }
+#define EFI_FDT_GUID                                                                  \
+	{                                                                                 \
+	    0xb1b621d5, 0xf19c, 0x41a5, {0x83, 0x0b, 0xd9, 0x15, 0x2c, 0x69, 0xaa, 0xe0} \
+}
 
 void* g_fdt;
 
@@ -25,9 +27,9 @@ status_t get_FDT(void) {
 	EFI_GUID fdt_guid = EFI_FDT_GUID;
 	EFI_CONFIGURATION_TABLE* entry;
 
-	for(UINTN index = 0; index < g_system_table->NumberOfTableEntries; ++index) {
+	for (UINTN index = 0; index < g_system_table->NumberOfTableEntries; ++index) {
 		entry = &g_system_table->ConfigurationTable[index];
-		if(CompareGuid(&entry->VendorGuid, &fdt_guid)) {
+		if (CompareGuid(&entry->VendorGuid, &fdt_guid)) {
 			g_fdt = entry->VendorTable;
 			RETURN(BOOT_SUCCESS);
 		}
