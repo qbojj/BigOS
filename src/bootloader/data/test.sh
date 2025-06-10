@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-IMG=test.img
+IMG="$1"
 IMG_SIZE_MB=256
 VOLUME_LABEL=KERNELVOL
 LOOP_DEV=
