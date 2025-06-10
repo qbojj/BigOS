@@ -38,15 +38,15 @@ void kernel_start(void) {
 	log(L"Exiting UEFI-boot...");
 	exit_boot();
 
-	RISCV_EFI_BOOT_PROTOCOL* riscv_boot_proto = NULL;
+	RISCV_EFI_BOOT_PROTOCOL* riscv_boot_protocol = nullptr;
 	UINTN boot_hartid = 0;
-	status =
-	    g_system_table->BootServices->LocateProtocol(&RISCV_EFI_BOOT_PROTOCOL_GUID, NULL, (void**)&riscv_boot_proto);
-	if (EFI_ERROR(status) || !riscv_boot_proto) {
+	status = g_system_table->BootServices->LocateProtocol(&RISCV_EFI_BOOT_PROTOCOL_GUID, nullptr,
+	                                                      (void**)&riscv_boot_protocol);
+	if (EFI_ERROR(status) || !riscv_boot_protocol) {
 		err(L"Failed to locate RISCV_EFI_BOOT_PROTOCOL: %u", status);
 		exit();
 	}
-	status = riscv_boot_proto->GetBootHartId(riscv_boot_proto, &boot_hartid);
+	status = riscv_boot_protocol->GetBootHartId(riscv_boot_protocol, &boot_hartid);
 	if (EFI_ERROR(status)) {
 		err(L"Failed to get boot hartid: %u", status);
 		exit();
@@ -64,20 +64,6 @@ void kernel_start(void) {
 	mem_map = AllocatePool(map_size);
 	if (mem_map == nullptr) {
 		err(L"Failed to allocate memory map");
-		exit();
-	}
-
-	RISCV_EFI_BOOT_PROTOCOL* riscv_boot_protocol = nullptr;
-	UINTN boot_hartid = 0;
-	status = g_system_table->BootServices->LocateProtocol(&RISCV_EFI_BOOT_PROTOCOL_GUID, nullptr,
-	                                                      (void**)&riscv_boot_protocol);
-	if (EFI_ERROR(status) || !riscv_boot_protocol) {
-		err(L"Failed to locate RISCV_EFI_BOOT_PROTOCOL: %u", status);
-		exit();
-	}
-	status = riscv_boot_protocol->GetBootHartId(riscv_boot_protocol, &boot_hartid);
-	if (EFI_ERROR(status)) {
-		err(L"Failed to get boot hartid: %u", status);
 		exit();
 	}
 
