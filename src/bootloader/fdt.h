@@ -10,6 +10,7 @@
 #define BIGOS_BOOTLOADER_FDT
 
 #include <efi.h>
+
 #include "error.h"
 
 /**

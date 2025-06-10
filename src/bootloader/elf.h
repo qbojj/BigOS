@@ -10,6 +10,7 @@
 #define BIGOS_BOOTLOADER_ELF
 
 #include <efi.h>
+
 #include "error.h"
 
 typedef struct {
@@ -54,7 +55,7 @@ typedef struct {
 } elf_section_header_t;
 
 typedef struct {
-	UINT32	name;
+	UINT32 name;
 	unsigned char info;
 	unsigned char other;
 	UINT16 shndx;

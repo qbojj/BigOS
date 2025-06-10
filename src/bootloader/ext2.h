@@ -10,6 +10,7 @@
 #define BIGOS_BOOTLOADER_EXT2
 
 #include <efi.h>
+
 #include "error.h"
 
 /**

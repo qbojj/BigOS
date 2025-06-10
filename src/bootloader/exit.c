@@ -10,6 +10,7 @@
 #include <efi.h>
 #include <efierr.h>
 #include <efilib.h>
+
 #include "log.h"
 
 typedef void (*exit_procedure_t)(void);
@@ -22,7 +23,7 @@ static exit_procedure_t* exit_procedures;
 
 static void exit_procedures_call(void) {
 	log(L"Calling exit procedures...");
-	for(INTN i = exit_procedure_count - 1; i >= 0; --i) {
+	for (INTN i = exit_procedure_count - 1; i >= 0; --i) {
 		exit_procedures[i]();
 	}
 	FreePool(exit_procedures);
@@ -33,6 +34,8 @@ void exit(void) {
 	exit_procedures_call();
 	log(L"Exiting UEFI-boot...");
 	Exit(EFI_LOAD_ERROR, 0, nullptr);
+	// Should not exit
+	while (true);
 }
 
 void exit_boot(void) {
@@ -41,9 +44,9 @@ void exit_boot(void) {
 
 void exit_procedure_register(exit_procedure_t function) {
 	START;
-	if(exit_procedure_buffer_size == 0) {
+	if (exit_procedure_buffer_size == 0) {
 		exit_procedures = AllocatePool(sizeof(exit_procedure_t) * BUFFER_CHUNK_SIZE);
-		if(exit_procedures == nullptr) {
+		if (exit_procedures == nullptr) {
 			err(L"Failed to register cleanup function");
 			END;
 			return;
@@ -53,9 +56,9 @@ void exit_procedure_register(exit_procedure_t function) {
 
 	exit_procedure_count++;
 
-	if(exit_procedure_count > exit_procedure_buffer_size) {
+	if (exit_procedure_count > exit_procedure_buffer_size) {
 		ReallocatePool(exit_procedures, exit_procedure_buffer_size, exit_procedure_buffer_size + BUFFER_CHUNK_SIZE);
-		if(exit_procedures == nullptr) {
+		if (exit_procedures == nullptr) {
 			err(L"Failed to register cleanup function");
 			END;
 			return;
