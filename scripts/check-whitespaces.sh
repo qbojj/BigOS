@@ -66,7 +66,7 @@ do
 		echo "${dash} ${sha} ${etc}"
 		;;
 	esac
-done <<< "$(git log --check --pretty=format:"---% h% s" "${baseCommit}".. -- ":!external")"
+done <<< "$(git log --check --pretty=format:"---% h% s" "${baseCommit}".. -- "$PROJ_DIR" ':!external')"
 
 if test ${#problems[*]} -gt 0
 then
