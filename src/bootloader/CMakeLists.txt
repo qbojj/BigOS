@@ -39,7 +39,6 @@ set(EXT2_BINARY_SRC "${PROJECT_SOURCE_DIR}/external/ext2efi/ext2_riscv64.efi")
 set(EXT2_BINARY_EFI "${EFI_BOOT_DIR}/ext2.efi")
 set(META_CONF_SRC "${CMAKE_CURRENT_LIST_DIR}/data/conf.meta")
 set(META_CONF "${EFI_BOOT_DIR}/conf.meta")
-set(TEST_SRC "${CMAKE_CURRENT_LIST_DIR}/data/test.img")
 set(TEST_IMAGE "${CMAKE_BINARY_DIR}/test.img")
 
 file(MAKE_DIRECTORY "${EFI_BOOT_DIR}")
