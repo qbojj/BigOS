@@ -35,7 +35,10 @@ typedef struct {
 /**
  * @brief	Reads conf.meta file and stores data in g_meta_config
  *
- * @note	conf.meta has to be located on boot partition
+ * @note	conf.meta has to be located in EFI/BOOT/ on boot partition
+ * @note	The conf.meta is a raw binary that is copied byte by byte:
+ *			First 16 bytes are copied as EFI_GUID struct.
+ *			Next bytes are copied to a CHAR16* buffer.
  */
 [[nodiscard]] status_t meta_config_load(void);
 
