@@ -34,7 +34,7 @@ static status_t verify_elf_header(elf64_header_t* header) {
 		RETURN(BOOT_ERROR);
 	}
 
-	if (header->type != 2) {
+	if (header->type != 3) {
 		err(L"Unsupported ELF type: %u", header->type);
 		RETURN(BOOT_ERROR);
 	}
