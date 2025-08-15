@@ -57,7 +57,7 @@ add_custom_command(
 )
 
 add_custom_target(
-	efi-partition-structure
+	efi-partition-structure ALL
 	DEPENDS ${BOOTRISCV64_EFI} ${EXT2_BINARY_EFI}
 )
 
