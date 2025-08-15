@@ -9,6 +9,7 @@
 
 #include <efi.h>
 #include <efilib.h>
+#include <stddef.h>
 
 #include "common.h"
 #include "error.h"
@@ -26,30 +27,30 @@
 #define R_RISCV_COPY      4
 #define R_RISCV_JUMP_SLOT 5
 
-static status_t verify_elf_header(elf64_header_t* header) {
+static status_t verify_elf_header(Elf64_Ehdr* header) {
 	START;
-	if (header->ident[0] != 0x7f || header->ident[1] != 'E' || header->ident[2] != 'L' || header->ident[3] != 'F') {
-		err(L"No ELF signature: %u %c%c%c", (UINT8)header->ident[0], header->ident[1], header->ident[2],
-		    header->ident[3]);
+	if (header->e_ident[0] != 0x7f || header->e_ident[1] != 'E' || header->e_ident[2] != 'L' || header->e_ident[3] != 'F') {
+		err(L"No ELF signature: %u %c%c%c", (UINT8)header->e_ident[0], header->e_ident[1], header->e_ident[2],
+		    header->e_ident[3]);
 		RETURN(BOOT_ERROR);
 	}
 
-	if (header->type != 3) {
-		err(L"Unsupported ELF type: %u", header->type);
+	if (header->e_type != ET_DYN) {	// PIE executables have a e_type of ET_DYN, not ET_EXEC
+		err(L"Unsupported ELF e_type: %u", header->e_type);
 		RETURN(BOOT_ERROR);
 	}
 
-	if (header->ident[4] != 2) {
-		err(L"Unsupported ELF class: %u", (UINT8)header->ident[4]);
+	if (header->e_ident[4] != 2) {
+		err(L"Unsupported ELF class: %u", (UINT8)header->e_ident[4]);
 		RETURN(BOOT_ERROR);
 	}
 
-	if (header->phnum == 0) {
+	if (header->e_phnum == 0) {
 		err(L"No program headers");
 		RETURN(BOOT_ERROR);
 	}
-	if (header->phentsize != sizeof(elf_program_header_t)) {
-		err(L"Unexpected program header size: %llu", header->phentsize);
+	if (header->e_phentsize != sizeof(Elf64_Phdr)) {
+		err(L"Unexpected program header size: %llu", header->e_phentsize);
 		RETURN(BOOT_ERROR);
 	}
 
@@ -60,14 +61,14 @@ static status_t read_elf_program_headers(elf_application_t* app) {
 	START;
 	status_t boot_status;
 
-	app->program_headers = AllocatePool(app->header.phnum * app->header.phentsize);
+	app->program_headers = AllocatePool((UINTN)app->header.e_phnum * app->header.e_phentsize);
 	if (app->program_headers == nullptr) {
 		err(L"Failed to allocate memory for program headers");
 		RETURN(BOOT_ERROR);
 	}
 
 	boot_status =
-	    read_file(app->file, app->header.phoff, app->header.phnum * app->header.phentsize, app->program_headers);
+	    read_file(app->file, app->header.e_phoff, (UINTN)app->header.e_phnum * app->header.e_phentsize, app->program_headers);
 	if (boot_status != BOOT_SUCCESS) {
 		err(L"Failed to read file");
 		RETURN(BOOT_ERROR);
@@ -80,28 +81,28 @@ static status_t read_elf_section_headers(elf_application_t* app) {
 	START;
 	status_t boot_status;
 
-	app->section_headers = AllocatePool(app->header.shnum * app->header.shentsize);
+	app->section_headers = AllocatePool((UINTN)app->header.e_shnum * app->header.e_shentsize);
 	if (app->section_headers == nullptr) {
 		err(L"Failed to allocate memory for section headers");
 		RETURN(BOOT_ERROR);
 	}
 
 	boot_status =
-	    read_file(app->file, app->header.shoff, app->header.shnum * app->header.shentsize, app->section_headers);
+	    read_file(app->file, app->header.e_shoff, (UINTN)app->header.e_shnum * app->header.e_shentsize, app->section_headers);
 	if (boot_status != BOOT_SUCCESS) {
 		err(L"Failed to read file");
 		RETURN(BOOT_ERROR);
 	}
 
-	elf_section_header_t* string_table_header = &app->section_headers[app->header.shstrndx];
-	app->section_headers_strings = AllocatePool(string_table_header->size);
+	Elf64_Shdr* string_table_header = &app->section_headers[app->header.e_shstrndx];
+	app->section_headers_strings = AllocatePool(string_table_header->sh_size);
 	if (app->section_headers_strings == nullptr) {
 		err(L"Failed to allocate memory for section string table");
 		RETURN(BOOT_ERROR);
 	}
 
 	boot_status =
-	    read_file(app->file, string_table_header->offset, string_table_header->size, app->section_headers_strings);
+	    read_file(app->file, string_table_header->sh_offset, string_table_header->sh_size, app->section_headers_strings);
 	if (boot_status != BOOT_SUCCESS) {
 		err(L"Failed to read file");
 		RETURN(BOOT_ERROR);
@@ -114,15 +115,15 @@ static status_t initialize_image_info(elf_application_t* app) {
 	START;
 	app->img_begin = UINT64_MAX;
 	app->img_end = 0;
-	for (UINTN i = 0; i < app->header.phnum; i++) {
-		elf_program_header_t* header = &app->program_headers[i];
-		if (header->type != 1)
+	for (UINTN i = 0; i < app->header.e_phnum; i++) {
+		Elf64_Phdr* header = &app->program_headers[i];
+		if (header->p_type != 1)
 			continue;
-		if (header->vaddr < app->img_begin) {
-			app->img_begin = header->vaddr;
+		if (header->p_vaddr < app->img_begin) {
+			app->img_begin = header->p_vaddr;
 		}
-		if (header->vaddr + header->memsz > app->img_end) {
-			app->img_end = header->vaddr + header->memsz;
+		if (header->p_vaddr + header->p_memsz > app->img_end) {
+			app->img_end = header->p_vaddr + header->p_memsz;
 		}
 	}
 
@@ -144,14 +145,14 @@ static status_t load_segments(elf_application_t* app) {
 	START;
 	status_t boot_status;
 
-	for (UINTN i = 0; i < app->header.phnum; ++i) {
-		elf_program_header_t* prog_header = &app->program_headers[i];
-		if (prog_header->type != 1 /* LOAD */)
+	for (UINTN i = 0; i < app->header.e_phnum; ++i) {
+		Elf64_Phdr* prog_header = &app->program_headers[i];
+		if (prog_header->p_type != 1 /* LOAD */)
 			continue;
 
-		UINT64 vaddr = prog_header->vaddr;
-		UINT64 filesz = prog_header->filesz;
-		UINT64 offset = prog_header->offset;
+		UINT64 vaddr = prog_header->p_vaddr;
+		UINT64 filesz = prog_header->p_filesz;
+		UINT64 offset = prog_header->p_offset;
 		UINT64 segment_offset = vaddr - app->base_vaddr;
 		UINT64 physical_dest = app->physical_base + segment_offset;
 
@@ -175,14 +176,14 @@ static status_t identify_relocations(elf_application_t* app) {
 	status_t boot_status;
 
 	log(L"Identifying relocation sections...");
-	for (UINTN i = 0; i < app->header.shnum; ++i) {
-		elf_section_header_t* section_h = &app->section_headers[i];
-		const CHAR8* name = app->section_headers_strings + section_h->name;
+	for (UINTN i = 0; i < app->header.e_shnum; ++i) {
+		Elf64_Shdr* section_h = &app->section_headers[i];
+		const CHAR8* name = app->section_headers_strings + section_h->sh_name;
 
-		if (section_h->type == SHT_SYMTAB || section_h->type == SHT_DYNSYM) {
+		if (section_h->sh_type == SHT_SYMTAB || section_h->sh_type == SHT_DYNSYM) {
 			app->relocations.symtab_hdr = section_h;
-			app->relocations.strtab_hdr = &app->section_headers[section_h->link];
-		} else if (section_h->type == SHT_RELA) {
+			app->relocations.strtab_hdr = &app->section_headers[section_h->sh_link];
+		} else if (section_h->sh_type == SHT_RELA) {
 			if (strcmpa(name, ".rela.dyn") == 0) {
 				app->relocations.rela_dyn_hdr = section_h;
 			} else if (strcmpa(name, ".rela.plt") == 0) {
@@ -197,13 +198,13 @@ static status_t identify_relocations(elf_application_t* app) {
 
 	log(L"Creating string table...");
 	if (app->relocations.strtab_hdr != nullptr) {
-		app->relocations.strtab = AllocatePool(app->relocations.strtab_hdr->size);
+		app->relocations.strtab = AllocatePool(app->relocations.strtab_hdr->sh_size);
 		if (app->relocations.strtab == nullptr) {
 			err(L"Failed to allocate memory for string table");
 			RETURN(BOOT_ERROR);
 		}
 
-		boot_status = read_file(app->file, app->relocations.strtab_hdr->offset, app->relocations.strtab_hdr->size,
+		boot_status = read_file(app->file, app->relocations.strtab_hdr->sh_offset, app->relocations.strtab_hdr->sh_size,
 		                        app->relocations.strtab);
 		if (boot_status != BOOT_SUCCESS) {
 			err(L"Failed to read file");
@@ -213,13 +214,13 @@ static status_t identify_relocations(elf_application_t* app) {
 
 	log(L"Creating symbol table...");
 	if (app->relocations.symtab_hdr != nullptr) {
-		app->relocations.symtab = AllocatePool(app->relocations.symtab_hdr->size);
+		app->relocations.symtab = AllocatePool(app->relocations.symtab_hdr->sh_size);
 		if (app->relocations.symtab == nullptr) {
 			err(L"Failed to allocate memory for symbol table");
 			RETURN(BOOT_ERROR);
 		}
 
-		boot_status = read_file(app->file, app->relocations.symtab_hdr->offset, app->relocations.symtab_hdr->size,
+		boot_status = read_file(app->file, app->relocations.symtab_hdr->sh_offset, app->relocations.symtab_hdr->sh_size,
 		                        app->relocations.symtab);
 		if (boot_status != BOOT_SUCCESS) {
 			err(L"Failed to read file");
@@ -230,38 +231,34 @@ static status_t identify_relocations(elf_application_t* app) {
 	RETURN(BOOT_SUCCESS);
 }
 
-#define ELF64_R_SYM(i)     ((i) >> 32)
-#define ELF64_R_TYPE(i)    ((i) & 0xffffffffL)
-#define ELF64_R_INFO(s, t) (((s) << 32) + ((t) & 0xffffffffL))
-
-static status_t apply_rela_section(elf_application_t* app, elf_section_header_t* rela_hdr) {
+static status_t apply_rela_section(elf_application_t* app, Elf64_Shdr* rela_hdr) {
 	START;
 	status_t boot_status;
 
-	UINTN rela_entries_count = (rela_hdr->size / sizeof(elf_rela_t));
+	UINTN rela_entries_count = (rela_hdr->sh_size / sizeof(Elf64_Rela));
 
-	elf_rela_t* rela_buf = AllocatePool(rela_hdr->size);
+	Elf64_Rela* rela_buf = AllocatePool(rela_hdr->sh_size);
 	if (rela_buf == nullptr) {
 		err(L"Failed to allocate for relocation buffer");
 		RETURN(BOOT_ERROR);
 	}
 
-	boot_status = read_file(app->file, rela_hdr->offset, rela_hdr->size, rela_buf);
+	boot_status = read_file(app->file, rela_hdr->sh_offset, rela_hdr->sh_size, rela_buf);
 	if (boot_status != BOOT_SUCCESS) {
 		err(L"Failed to read relocation entries");
 		RETURN(BOOT_ERROR);
 	}
 
 	for (UINTN i = 0; i < rela_entries_count; ++i) {
-		elf_rela_t* rel = &rela_buf[i];
-		UINT32 type = ELF64_R_TYPE(rel->info);
-		UINT32 sym = ELF64_R_SYM(rel->info);
-		UINT64 offset = rel->offset;
-		INT64 addend = rel->addend;
+		Elf64_Rela* rel = &rela_buf[i];
+		UINT32 e_type = ELF64_R_TYPE(rel->r_info);
+		UINT32 sym = ELF64_R_SYM(rel->r_info);
+		UINT64 offset = rel->r_offset;
+		INT64 addend = rel->r_addend;
 
 		UINT64 patch_addr = app->physical_base + (offset - app->base_vaddr);
 
-		switch (type) {
+		switch (e_type) {
 		case R_RISCV_RELATIVE: {
 			UINT64 new_val = app->physical_base + addend;
 			*((UINT64*)patch_addr) = new_val;
@@ -269,14 +266,14 @@ static status_t apply_rela_section(elf_application_t* app, elf_section_header_t*
 		}
 
 		case R_RISCV_64: {
-			UINT64 symval = app->relocations.symtab[sym].value;
+			UINT64 symval = app->relocations.symtab[sym].st_value;
 			UINT64 new_val = app->physical_base + symval + addend;
 			*((UINT64*)patch_addr) = new_val;
 			break;
 		}
 
 		default: {
-			err(L"Relocation type %u not supported", type);
+			err(L"Relocation type %u not supported", e_type);
 			RETURN(BOOT_ERROR);
 		}
 		}
@@ -317,7 +314,7 @@ status_t elf_load(elf_application_t* app) {
 	status_t boot_status;
 
 	log(L"Reading ELF header...");
-	boot_status = read_file(app->file, 0, sizeof(elf64_header_t), &app->header);
+	boot_status = read_file(app->file, 0, sizeof(Elf64_Ehdr), &app->header);
 	if (boot_status != BOOT_SUCCESS) {
 		err(L"Failed to read ELF header");
 		RETURN(BOOT_ERROR);
@@ -385,11 +382,11 @@ status_t elf_load(elf_application_t* app) {
 	}
 
 	log(L"Determining entry point address...");
-	if (app->header.entry < app->img_begin || app->header.entry >= app->img_end) {
+	if (app->header.e_entry < app->img_begin || app->header.e_entry >= app->img_end) {
 		err(L"Invalid entry point address");
 		RETURN(BOOT_ERROR);
 	}
-	app->entry_address = app->physical_base + (app->header.entry - app->base_vaddr);
+	app->entry_address = app->physical_base + (app->header.e_entry - app->base_vaddr);
 
 	RETURN(BOOT_SUCCESS);
 }

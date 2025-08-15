@@ -28,7 +28,7 @@
 	do {                     \
 		log_procedure_end(); \
 		return (x);          \
-	} while (1)
+	} while (0)
 
 /**
  * @brief	Logging function
