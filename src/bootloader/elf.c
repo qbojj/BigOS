@@ -18,10 +18,6 @@
 
 #define PAGE_SIZE 4096
 
-#define SHT_SYMTAB 2
-#define SHT_DYNSYM 11
-#define SHT_RELA   4
-
 #define R_RISCV_64        2
 #define R_RISCV_RELATIVE  3
 #define R_RISCV_COPY      4
@@ -29,19 +25,20 @@
 
 static status_t verify_elf_header(Elf64_Ehdr* header) {
 	START;
-	if (header->e_ident[0] != 0x7f || header->e_ident[1] != 'E' || header->e_ident[2] != 'L' || header->e_ident[3] != 'F') {
-		err(L"No ELF signature: %u %c%c%c", (UINT8)header->e_ident[0], header->e_ident[1], header->e_ident[2],
-		    header->e_ident[3]);
+	if (header->e_ident[EI_MAG0] != ELFMAG0 || header->e_ident[EI_MAG1] != ELFMAG1 ||
+	    header->e_ident[EI_MAG2] != ELFMAG2 || header->e_ident[EI_MAG3] != ELFMAG3) {
+		err(L"No ELF signature: %u %c%c%c", (UINT8)header->e_ident[EI_MAG0], header->e_ident[EI_MAG1],
+		    header->e_ident[EI_MAG2], header->e_ident[EI_MAG3]);
 		RETURN(BOOT_ERROR);
 	}
 
-	if (header->e_type != ET_DYN) {	// PIE executables have a e_type of ET_DYN, not ET_EXEC
+	if (header->e_type != ET_DYN) { // PIE executables have a e_type of ET_DYN, not ET_EXEC
 		err(L"Unsupported ELF e_type: %u", header->e_type);
 		RETURN(BOOT_ERROR);
 	}
 
-	if (header->e_ident[4] != 2) {
-		err(L"Unsupported ELF class: %u", (UINT8)header->e_ident[4]);
+	if (header->e_ident[EI_CLASS] != ELFCLASS64) {
+		err(L"Unsupported ELF class: %u", (UINT8)header->e_ident[EI_CLASS]);
 		RETURN(BOOT_ERROR);
 	}
 
@@ -67,8 +64,8 @@ static status_t read_elf_program_headers(elf_application_t* app) {
 		RETURN(BOOT_ERROR);
 	}
 
-	boot_status =
-	    read_file(app->file, app->header.e_phoff, (UINTN)app->header.e_phnum * app->header.e_phentsize, app->program_headers);
+	boot_status = read_file(app->file, app->header.e_phoff, (UINTN)app->header.e_phnum * app->header.e_phentsize,
+	                        app->program_headers);
 	if (boot_status != BOOT_SUCCESS) {
 		err(L"Failed to read file");
 		RETURN(BOOT_ERROR);
@@ -87,8 +84,8 @@ static status_t read_elf_section_headers(elf_application_t* app) {
 		RETURN(BOOT_ERROR);
 	}
 
-	boot_status =
-	    read_file(app->file, app->header.e_shoff, (UINTN)app->header.e_shnum * app->header.e_shentsize, app->section_headers);
+	boot_status = read_file(app->file, app->header.e_shoff, (UINTN)app->header.e_shnum * app->header.e_shentsize,
+	                        app->section_headers);
 	if (boot_status != BOOT_SUCCESS) {
 		err(L"Failed to read file");
 		RETURN(BOOT_ERROR);
@@ -101,8 +98,8 @@ static status_t read_elf_section_headers(elf_application_t* app) {
 		RETURN(BOOT_ERROR);
 	}
 
-	boot_status =
-	    read_file(app->file, string_table_header->sh_offset, string_table_header->sh_size, app->section_headers_strings);
+	boot_status = read_file(app->file, string_table_header->sh_offset, string_table_header->sh_size,
+	                        app->section_headers_strings);
 	if (boot_status != BOOT_SUCCESS) {
 		err(L"Failed to read file");
 		RETURN(BOOT_ERROR);
@@ -117,7 +114,7 @@ static status_t initialize_image_info(elf_application_t* app) {
 	app->img_end = 0;
 	for (UINTN i = 0; i < app->header.e_phnum; i++) {
 		Elf64_Phdr* header = &app->program_headers[i];
-		if (header->p_type != 1)
+		if (header->p_type != PT_LOAD)
 			continue;
 		if (header->p_vaddr < app->img_begin) {
 			app->img_begin = header->p_vaddr;
@@ -147,7 +144,7 @@ static status_t load_segments(elf_application_t* app) {
 
 	for (UINTN i = 0; i < app->header.e_phnum; ++i) {
 		Elf64_Phdr* prog_header = &app->program_headers[i];
-		if (prog_header->p_type != 1 /* LOAD */)
+		if (prog_header->p_type != PT_LOAD)
 			continue;
 
 		UINT64 vaddr = prog_header->p_vaddr;
