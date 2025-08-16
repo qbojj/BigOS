@@ -36,6 +36,11 @@ typedef struct elf_application_t {
 	UINT64 physical_base;
 } elf_application_t;
 
+/**
+ * @brief	Load the ELF file and setup its execution
+ *
+ * @param	app - ELF application to load
+ */
 [[nodiscard]] status_t elf_load(elf_application_t* app);
 
 #endif // !BIGOS_BOOTLOADER_ELF_ELF
