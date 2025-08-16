@@ -12,7 +12,7 @@
 #include <efi.h>
 
 #include "config.h"
-#include "elf.h"
+#include "elf/elf.h"
 #include "loader.h"
 #include "partition.h"
 

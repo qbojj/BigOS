@@ -17,7 +17,7 @@
 
 #include "common.h"
 #include "config.h"
-#include "elf.h"
+#include "elf/elf.h"
 #include "error.h"
 #include "exit.h"
 #include "ext2.h"
