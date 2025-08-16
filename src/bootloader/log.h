@@ -38,6 +38,13 @@
 void log(const CHAR16* message, ...);
 
 /**
+ * @brief	Warning logging function
+ *
+ * @param	message - Standard format string followed by optional to be formatted
+ */
+void warn(const CHAR16* message, ...);
+
+/**
  * @brief	Error logging function
  *
  * @param	message - Standard format string followed by optional to be formatted

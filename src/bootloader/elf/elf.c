@@ -119,7 +119,7 @@ static status_t load_segments(elf_application_t* app) {
 			if (load_pt_dynamic(app, prog_header) != BOOT_SUCCESS)
 				RETURN(BOOT_ERROR);
 			break;
-		default: err(L"Unhandled program header type: %u", prog_header->p_type);
+		default: warn(L"Unhandled program header type: %u", prog_header->p_type);
 		}
 	}
 

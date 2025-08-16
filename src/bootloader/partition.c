@@ -148,7 +148,7 @@ void partition_print(partition_t* partition) {
 		    partition->guid->Data4[2], partition->guid->Data4[3], partition->guid->Data4[4], partition->guid->Data4[5],
 		    partition->guid->Data4[6], partition->guid->Data4[7]);
 	} else {
-		err(L" - GPT UUID: (missing)");
+		warn(L" - GPT UUID: (missing)");
 	}
 	END;
 }

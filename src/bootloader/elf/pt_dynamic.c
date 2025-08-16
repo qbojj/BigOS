@@ -55,10 +55,10 @@ status_t load_pt_dynamic(elf_application_t* app, Elf64_Phdr* prog_header) {
 
 		case DT_DEBUG: info->dt_debug = (void*)REBASE(app, val); break;
 
-		case DT_GNU_HASH: log(L"Ignored DT_GNU_HASH entry."); break;
-		case DT_HASH:     log(L"Ignored DT_HASH entry."); break;
+		case DT_GNU_HASH: warn(L"Ignored DT_GNU_HASH entry."); break;
+		case DT_HASH:     warn(L"Ignored DT_HASH entry."); break;
 
-		default: log(L"Ignored unknown dynamic entry."); break;
+		default: warn(L"Ignored unknown dynamic entry."); break;
 		}
 	}
 
