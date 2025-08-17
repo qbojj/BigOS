@@ -7,6 +7,7 @@
 #include <stdbigos/types.h>
 
 #include "dt_alloc.h"
+#include "dt_defines.h"
 #include "dt_node.h"
 
 // Function to parse a block of properties starting at props_offset with props_size size in the FDT with fdt

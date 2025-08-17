@@ -1,3 +1,4 @@
+#include <debug/debug_stdio.h>
 #include <drivers/dt/dt.h>
 #include <drivers/dt/dt_props.h>
 #include <stdbigos/bitutils.h>
@@ -74,11 +75,11 @@ static buffer_t parse_subtree(const buffer_t* fdt_buf, u32* offset, u32 max_offs
 
 	u32 tag;
 	if (!buffer_read_u32_be(*fdt_buf, curr_offset - 4, &tag) || (fdt_token_t)tag != FDT_BEGIN_NODE)
-		return nullptr;
+		return make_buffer(nullptr, 0);
 
 	const char* name;
 	if (!buffer_read_cstring(*fdt_buf, curr_offset, &name))
-		return nullptr;
+		return make_buffer(nullptr, 0);
 
 	// After this point all reads from the buffer should be correct
 
@@ -90,14 +91,14 @@ static buffer_t parse_subtree(const buffer_t* fdt_buf, u32* offset, u32 max_offs
 	while (curr_offset < max_offset) {
 		u32 tag;
 		if (!buffer_read_u32_be(*fdt_buf, curr_offset, &tag))
-			return nullptr;
+			return make_buffer(nullptr, 0);
 
 		if ((fdt_token_t)tag != FDT_PROP)
 			break;
 
 		u32 p_len;
 		if (!buffer_read_u32_be(*fdt_buf, curr_offset + 4, &p_len))
-			return nullptr;
+			return make_buffer(nullptr, 0);
 
 		curr_offset += 12; // Skip tag, length, name_offset
 		curr_offset = align_u32(curr_offset + p_len, sizeof(u32));
@@ -109,34 +110,36 @@ static buffer_t parse_subtree(const buffer_t* fdt_buf, u32* offset, u32 max_offs
 	while (curr_offset < max_offset) {
 		u32 tag;
 		if (!buffer_read_u32_be(*fdt_buf, curr_offset, &tag))
-			return nullptr;
+			return make_buffer(nullptr, 0);
 
 		curr_offset += 4;
 		switch ((fdt_token_t)tag) {
 		case FDT_BEGIN_NODE:
 			u32 new_tag;
 			if (!buffer_read_u32_be(*fdt_buf, curr_offset - 4, &new_tag) || (fdt_token_t)new_tag != FDT_BEGIN_NODE)
-				return nullptr;
+				return make_buffer(nullptr, 0);
 
 			const char* name;
 			if (!buffer_read_cstring(*fdt_buf, curr_offset, &name))
-				return nullptr;
+				return make_buffer(nullptr, 0);
 
 			u32 name_len = strlen(name) + 1;
 
 			curr_offset = align_u32(curr_offset + name_len, sizeof(u32));
-
 			// Check if this is the child we're looking for
+			dprintf("path: %s\n", path);
+			dprintf("name: %s\n", name);
 			size_t i = 0;
 			bool wrong_child = false;
 			while (i < name_len) {
-				if (path[i] == name[i])
+				if (path[i] != name[i])
 					wrong_child = true;
+				i += 1;
 			}
 
-			if (!wrongchild) {
+			if (!wrong_child) {
 				// If this is the end child, process properties here
-				return parse_subtree(fdt_buf, &curr_offset, max_offset, str_offset, path + name_len, p_name);
+				return make_buffer((const void*)1, 0);
 			} else {
 				// Skip this node
 				curr_offset += name_len;
@@ -145,7 +148,7 @@ static buffer_t parse_subtree(const buffer_t* fdt_buf, u32* offset, u32 max_offs
 				while (curr_offset < max_offset && depth > 0) {
 					u32 tag;
 					if (!buffer_read_u32_be(*fdt_buf, curr_offset, &tag))
-						return nullptr;
+						return make_buffer(nullptr, 0);
 
 					curr_offset += 4;
 
@@ -154,7 +157,7 @@ static buffer_t parse_subtree(const buffer_t* fdt_buf, u32* offset, u32 max_offs
 						depth += 1;
 						const char* new_name;
 						if (!buffer_read_cstring(*fdt_buf, curr_offset, &new_name))
-							return nullptr;
+							return make_buffer(nullptr, 0);
 
 						u32 new_name_len = strlen(name) + 1;
 
@@ -169,14 +172,14 @@ static buffer_t parse_subtree(const buffer_t* fdt_buf, u32* offset, u32 max_offs
 						while (curr_offset < max_offset) {
 							u32 tag;
 							if (!buffer_read_u32_be(*fdt_buf, curr_offset, &tag))
-								return nullptr;
+								return make_buffer(nullptr, 0);
 
 							if ((fdt_token_t)tag != FDT_PROP)
 								break;
 
 							u32 p_len;
 							if (!buffer_read_u32_be(*fdt_buf, curr_offset + 4, &p_len))
-								return nullptr;
+								return make_buffer(nullptr, 0);
 
 							curr_offset += 12; // Skip tag, length, name_offset
 							curr_offset = align_u32(curr_offset + p_len, sizeof(u32));
@@ -189,9 +192,9 @@ static buffer_t parse_subtree(const buffer_t* fdt_buf, u32* offset, u32 max_offs
 
 					case FDT_NOP: continue;
 
-					case FDT_END: return nullptr; // No such node found
+					case FDT_END: return make_buffer(nullptr, 0); // No such node found
 
-					default: return nullptr;      // Unknown element type (not defined in v17)
+					default: return make_buffer(nullptr, 0);      // Unknown element type (not defined in v17)
 					}
 				}
 			}
@@ -201,21 +204,21 @@ static buffer_t parse_subtree(const buffer_t* fdt_buf, u32* offset, u32 max_offs
 		case FDT_NOP: continue;
 
 		case FDT_END_NODE:
-		case FDT_END:      *offset = curr_offset; return node;
+		case FDT_END:      return make_buffer(nullptr, 0); // No such node found
 
-		default: // Unknown element type (not defined in v17)
+		default:                                      // Unknown element type (not defined in v17)
 			DEBUG_PRINTF("Invalid FDT structure\n");
-			return nullptr;
+			return make_buffer(nullptr, 0);
 		}
 	}
 
 	DEBUG_PRINTF("Invalid FDT structure\n");
-	return nullptr;
+	return make_buffer(nullptr, 0);
 }
 
 // TODO: Part of this function could be generalized then used by the pareser and this without duplication
 buffer_t dt_prop_get_immediate(const void* fdt, const char* path, const char* p_name) {
-	if (!name)
+	if (!p_name)
 		return make_buffer(nullptr, 0); // invalid buffer
 
 	if (!fdt)
@@ -242,19 +245,19 @@ buffer_t dt_prop_get_immediate(const void* fdt, const char* path, const char* p_
 	    !buffer_read_u32_be(fdt_buf, FDT_OFF_OFF_DT_STRINGS, &strings_off) ||
 	    !buffer_read_u32_be(fdt_buf, FDT_OFF_SIZE_DT_STRUCT, &struct_size) ||
 	    !buffer_read_u32_be(fdt_buf, FDT_OFF_VERSION, &fdt_version))
-		make_buffer(nullptr, 0);
+		return make_buffer(nullptr, 0);
 
-	if (fdt_version > fdt_compatible_version)
-		make_buffer(nullptr, 0);
+	if (fdt_version > FDT_COMPATIBLE_VERSION)
+		return make_buffer(nullptr, 0);
 
 	if (struct_off + struct_size > total_size)
-		make_buffer(nullptr, 0);
+		return make_buffer(nullptr, 0);
 
 	u32 offset = struct_off + 4;
 
-	parse_subtree(&fdt_buf, &offset, struct_off + struct_size, strings_off, path + 1, p_name);
+	return parse_subtree(&fdt_buf, &offset, struct_off + struct_size, strings_off, path + 1, p_name);
 
 	// PARSING
 
-	return prop->data;
+	return make_buffer(nullptr, 0);
 }

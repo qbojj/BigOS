@@ -1,3 +1,6 @@
+#ifndef DT_DEFINES_H
+#define DT_DEFINES_H
+
 // Magic number and offsets for the device tree
 
 #define FDT_MAGIC                 0xd00dfeed
@@ -12,7 +15,7 @@
 #define FDT_OFF_SIZE_DT_STRINGS   0x20
 #define FDT_OFF_SIZE_DT_STRUCT    0x24
 
-const u32 fdt_compatible_version = 17;
+#define FDT_COMPATIBLE_VERSION 17
 
 // FDT token values
 typedef enum : u32 {
@@ -23,3 +26,5 @@ typedef enum : u32 {
 	// Unused/Reserved 0x5 - 0x8
 	FDT_END = 0x9
 } fdt_token_t;
+
+#endif

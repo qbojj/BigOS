@@ -49,7 +49,7 @@ int dt_init(const void* fdt) {
 	    !buffer_read_u32_be(fdt_buf, FDT_OFF_VERSION, &fdt_version))
 		return -2;
 
-	if (fdt_version > fdt_compatible_version)
+	if (fdt_version > FDT_COMPATIBLE_VERSION)
 		return -3;
 
 	if (struct_off + struct_size > total_size)
