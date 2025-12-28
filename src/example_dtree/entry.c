@@ -5,19 +5,17 @@
 #include <stdbigos/types.h>
 
 void main([[maybe_unused]] u32 hartid, const void* fdt) {
-	/*
-	if (dt_init(fdt) < 0) {
-	    dprintf("DT_INIT FAILED");
-	    return;
+	int a;
+	if ((a = dt_init(fdt)) < 0) {
+		dprintf("DT_INIT FAILED %d", a);
+		return;
 	}
-
 
 	dt_node_t* root = dt_get_root();
 	if (!root) {
-	    dprintf("GETTING ROOT FAILED");
-	    return;
+		dprintf("GETTING ROOT FAILED");
+		return;
 	}
-	    */
 
 	// Showcasing that values and finding work
 	// TODO: find any serial or the serial with specific compatible field
@@ -37,17 +35,18 @@ void main([[maybe_unused]] u32 hartid, const void* fdt) {
 	        dprintf("\"reg\" prop missing or invalid\n");
 	    }
 	}
-	*/
+
 	dprintf("Starting:\n");
 	buffer_t x = dt_prop_get_immediate(fdt, "/reserved-memory", "ranges");
 
 	if (buffer_is_valid(x))
-		dprintf("Buffer ok\n");
+	    dprintf("Buffer ok\n");
 	else
-		dprintf("Buffer bad\n");
+	    dprintf("Buffer bad\n");
 
 	// Showcasing that the tree works
-	// dt_print_tree(root, 0);
+	dt_print_tree(root, 0);
 
-	// dt_cleanup();
+	dt_cleanup();
+	*/
 }

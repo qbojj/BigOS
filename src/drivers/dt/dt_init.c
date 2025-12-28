@@ -5,21 +5,43 @@
 
 #include "dt_alloc.h"
 #include "dt_defines.h"
-#include "dt_node.h"
-#include "dt_parser.h"
+#include "dt_utils.c"
 
-static dt_node_t* root_node = nullptr;
+// Properties of the currently used fdt
+static u32 total_size;
+static u32 struct_off;
+static u32 strings_off;
+static u32 struct_size;
+static u32 fdt_version;
 
-#define DT_ARENA_SIZE 32760
-static u8 dt_arena_buffer[DT_ARENA_SIZE];
+// Pointer to the first node (root) of current fdt
+static void* root_ptr;
 
-dt_node_t* dt_get_root(void) {
+// root_node is a special node that resets it's position to the root of the device tree after any operation
+static dt_node_t root_node;
+
+dt_node_t dt_get_root(void) {
 	return root_node;
 }
 
-void dt_cleanup(void) {
-	dt_arena_reset();
-	root_node = nullptr;
+u32 dt_get_total_size(void) {
+	return total_size;
+}
+
+u32 dt_get_struct_off(void) {
+	return struct_off;
+}
+
+u32 dt_get_strings_off(void) {
+	return strings_off;
+}
+
+u32 dt_get_struct_size(void) {
+	return struct_size;
+}
+
+u32 dt_get_fdt_version(void) {
+	return fdt_version;
 }
 
 int dt_init(const void* fdt) {
@@ -32,16 +54,12 @@ int dt_init(const void* fdt) {
 
 	u32 fdt_size = read_be32((u8*)fdt + FDT_OFF_TOTAL_SIZE);
 
+	// Temporary buffer to read properties more easily
 	buffer_t fdt_buf = make_buffer(fdt, fdt_size);
 
 	if (fdt_buf.size < (FDT_OFF_OFF_DT_STRINGS + 4))
 		return -1;
 
-	u32 total_size;
-	u32 struct_off;
-	u32 strings_off;
-	u32 struct_size;
-	u32 fdt_version;
 	if (!buffer_read_u32_be(fdt_buf, FDT_OFF_TOTAL_SIZE, &total_size) ||
 	    !buffer_read_u32_be(fdt_buf, FDT_OFF_OFF_DT_STRUCT, &struct_off) ||
 	    !buffer_read_u32_be(fdt_buf, FDT_OFF_OFF_DT_STRINGS, &strings_off) ||
@@ -55,12 +73,13 @@ int dt_init(const void* fdt) {
 	if (struct_off + struct_size > total_size)
 		return -3;
 
-	if (!dt_arena_init(dt_arena_buffer, DT_ARENA_SIZE))
-		return -4;
-
 	u32 offset = struct_off + 4;
-	root_node = parse_subtree(&fdt_buf, &offset, struct_off + struct_size, strings_off, nullptr);
-	if (!root_node)
+
+	root_ptr = (void*)((const u8*)fdt + offset);
+
+	root_node = (dt_node_t)make_buffer(root_ptr, fdt_size - offset);
+
+	if (!buffer_is_valid(root_node))
 		return -5;
 
 	return 0;

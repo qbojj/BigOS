@@ -1,76 +1,73 @@
 #include <debug/debug_stdio.h>
 #include <drivers/dt/dt.h>
-#include <drivers/dt/dt_props.h>
 #include <stdbigos/bitutils.h>
 #include <stdbigos/buffer.h>
 #include <stdbigos/string.h>
 #include <stdbigos/types.h>
-#include <stdint.h>
 
 #include "dt_defines.h"
 
 // Function to parse a block of properties starting at props_offset with props_size size in the FDT with fdt
 // being a ptr to the start of the flattened device tree blob
-// TODO: Change this to work in tandem with the static parse_subtree, maybe change names
-/*
-static buffer_t parse_props(const buffer_t* fdt_buf, u32 props_offset, u32 props_size, u32 str_offset) {
-    u32 curr_offset = props_offset;
+// TODO: Change this to work in tandem with the static parse_subtree, maybe change names, take from HERE
 
-    dt_prop_t* head = nullptr;
-    dt_prop_t** pp = &head;
+buffer_t* parse_props(const buffer_t* fdt_buf, u32 props_offset, u32 props_size, u32 str_offset) {
+	u32 curr_offset = props_offset;
 
-    while (curr_offset < props_offset + props_size) {
-        u32 tag;
-        if (!buffer_read_u32_be(*fdt_buf, curr_offset, &tag))
-            return nullptr;
+	dt_prop_t* head = nullptr;
+	dt_prop_t** pp = &head;
 
-        // Because of the separation of parsing properties and nodes, we don't want to parse non-properties
-        if ((fdt_token_t)tag != FDT_PROP)
-            break;
+	while (curr_offset < props_offset + props_size) {
+		u32 tag;
+		if (!buffer_read_u32_be(*fdt_buf, curr_offset, &tag))
+			return nullptr;
 
-        curr_offset += 4;
-        u32 len;
-        u32 name_offset;
+		// Because of the separation of parsing properties and nodes, we don't want to parse non-properties
+		if ((fdt_token_t)tag != FDT_PROP)
+			break;
 
-        if (!buffer_read_u32_be(*fdt_buf, curr_offset + 0, &len) ||
-            !buffer_read_u32_be(*fdt_buf, curr_offset + 4, &name_offset))
-            return nullptr;
+		curr_offset += 4;
+		u32 len;
+		u32 name_offset;
 
-        curr_offset += 8;
+		if (!buffer_read_u32_be(*fdt_buf, curr_offset + 0, &len) ||
+		    !buffer_read_u32_be(*fdt_buf, curr_offset + 4, &name_offset))
+			return nullptr;
 
-        const char* name;
-        if (!buffer_read_cstring(*fdt_buf, str_offset + name_offset, &name))
-            return nullptr;
+		curr_offset += 8;
 
-        dt_prop_t* new_prop = dt_alloc(sizeof(*new_prop));
-        if (!new_prop)
-            return nullptr;
+		const char* name;
+		if (!buffer_read_cstring(*fdt_buf, str_offset + name_offset, &name))
+			return nullptr;
 
-        *new_prop = (dt_prop_t){
-            .name = name,
-            .data = buffer_sub_buffer(*fdt_buf, curr_offset, len),
-            .next_prop = nullptr,
-        };
+		dt_prop_t* new_prop = dt_alloc(sizeof(*new_prop));
+		if (!new_prop)
+			return nullptr;
 
-        if (!buffer_is_valid(new_prop->data))
-            return nullptr;
+		*new_prop = (dt_prop_t){
+		    .name = name,
+		    .data = buffer_sub_buffer(*fdt_buf, curr_offset, len),
+		    .next_prop = nullptr,
+		};
 
-        // At first it sets the head in the right place, then it sets the next_prop of the previous property to point to
-        // the current property
-        *pp = new_prop;
-        pp = &new_prop->next_prop;
+		if (!buffer_is_valid(new_prop->data))
+			return nullptr;
 
-        curr_offset = align_u32(curr_offset + len, sizeof(u32));
-    }
-    return head;
+		// At first it sets the head in the right place, then it sets the next_prop of the previous property to point to
+		// the current property
+		*pp = new_prop;
+		pp = &new_prop->next_prop;
+
+		curr_offset = align_u32(curr_offset + len, sizeof(u32));
+	}
+	return head;
 }
-*/
 
 // Function to recursively parse a subtree at the given offset to find node by path and by name
 // TODO: change all nullptr returns to invalid buffers, after finding the end correct node find the searched-after
 // property and get it's buffer
-static buffer_t parse_subtree(const buffer_t* fdt_buf, u32* offset, u32 max_offset, u32 str_offset, const char* path,
-                              const char* p_name) {
+buffer_t* parse_subtree(const buffer_t* fdt_buf, u32* offset, u32 max_offset, u32 str_offset, const char* path,
+                        const char* p_name) {
 	u32 curr_offset = *offset;
 
 	u32 tag;
