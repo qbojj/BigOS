@@ -27,4 +27,4 @@ typedef enum : u32 {
 	FDT_END = 0x9
 } fdt_token_t;
 
-#endif
+#endif // !DT_DEFINES_H

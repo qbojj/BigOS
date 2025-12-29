@@ -13,6 +13,9 @@ typedef u32 dt_prop_t;
 // Caches fdt properties and sets root_node for faster future parsing, 0 if success, <0 if error
 int dt_init(const void* fdt);
 
+// Reset properties of the currently used fdt
+void dt_reset(void);
+
 // Returns the shortened path, while outputting the name with a pointer to it's start and length, nullptr if error
 const char* dt_walk(const char* path, const char** name, u32* name_len);
 
@@ -28,15 +31,19 @@ bool dt_get_node_name(const void* fdt, dt_node_t node, char* out, u32 out_size);
 // Get a node's prop_name property, >0 if success, 0 if error
 dt_prop_t dt_get_prop(const void* fdt, dt_node_t node, const char* prop_name);
 
-buffer_t parse_subtree(const void* fdt, dt_node_t node, const char* node_path, const char* prop_name);
+// Get a prop's name, >0 if success, 0 if error
+bool dt_get_prop_name(const void* fdt, dt_node_t prop, char* out, u32 out_size);
+
+// Get a buffer for prop's data
+buffer_t dt_get_prop_buffer(const void* fdt, dt_node_t prop);
 
 // Get node's child count, >=0 if success, <0 if error
 int dt_node_child_count(const dt_node_t node);
 
-// Get a node's next sibling, dt_node_t ptr if success, nullptr if error or node is the last child
-dt_node_t* dt_get_next_child(const dt_node_t node);
+// Get a node's next sibling, >0 if success, 0 if error or last child
+dt_node_t dt_get_next_child(const dt_node_t node);
 
-// Returns the pointer to the root of the parsed device tree if success, nullptr if error
+// Returns the node of the root of current fdt, >0 if success, 0 if error
 dt_node_t dt_get_root(void);
 
 // Getters for device tree parameters
@@ -50,6 +57,4 @@ u32 dt_get_struct_size(void);
 
 u32 dt_get_fdt_version(void);
 
-void dt_reset_root(void);
-
-#endif
+#endif // !DT_H
