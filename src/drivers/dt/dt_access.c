@@ -16,44 +16,8 @@ static dt_node_t* find_child_by_name_s(dt_node_t* parent, const char* name) {
     }
     return nullptr;
 }
-
-dt_node_t* dt_node_find(const char* path) {
-    dt_node_t* root_node = dt_get_root();
-
-    if (!path || path[0] != '/' || !root_node)
-        return nullptr;
-
-    if (strcmp(path, "/") == 0)
-        return root_node;
-
-    dt_node_t* current = root_node;
-    const char* p = path + 1;
-
-    while (*p) {
-        const char* slash = p;
-        while (*slash && *slash != '/') slash += 1;
-
-        uintptr_t len = slash - p;
-        if (len == 0)
-            break;
-
-        char segment[64];
-        if (len >= (u32)sizeof(segment))
-            return nullptr;
-
-        memcpy(segment, p, len);
-        segment[len] = '\0';
-
-        current = find_child_by_name_s(current, segment);
-        if (!current)
-            return nullptr;
-
-        p = (*slash == '/') ? slash + 1 : slash;
-    }
-
-    return current;
-}
-
+*/
+/*
 const char* dt_node_get_name(const dt_node_t* node) {
     if (!node)
         return nullptr;

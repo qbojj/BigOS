@@ -11,11 +11,26 @@ void main([[maybe_unused]] u32 hartid, const void* fdt) {
 		return;
 	}
 
-	dt_node_t* root = dt_get_root();
+	dt_node_t root = dt_get_root();
 	if (!root) {
 		dprintf("GETTING ROOT FAILED");
 		return;
 	}
+
+	const char* path = "/soc/serial@10000000";
+
+	buffer_t res = parse_subtree(fdt, dt_get_root(), path, "reg");
+
+	DEBUG_PRINTF("AFTER PARSE\n");
+
+	u32 res2 = dt_get_node(fdt, path);
+
+	DEBUG_PRINTF("%u\n", res2);
+
+	char name[64];
+
+	dt_get_node_name(fdt, res2, name, 64);
+	DEBUG_PRINTF("%s\n", name);
 
 	// Showcasing that values and finding work
 	// TODO: find any serial or the serial with specific compatible field

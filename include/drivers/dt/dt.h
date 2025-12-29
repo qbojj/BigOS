@@ -4,18 +4,31 @@
 #include <stdbigos/buffer.h>
 #include <stdbigos/types.h>
 
-typedef buffer_t dt_node_t;
+// A node is an offset from the start of fdt with FDT_BEGIN_NODE
+typedef u32 dt_node_t;
 
-// Initializes the device tree driver
-// TODO: Currently parses the entire FDT at init, maybe change to lazy parsing later
-// Builds the actual tree structure handleable by the driver, 0 if success, <0 if error
+// A property is an offset from the start of fdt with FDT_PROP
+typedef u32 dt_prop_t;
+
+// Caches fdt properties and sets root_node for faster future parsing, 0 if success, <0 if error
 int dt_init(const void* fdt);
 
-// Find a node by full path in the tree, dt_node_t ptr if success, nullptr if error
-dt_node_t* dt_node_find(const char* path);
+// Returns the shortened path, while outputting the name with a pointer to it's start and length, nullptr if error
+const char* dt_walk(const char* path, const char** name, u32* name_len);
 
-// Get a node's name, const char ptr name if success, nullptr if error
-const char* dt_node_get_name(const dt_node_t node);
+// Get a node in a subtree of the fdt, leave as 0 for global search, >0 if success, 0 if error
+dt_node_t dt_get_node_subtree(const void* fdt, dt_node_t node, const char* node_path);
+
+// Get a node globally in the fdt, >0 if success, 0 if error
+dt_node_t dt_get_node(const void* fdt, const char* node_path);
+
+// Get a node's name in out, true if success, false if error
+bool dt_get_node_name(const void* fdt, dt_node_t node, char* out, u32 out_size);
+
+// Get a node's prop_name property, >0 if success, 0 if error
+dt_prop_t dt_get_prop(const void* fdt, dt_node_t node, const char* prop_name);
+
+buffer_t parse_subtree(const void* fdt, dt_node_t node, const char* node_path, const char* prop_name);
 
 // Get node's child count, >=0 if success, <0 if error
 int dt_node_child_count(const dt_node_t node);

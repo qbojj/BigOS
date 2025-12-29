@@ -1,3 +1,4 @@
+#include <debug/debug_stdio.h>
 #include <drivers/dt/dt.h>
 #include <stdbigos/bitutils.h>
 #include <stdbigos/buffer.h>
@@ -5,7 +6,7 @@
 
 #include "dt_alloc.h"
 #include "dt_defines.h"
-#include "dt_utils.c"
+// #include "dt_utils.c"
 
 // Properties of the currently used fdt
 static u32 total_size;
@@ -14,11 +15,9 @@ static u32 strings_off;
 static u32 struct_size;
 static u32 fdt_version;
 
-// Pointer to the first node (root) of current fdt
-static void* root_ptr;
-
-// root_node is a special node that resets it's position to the root of the device tree after any operation
-static dt_node_t root_node;
+// root_node is a special node that resets it's position to the root of the device tree after any operation,
+// It's also a useful static marker to not retread properties
+dt_node_t root_node;
 
 dt_node_t dt_get_root(void) {
 	return root_node;
@@ -73,14 +72,7 @@ int dt_init(const void* fdt) {
 	if (struct_off + struct_size > total_size)
 		return -3;
 
-	u32 offset = struct_off + 4;
-
-	root_ptr = (void*)((const u8*)fdt + offset);
-
-	root_node = (dt_node_t)make_buffer(root_ptr, fdt_size - offset);
-
-	if (!buffer_is_valid(root_node))
-		return -5;
+	root_node = struct_off;
 
 	return 0;
 }
