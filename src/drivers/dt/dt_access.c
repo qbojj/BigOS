@@ -7,6 +7,8 @@
 
 #include "dt_defines.h"
 
+// TODO: Put common operations like skipping properties in functions
+
 const char* dt_walk(const char* path, const char** name, u32* name_len) {
 	if (!path || path[0] != '/')
 		return nullptr;
@@ -34,7 +36,7 @@ const char* dt_walk(const char* path, const char** name, u32* name_len) {
 	return (*p) ? p : nullptr;
 }
 
-dt_node_t dt_get_node_subtree(const void* fdt, dt_node_t node, const char* node_path) {
+dt_node_t dt_get_node_in_subtree_by_path(const void* fdt, dt_node_t node, const char* node_path) {
 	if (!node)
 		node = dt_get_root();
 
@@ -126,7 +128,7 @@ dt_node_t dt_get_node_subtree(const void* fdt, dt_node_t node, const char* node_
 				if (node_path == NULL) {
 					return node_offset;
 				} else {
-					return dt_get_node_subtree(fdt, node_offset, node_path);
+					return dt_get_node_in_subtree_by_path(fdt, node_offset, node_path);
 				}
 			} else {
 				// Skip this node
@@ -207,8 +209,213 @@ dt_node_t dt_get_node_subtree(const void* fdt, dt_node_t node, const char* node_
 	return 0;
 }
 
-dt_node_t dt_get_node(const void* fdt, const char* node_path) {
-	return dt_get_node_subtree(fdt, (dt_node_t)0, node_path);
+dt_node_t dt_get_node_by_path(const void* fdt, const char* node_path) {
+	return dt_get_node_in_subtree_by_path(fdt, (dt_node_t)0, node_path);
+}
+
+dt_node_t dt_get_node_child(const void* fdt, dt_node_t node) {
+	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
+
+	u32 curr_offset = node;
+
+	u32 tag;
+
+	// Check validity of node
+	if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag) || (fdt_token_t)tag != FDT_BEGIN_NODE)
+		return 0;
+
+	curr_offset += sizeof(fdt_token_t);
+
+	const char* name;
+	if (!buffer_read_cstring(fdt_buf, curr_offset, &name))
+		return 0;
+
+	u32 name_len = strlen(name) + 1;
+
+	// Skip name of node
+	curr_offset = align_u32(curr_offset + name_len, sizeof(u32));
+
+	u32 max_offset = dt_get_struct_off() + dt_get_struct_size();
+
+	// Skip properties of node
+	u32 props_off = curr_offset;
+	while (curr_offset < max_offset) {
+		u32 tag;
+		if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
+			return 0;
+
+		if ((fdt_token_t)tag != FDT_PROP)
+			break;
+
+		u32 p_len;
+		if (!buffer_read_u32_be(fdt_buf, curr_offset + sizeof(u32), &p_len))
+			return 0;
+
+		curr_offset += 3 * sizeof(u32); // Skip tag, length, name_offset
+		curr_offset = align_u32(curr_offset + p_len, sizeof(u32));
+	}
+	u32 props_len = curr_offset - props_off;
+
+	curr_offset = align_u32(props_off + props_len, sizeof(u32));
+
+	while (curr_offset < max_offset) {
+		u32 tag;
+		if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
+			return 0;
+
+		u32 node_offset = curr_offset;
+
+		curr_offset += sizeof(fdt_token_t);
+		switch ((fdt_token_t)tag) {
+		case FDT_BEGIN_NODE: return node_offset;
+
+		case FDT_NOP: continue;
+
+		case FDT_END_NODE:
+		case FDT_END:      return 0; // No such node found
+
+		default:                // Unknown element type (not defined in v17)
+			DEBUG_PRINTF("Invalid FDT structure\n");
+			return 0;
+		}
+	}
+
+	return 0;
+}
+
+dt_node_t dt_get_node_sibling(const void* fdt, dt_node_t node) {
+	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
+
+	u32 curr_offset = node;
+
+	u32 tag;
+
+	// Check validity of node
+	if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag) || (fdt_token_t)tag != FDT_BEGIN_NODE)
+		return 0;
+
+	curr_offset += sizeof(fdt_token_t);
+
+	const char* name;
+	if (!buffer_read_cstring(fdt_buf, curr_offset, &name))
+		return 0;
+
+	u32 name_len = strlen(name) + 1;
+
+	// Skip name of node
+	curr_offset = align_u32(curr_offset + name_len, sizeof(u32));
+
+	u32 max_offset = dt_get_struct_off() + dt_get_struct_size();
+
+	// Skip properties of node
+	u32 props_off = curr_offset;
+	while (curr_offset < max_offset) {
+		u32 tag;
+		if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
+			return 0;
+
+		if ((fdt_token_t)tag != FDT_PROP)
+			break;
+
+		u32 p_len;
+		if (!buffer_read_u32_be(fdt_buf, curr_offset + sizeof(u32), &p_len))
+			return 0;
+
+		curr_offset += 3 * sizeof(u32); // Skip tag, length, name_offset
+		curr_offset = align_u32(curr_offset + p_len, sizeof(u32));
+	}
+	u32 props_len = curr_offset - props_off;
+
+	curr_offset = align_u32(props_off + props_len, sizeof(u32));
+
+	u32 depth = 1;
+
+	while (curr_offset < max_offset) {
+		u32 tag;
+		if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
+			return 0;
+
+		u32 node_offset = curr_offset;
+
+		curr_offset += sizeof(fdt_token_t);
+		switch ((fdt_token_t)tag) {
+		case FDT_BEGIN_NODE:
+			if (depth == 0)
+				return node_offset;
+			else {
+				// Skip this node and ignore all nested nodes
+				curr_offset -= sizeof(fdt_token_t);
+				while (curr_offset < max_offset && depth > 0) {
+					u32 tag_internal;
+					if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag_internal))
+						return 0;
+
+					curr_offset += sizeof(fdt_token_t);
+
+					switch (tag_internal) {
+					case FDT_BEGIN_NODE:
+
+						depth += 1;
+						const char* new_name;
+						if (!buffer_read_cstring(fdt_buf, curr_offset, &new_name))
+							return 0;
+
+						u32 new_name_len = strlen(new_name) + 1;
+						// Skip name of node
+						curr_offset = align_u32(curr_offset + new_name_len, sizeof(u32));
+						break;
+
+					case FDT_END_NODE: depth -= 1; break;
+
+					case FDT_PROP:
+
+						// Go back one token to reuse the property skip
+						curr_offset -= sizeof(fdt_token_t);
+						u32 props_off = curr_offset;
+						while (curr_offset < max_offset) {
+							u32 tag;
+							if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
+								return 0;
+
+							if ((fdt_token_t)tag != FDT_PROP) {
+								break;
+							}
+
+							u32 p_len;
+							if (!buffer_read_u32_be(fdt_buf, curr_offset + 4, &p_len))
+								return 0;
+
+							curr_offset += 3 * sizeof(u32); // Skip tag, length, name_offset
+							curr_offset = align_u32(curr_offset + p_len, sizeof(u32));
+						}
+						u32 props_len = curr_offset - props_off;
+
+						curr_offset = align_u32(props_off + props_len, sizeof(u32));
+						break;
+
+					case FDT_NOP: continue;
+
+					case FDT_END:
+					default: // Unknown element type (not defined in v17)
+						DEBUG_PRINTF("Invalid FDT structure\n");
+						return 0;
+					}
+				}
+				break;
+			}
+
+		case FDT_NOP: continue;
+
+		case FDT_END_NODE: depth -= 1; break;
+		case FDT_END:      return 0; // No such node found
+
+		default:                // Unknown element type (not defined in v17)
+			DEBUG_PRINTF("Invalid FDT structure\n");
+			return 0;
+		}
+	}
+
+	return 0;
 }
 
 bool dt_get_node_name(const void* fdt, dt_node_t node, char* out, u32 out_size) {
@@ -227,7 +434,7 @@ bool dt_get_node_name(const void* fdt, dt_node_t node, char* out, u32 out_size) 
 	return true;
 }
 
-dt_prop_t dt_get_prop(const void* fdt, dt_node_t node, const char* prop_name) {
+dt_prop_t dt_get_prop_by_name(const void* fdt, dt_node_t node, const char* prop_name) {
 	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
 
 	u32 max_offset = dt_get_struct_off() + dt_get_struct_size();
@@ -277,7 +484,70 @@ dt_prop_t dt_get_prop(const void* fdt, dt_node_t node, const char* prop_name) {
 	return 0;
 }
 
-bool dt_get_prop_name(const void* fdt, dt_node_t prop, char* out, u32 out_size) {
+dt_prop_t dt_get_first_prop(const void* fdt, dt_node_t node) {
+	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
+
+	u32 curr_offset = node;
+
+	u32 tag;
+
+	// Check validity of node
+	if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag) || (fdt_token_t)tag != FDT_BEGIN_NODE)
+		return 0;
+
+	curr_offset += sizeof(fdt_token_t);
+
+	const char* name;
+	if (!buffer_read_cstring(fdt_buf, curr_offset, &name))
+		return 0;
+
+	u32 name_len = strlen(name) + 1;
+
+	// Skip name of node
+	curr_offset = align_u32(curr_offset + name_len, sizeof(u32));
+
+	if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
+		return 0;
+
+	// Node has no properties
+	if ((fdt_token_t)tag != FDT_PROP)
+		return 0;
+
+	return curr_offset;
+}
+
+dt_prop_t dt_get_next_prop(const void* fdt, dt_prop_t prop) {
+	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
+
+	u32 curr_offset = prop;
+
+	u32 tag;
+	if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
+		return 0;
+
+	// Check validity of prop
+	if ((fdt_token_t)tag != FDT_PROP)
+		return 0;
+
+	u32 p_len;
+	if (!buffer_read_u32_be(fdt_buf, curr_offset + sizeof(u32), &p_len))
+		return 0;
+
+	curr_offset += 3 * sizeof(u32); // Skip tag, length, name_offset
+	curr_offset = align_u32(curr_offset + p_len, sizeof(u32));
+
+	// Check if next token is a property
+	if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
+		return 0;
+
+	// Check validity of prop
+	if ((fdt_token_t)tag != FDT_PROP)
+		return 0;
+
+	return curr_offset;
+}
+
+bool dt_get_prop_name(const void* fdt, dt_prop_t prop, char* out, u32 out_size) {
 	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
 
 	u32 name_offset;
@@ -297,7 +567,7 @@ bool dt_get_prop_name(const void* fdt, dt_node_t prop, char* out, u32 out_size) 
 	return true;
 }
 
-buffer_t dt_get_prop_buffer(const void* fdt, dt_node_t prop) {
+buffer_t dt_get_prop_buffer(const void* fdt, dt_prop_t prop) {
 	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
 
 	u32 prop_len;
