@@ -5,9 +5,8 @@
 #include <stdbigos/string.h>
 #include <stdbigos/types.h>
 
+#include "dt_common.h"
 #include "dt_defines.h"
-
-// TODO: Put common operations like skipping properties in functions
 
 const char* dt_walk(const char* path, const char** name, u32* name_len) {
 	if (!path || path[0] != '/')
@@ -42,51 +41,13 @@ dt_node_t dt_get_node_in_subtree_by_path(const void* fdt, dt_node_t node, const 
 
 	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
 
-	u32 curr_offset = node;
-
-	u32 tag;
-
-	// Check validity of node
-	if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag) || (fdt_token_t)tag != FDT_BEGIN_NODE)
-		return 0;
-
-	curr_offset += sizeof(fdt_token_t);
-
-	const char* name;
-	if (!buffer_read_cstring(fdt_buf, curr_offset, &name))
-		return 0;
-
-	u32 name_len = strlen(name) + 1;
-
-	// Skip name of node
-	curr_offset = align_u32(curr_offset + name_len, sizeof(u32));
-
-	u32 max_offset = dt_get_struct_off() + dt_get_struct_size();
-
-	// Skip properties of node
-	u32 props_off = curr_offset;
-	while (curr_offset < max_offset) {
-		u32 tag;
-		if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
-			return 0;
-
-		if ((fdt_token_t)tag != FDT_PROP)
-			break;
-
-		u32 p_len;
-		if (!buffer_read_u32_be(fdt_buf, curr_offset + sizeof(u32), &p_len))
-			return 0;
-
-		curr_offset += 3 * sizeof(u32); // Skip tag, length, name_offset
-		curr_offset = align_u32(curr_offset + p_len, sizeof(u32));
-	}
-	u32 props_len = curr_offset - props_off;
-
-	curr_offset = align_u32(props_off + props_len, sizeof(u32));
+	u32 curr_offset = dt_skip_node_header(fdt, node);
 
 	const char* next_node = nullptr;
 	u32 node_name_len = 0;
 	node_path = dt_walk(node_path, &next_node, &node_name_len);
+
+	u32 max_offset = dt_get_struct_off() + dt_get_struct_size();
 
 	while (curr_offset < max_offset) {
 		u32 tag;
@@ -131,66 +92,7 @@ dt_node_t dt_get_node_in_subtree_by_path(const void* fdt, dt_node_t node, const 
 					return dt_get_node_in_subtree_by_path(fdt, node_offset, node_path);
 				}
 			} else {
-				// Skip this node
-				size_t depth = 1;
-				// Depth to ignore all nested nodes
-				while (curr_offset < max_offset && depth > 0) {
-					u32 tag;
-					if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
-						return 0;
-
-					curr_offset += sizeof(fdt_token_t);
-
-					switch (tag) {
-					case FDT_BEGIN_NODE:
-
-						depth += 1;
-						const char* new_name;
-						if (!buffer_read_cstring(fdt_buf, curr_offset, &new_name))
-							return 0;
-
-						u32 new_name_len = strlen(new_name) + 1;
-						// Skip name of node
-						curr_offset = align_u32(curr_offset + new_name_len, sizeof(u32));
-
-						break;
-
-					case FDT_END_NODE: depth -= 1; break;
-
-					case FDT_PROP:
-
-						// Go back one token to reuse the property skip
-						curr_offset -= sizeof(fdt_token_t);
-						u32 props_off = curr_offset;
-						while (curr_offset < max_offset) {
-							u32 tag;
-							if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
-								return 0;
-
-							if ((fdt_token_t)tag != FDT_PROP) {
-								break;
-							}
-
-							u32 p_len;
-							if (!buffer_read_u32_be(fdt_buf, curr_offset + 4, &p_len))
-								return 0;
-
-							curr_offset += 3 * sizeof(u32); // Skip tag, length, name_offset
-							curr_offset = align_u32(curr_offset + p_len, sizeof(u32));
-						}
-						u32 props_len = curr_offset - props_off;
-
-						curr_offset = align_u32(props_off + props_len, sizeof(u32));
-						break;
-
-					case FDT_NOP: continue;
-
-					case FDT_END:
-					default: // Unknown element type (not defined in v17)
-						DEBUG_PRINTF("Invalid FDT structure\n");
-						return 0;
-					}
-				}
+				curr_offset = dt_skip_nested_nodes(fdt, node_offset);
 			}
 			break;
 
@@ -216,47 +118,9 @@ dt_node_t dt_get_node_by_path(const void* fdt, const char* node_path) {
 dt_node_t dt_get_node_child(const void* fdt, dt_node_t node) {
 	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
 
-	u32 curr_offset = node;
-
-	u32 tag;
-
-	// Check validity of node
-	if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag) || (fdt_token_t)tag != FDT_BEGIN_NODE)
-		return 0;
-
-	curr_offset += sizeof(fdt_token_t);
-
-	const char* name;
-	if (!buffer_read_cstring(fdt_buf, curr_offset, &name))
-		return 0;
-
-	u32 name_len = strlen(name) + 1;
-
-	// Skip name of node
-	curr_offset = align_u32(curr_offset + name_len, sizeof(u32));
+	u32 curr_offset = dt_skip_node_header(fdt, node);
 
 	u32 max_offset = dt_get_struct_off() + dt_get_struct_size();
-
-	// Skip properties of node
-	u32 props_off = curr_offset;
-	while (curr_offset < max_offset) {
-		u32 tag;
-		if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
-			return 0;
-
-		if ((fdt_token_t)tag != FDT_PROP)
-			break;
-
-		u32 p_len;
-		if (!buffer_read_u32_be(fdt_buf, curr_offset + sizeof(u32), &p_len))
-			return 0;
-
-		curr_offset += 3 * sizeof(u32); // Skip tag, length, name_offset
-		curr_offset = align_u32(curr_offset + p_len, sizeof(u32));
-	}
-	u32 props_len = curr_offset - props_off;
-
-	curr_offset = align_u32(props_off + props_len, sizeof(u32));
 
 	while (curr_offset < max_offset) {
 		u32 tag;
@@ -286,49 +150,11 @@ dt_node_t dt_get_node_child(const void* fdt, dt_node_t node) {
 dt_node_t dt_get_node_sibling(const void* fdt, dt_node_t node) {
 	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
 
-	u32 curr_offset = node;
+	u32 curr_offset = dt_skip_node_header(fdt, node);
 
-	u32 tag;
-
-	// Check validity of node
-	if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag) || (fdt_token_t)tag != FDT_BEGIN_NODE)
-		return 0;
-
-	curr_offset += sizeof(fdt_token_t);
-
-	const char* name;
-	if (!buffer_read_cstring(fdt_buf, curr_offset, &name))
-		return 0;
-
-	u32 name_len = strlen(name) + 1;
-
-	// Skip name of node
-	curr_offset = align_u32(curr_offset + name_len, sizeof(u32));
+	bool not_nested = false;
 
 	u32 max_offset = dt_get_struct_off() + dt_get_struct_size();
-
-	// Skip properties of node
-	u32 props_off = curr_offset;
-	while (curr_offset < max_offset) {
-		u32 tag;
-		if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
-			return 0;
-
-		if ((fdt_token_t)tag != FDT_PROP)
-			break;
-
-		u32 p_len;
-		if (!buffer_read_u32_be(fdt_buf, curr_offset + sizeof(u32), &p_len))
-			return 0;
-
-		curr_offset += 3 * sizeof(u32); // Skip tag, length, name_offset
-		curr_offset = align_u32(curr_offset + p_len, sizeof(u32));
-	}
-	u32 props_len = curr_offset - props_off;
-
-	curr_offset = align_u32(props_off + props_len, sizeof(u32));
-
-	u32 depth = 1;
 
 	while (curr_offset < max_offset) {
 		u32 tag;
@@ -340,73 +166,16 @@ dt_node_t dt_get_node_sibling(const void* fdt, dt_node_t node) {
 		curr_offset += sizeof(fdt_token_t);
 		switch ((fdt_token_t)tag) {
 		case FDT_BEGIN_NODE:
-			if (depth == 0)
+			if (not_nested == true)
 				return node_offset;
 			else {
-				// Skip this node and ignore all nested nodes
-				curr_offset -= sizeof(fdt_token_t);
-				while (curr_offset < max_offset && depth > 0) {
-					u32 tag_internal;
-					if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag_internal))
-						return 0;
-
-					curr_offset += sizeof(fdt_token_t);
-
-					switch (tag_internal) {
-					case FDT_BEGIN_NODE:
-
-						depth += 1;
-						const char* new_name;
-						if (!buffer_read_cstring(fdt_buf, curr_offset, &new_name))
-							return 0;
-
-						u32 new_name_len = strlen(new_name) + 1;
-						// Skip name of node
-						curr_offset = align_u32(curr_offset + new_name_len, sizeof(u32));
-						break;
-
-					case FDT_END_NODE: depth -= 1; break;
-
-					case FDT_PROP:
-
-						// Go back one token to reuse the property skip
-						curr_offset -= sizeof(fdt_token_t);
-						u32 props_off = curr_offset;
-						while (curr_offset < max_offset) {
-							u32 tag;
-							if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
-								return 0;
-
-							if ((fdt_token_t)tag != FDT_PROP) {
-								break;
-							}
-
-							u32 p_len;
-							if (!buffer_read_u32_be(fdt_buf, curr_offset + 4, &p_len))
-								return 0;
-
-							curr_offset += 3 * sizeof(u32); // Skip tag, length, name_offset
-							curr_offset = align_u32(curr_offset + p_len, sizeof(u32));
-						}
-						u32 props_len = curr_offset - props_off;
-
-						curr_offset = align_u32(props_off + props_len, sizeof(u32));
-						break;
-
-					case FDT_NOP: continue;
-
-					case FDT_END:
-					default: // Unknown element type (not defined in v17)
-						DEBUG_PRINTF("Invalid FDT structure\n");
-						return 0;
-					}
-				}
+				curr_offset = dt_skip_nested_nodes(fdt, node_offset);
 				break;
 			}
 
 		case FDT_NOP: continue;
 
-		case FDT_END_NODE: depth -= 1; break;
+		case FDT_END_NODE: not_nested = true; break;
 		case FDT_END:      return 0; // No such node found
 
 		default:                // Unknown element type (not defined in v17)
@@ -461,7 +230,7 @@ dt_prop_t dt_get_prop_by_name(const void* fdt, dt_node_t node, const char* prop_
 			    !buffer_read_u32_be(fdt_buf, curr_offset + sizeof(u32), &name_offset))
 				return 0;
 
-			curr_offset += 8;
+			curr_offset += 2 * sizeof(u32);
 
 			const char* name;
 			if (!buffer_read_cstring(fdt_buf, str_offset + name_offset, &name))
@@ -487,33 +256,27 @@ dt_prop_t dt_get_prop_by_name(const void* fdt, dt_node_t node, const char* prop_
 dt_prop_t dt_get_first_prop(const void* fdt, dt_node_t node) {
 	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
 
-	u32 curr_offset = node;
+	u32 curr_offset = dt_skip_node_name(fdt, node);
 
 	u32 tag;
 
-	// Check validity of node
-	if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag) || (fdt_token_t)tag != FDT_BEGIN_NODE)
-		return 0;
+	u32 max_offset = dt_get_struct_off() + dt_get_struct_size();
 
-	curr_offset += sizeof(fdt_token_t);
+	while (curr_offset < max_offset) {
+		if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
+			return 0;
 
-	const char* name;
-	if (!buffer_read_cstring(fdt_buf, curr_offset, &name))
-		return 0;
+		switch ((fdt_token_t)tag) {
+		case FDT_PROP: return curr_offset;
 
-	u32 name_len = strlen(name) + 1;
+		case FDT_NOP: break;
 
-	// Skip name of node
-	curr_offset = align_u32(curr_offset + name_len, sizeof(u32));
+		// Something else before the first prop
+		default: return 0;
+		}
+	}
 
-	if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
-		return 0;
-
-	// Node has no properties
-	if ((fdt_token_t)tag != FDT_PROP)
-		return 0;
-
-	return curr_offset;
+	return 0;
 }
 
 dt_prop_t dt_get_next_prop(const void* fdt, dt_prop_t prop) {
@@ -536,15 +299,23 @@ dt_prop_t dt_get_next_prop(const void* fdt, dt_prop_t prop) {
 	curr_offset += 3 * sizeof(u32); // Skip tag, length, name_offset
 	curr_offset = align_u32(curr_offset + p_len, sizeof(u32));
 
-	// Check if next token is a property
-	if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
-		return 0;
+	u32 max_offset = dt_get_struct_off() + dt_get_struct_size();
 
-	// Check validity of prop
-	if ((fdt_token_t)tag != FDT_PROP)
-		return 0;
+	while (curr_offset < max_offset) {
+		if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
+			return 0;
 
-	return curr_offset;
+		switch ((fdt_token_t)tag) {
+		case FDT_PROP: return curr_offset;
+
+		case FDT_NOP: break;
+
+		// Something else before the next prop
+		default: return 0;
+		}
+	}
+
+	return 0;
 }
 
 bool dt_get_prop_name(const void* fdt, dt_prop_t prop, char* out, u32 out_size) {
