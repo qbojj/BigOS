@@ -1,8 +1,9 @@
 #ifndef DT_COMMON_H
 #define DT_COMMON_H
 
-#include <drivers/dt/dt.h>
 #include <stdbigos/types.h>
+
+#include "dt.h"
 
 // Offsets are of type u32
 

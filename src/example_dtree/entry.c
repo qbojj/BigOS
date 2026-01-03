@@ -1,18 +1,19 @@
 #include <debug/debug_stdio.h>
-#include <drivers/dt/dt.h>
+#include <dt/dt.h>
 #include <stdbigos/buffer.h>
 #include <stdbigos/types.h>
 
 void main([[maybe_unused]] u32 hartid, const void* fdt) {
 	int a;
+
 	if ((a = dt_init(fdt)) < 0) {
-		dprintf("DT_INIT FAILED %d", a);
+		DEBUG_PRINTF("DT_INIT FAILED %d", a);
 		return;
 	}
 
 	dt_node_t root = dt_get_root();
 	if (!root) {
-		dprintf("GETTING ROOT FAILED");
+		DEBUG_PRINTF("GETTING ROOT FAILED");
 		return;
 	}
 

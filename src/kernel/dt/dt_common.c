@@ -1,11 +1,11 @@
 #include "dt_common.h"
 
-#include <drivers/dt/dt.h>
 #include <stdbigos/bitutils.h>
 #include <stdbigos/buffer.h>
 #include <stdbigos/string.h>
 #include <stdbigos/types.h>
 
+#include "dt.h"
 #include "dt_defines.h"
 
 u32 dt_skip_node_name(const void* fdt, dt_node_t node) {

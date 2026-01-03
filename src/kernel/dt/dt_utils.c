@@ -1,8 +1,8 @@
-#include <drivers/dt/dt.h>
 #include <stdbigos/bitutils.h>
 #include <stdbigos/buffer.h>
 #include <stdbigos/types.h>
 
+#include "dt.h"
 #include "dt_defines.h"
 
 // Properties of the currently used fdt, in the future maybe use malloc for allocating and deallocating them?

@@ -1,10 +1,10 @@
 #include <debug/debug_stdio.h>
-#include <drivers/dt/dt.h>
 #include <stdbigos/bitutils.h>
 #include <stdbigos/buffer.h>
 #include <stdbigos/string.h>
 #include <stdbigos/types.h>
 
+#include "dt.h"
 #include "dt_common.h"
 #include "dt_defines.h"
 
