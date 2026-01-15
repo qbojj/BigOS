@@ -25,27 +25,31 @@ void main([[maybe_unused]] u32 hartid, const void* fdt) {
 
 	u32 child = dt_get_node_child(fdt, main_node);
 
-	char child_name[64];
+	buffer_t child_name = dt_get_node_name(fdt, child);
 
-	dt_get_node_name(fdt, child, child_name, 64);
+	const char* c_name;
+	(void)buffer_read_cstring(child_name, 0, &c_name);
 
-	DEBUG_PRINTF("Child: %s\n", child_name);
-
-	char sibling_name[64];
+	DEBUG_PRINTF("Child: %s\n", c_name);
 
 	u32 sibling = dt_get_node_sibling(fdt, main_node);
 
-	dt_get_node_name(fdt, sibling, sibling_name, 64);
+	buffer_t sibling_name = dt_get_node_name(fdt, sibling);
 
-	DEBUG_PRINTF("Sibling: %s\n", sibling_name);
+	const char* s_name;
+	(void)buffer_read_cstring(sibling_name, 0, &s_name);
+
+	DEBUG_PRINTF("Sibling: %s\n", s_name);
 
 	u32 main_prop = dt_get_prop_by_name(fdt, main_node, "#address-cells");
 
-	char m_prop_name[64];
+	buffer_t main_prop_name = dt_get_prop_name(fdt, main_prop);
 
-	dt_get_prop_name(fdt, main_prop, m_prop_name, 64);
+	const char* m_prop;
 
-	DEBUG_PRINTF("Main node prop: %s\n", m_prop_name);
+	(void)buffer_read_cstring(main_prop_name, 0, &m_prop);
+
+	DEBUG_PRINTF("Main node prop: %s\n", m_prop);
 
 	buffer_t buf = dt_get_prop_buffer(fdt, main_prop);
 
@@ -56,17 +60,21 @@ void main([[maybe_unused]] u32 hartid, const void* fdt) {
 
 	u32 first_prop = dt_get_first_prop(fdt, main_node);
 
-	char f_prop_name[64];
+	buffer_t first_prop_name = dt_get_prop_name(fdt, first_prop);
 
-	dt_get_prop_name(fdt, first_prop, f_prop_name, 64);
+	const char* f_prop;
 
-	DEBUG_PRINTF("First prop: %s\n", f_prop_name);
+	(void)buffer_read_cstring(first_prop_name, 0, &f_prop);
+
+	DEBUG_PRINTF("First prop: %s\n", f_prop);
 
 	u32 next_prop = dt_get_next_prop(fdt, main_prop);
 
-	char n_prop_name[64];
+	buffer_t next_prop_name = dt_get_prop_name(fdt, next_prop);
 
-	dt_get_prop_name(fdt, next_prop, n_prop_name, 64);
+	const char* n_prop;
 
-	DEBUG_PRINTF("Next prop: %s\n", n_prop_name);
+	(void)buffer_read_cstring(next_prop_name, 0, &n_prop);
+
+	DEBUG_PRINTF("Next prop: %s\n", n_prop);
 }

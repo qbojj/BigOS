@@ -43,6 +43,9 @@ dt_node_t dt_get_node_in_subtree_by_path(const void* fdt, dt_node_t node, const 
 
 	u32 curr_offset = dt_skip_node_header(fdt, node);
 
+	if (curr_offset == 0)
+		return 0;
+
 	const char* next_node = nullptr;
 	u32 node_name_len = 0;
 	node_path = dt_walk(node_path, &next_node, &node_name_len);
@@ -61,10 +64,12 @@ dt_node_t dt_get_node_in_subtree_by_path(const void* fdt, dt_node_t node, const 
 		case FDT_BEGIN_NODE:
 
 			const char* name;
-			if (!buffer_read_cstring(fdt_buf, curr_offset, &name))
+			u64 name_len;
+			if (!buffer_read_cstring_len(fdt_buf, curr_offset, &name, &name_len))
 				return 0;
 
-			u32 name_len = strlen(name) + 1;
+			// \0
+			name_len += 1;
 
 			curr_offset = align_u32(curr_offset + name_len, sizeof(u32));
 
@@ -76,12 +81,8 @@ dt_node_t dt_get_node_in_subtree_by_path(const void* fdt, dt_node_t node, const 
 				wrong_child = true;
 			}
 
-			size_t i = 0;
-			while (i < node_name_len && !wrong_child) {
-				if (next_node[i] != name[i])
-					wrong_child = true;
-
-				i += 1;
+			if (!wrong_child && memcmp(next_node, name, node_name_len) != 0) {
+				wrong_child = true;
 			}
 
 			if (!wrong_child) {
@@ -93,6 +94,9 @@ dt_node_t dt_get_node_in_subtree_by_path(const void* fdt, dt_node_t node, const 
 				}
 			} else {
 				curr_offset = dt_skip_nested_nodes(fdt, node_offset);
+
+				if (curr_offset == 0)
+					return 0;
 			}
 			break;
 
@@ -119,6 +123,9 @@ dt_node_t dt_get_node_child(const void* fdt, dt_node_t node) {
 	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
 
 	u32 curr_offset = dt_skip_node_header(fdt, node);
+
+	if (curr_offset == 0)
+		return 0;
 
 	u32 max_offset = dt_get_struct_off() + dt_get_struct_size();
 
@@ -152,6 +159,9 @@ dt_node_t dt_get_node_sibling(const void* fdt, dt_node_t node) {
 
 	u32 curr_offset = dt_skip_node_header(fdt, node);
 
+	if (curr_offset == 0)
+		return 0;
+
 	bool not_nested = false;
 
 	u32 max_offset = dt_get_struct_off() + dt_get_struct_size();
@@ -170,6 +180,8 @@ dt_node_t dt_get_node_sibling(const void* fdt, dt_node_t node) {
 				return node_offset;
 			else {
 				curr_offset = dt_skip_nested_nodes(fdt, node_offset);
+				if (curr_offset == 0)
+					return 0;
 				break;
 			}
 
@@ -187,20 +199,23 @@ dt_node_t dt_get_node_sibling(const void* fdt, dt_node_t node) {
 	return 0;
 }
 
-bool dt_get_node_name(const void* fdt, dt_node_t node, char* out, u32 out_size) {
+buffer_t dt_get_node_name(const void* fdt, dt_node_t node) {
 	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
 
+	u32 curr_offset = node;
+
+	u32 tag;
+
+	// Check validity of node
+	if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag) || (fdt_token_t)tag != FDT_BEGIN_NODE)
+		return make_buffer(nullptr, 0);
+
 	const char* name;
-	if (!buffer_read_cstring(fdt_buf, node + sizeof(fdt_token_t), &name))
-		return false;
+	u64 name_len;
+	if (!buffer_read_cstring_len(fdt_buf, curr_offset + sizeof(fdt_token_t), &name, &name_len))
+		return make_buffer(nullptr, 0);
 
-	// Buffer too small
-	if (strlen(name) + 1 > out_size)
-		return false;
-
-	strcpy(out, name);
-
-	return true;
+	return make_buffer(fdt + curr_offset + sizeof(fdt_token_t), name_len + 1);
 }
 
 dt_prop_t dt_get_prop_by_name(const void* fdt, dt_node_t node, const char* prop_name) {
@@ -257,6 +272,9 @@ dt_prop_t dt_get_first_prop(const void* fdt, dt_node_t node) {
 	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
 
 	u32 curr_offset = dt_skip_node_name(fdt, node);
+
+	if (curr_offset == 0)
+		return 0;
 
 	u32 tag;
 
@@ -318,24 +336,19 @@ dt_prop_t dt_get_next_prop(const void* fdt, dt_prop_t prop) {
 	return 0;
 }
 
-bool dt_get_prop_name(const void* fdt, dt_prop_t prop, char* out, u32 out_size) {
+buffer_t dt_get_prop_name(const void* fdt, dt_prop_t prop) {
 	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
 
 	u32 name_offset;
 	if (!buffer_read_u32_be(fdt_buf, prop + 2 * sizeof(fdt_token_t), &name_offset))
-		return false;
+		return make_buffer(nullptr, 0);
 
 	const char* name;
-	if (!buffer_read_cstring(fdt_buf, dt_get_strings_off() + name_offset, &name))
-		return false;
+	u64 name_len;
+	if (!buffer_read_cstring_len(fdt_buf, dt_get_strings_off() + name_offset, &name, &name_len))
+		return make_buffer(nullptr, 0);
 
-	// Buffer too small
-	if (strlen(name) + 1 > out_size)
-		return false;
-
-	strcpy(out, name);
-
-	return true;
+	return make_buffer(fdt + dt_get_strings_off() + name_offset, name_len + 1);
 }
 
 buffer_t dt_get_prop_buffer(const void* fdt, dt_prop_t prop) {

@@ -14,7 +14,7 @@ u32 dt_skip_node_name(const void* fdt, dt_node_t node);
 // >0 if success, 0 if error
 u32 dt_skip_node_properties(const void* fdt, u32 offset);
 
-// Skip node's tag, name and properties and return first aligned offset after them
+// Skip node's tag, name and properties and return first aligned offset after them, >0 if success, 0 if error
 u32 dt_skip_node_header(const void* fdt, dt_node_t node);
 
 // Skip an overarching node's nested nodes starting at the start of the first nested node, >0 if success, 0 if error
