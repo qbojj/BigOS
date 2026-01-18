@@ -1,14 +1,16 @@
 #include <debug/debug_stdio.h>
+#include <dt/dt.h>
 #include <stdbigos/bitutils.h>
 #include <stdbigos/buffer.h>
 #include <stdbigos/string.h>
 #include <stdbigos/types.h>
 
-#include "dt.h"
 #include "dt_common.h"
 #include "dt_defines.h"
 
-const char* dt_walk(const char* path, const char** name, u32* name_len) {
+// Returns the shortened path, while outputting the name with a pointer to it's start and length, nullptr if error
+// TODO: Maybe put this in some string lib
+static const char* dt_walk(const char* path, const char** name, u32* name_len) {
 	if (!path || path[0] != '/')
 		return nullptr;
 
@@ -35,11 +37,15 @@ const char* dt_walk(const char* path, const char** name, u32* name_len) {
 	return (*p) ? p : nullptr;
 }
 
-dt_node_t dt_get_node_in_subtree_by_path(const void* fdt, dt_node_t node, const char* node_path) {
-	if (!node)
-		node = dt_get_root();
+dt_node_t dt_get_node_in_subtree_by_path(const fdt_t* fdt, dt_node_t node, const char* node_path) {
+	if (!node) {
+		if (fdt->root_node)
+			node = fdt->root_node;
+		else
+			return 0;
+	}
 
-	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
+	buffer_t fdt_buf = fdt->fdt_buffer;
 
 	u32 curr_offset = dt_skip_node_header(fdt, node);
 
@@ -50,7 +56,7 @@ dt_node_t dt_get_node_in_subtree_by_path(const void* fdt, dt_node_t node, const 
 	u32 node_name_len = 0;
 	node_path = dt_walk(node_path, &next_node, &node_name_len);
 
-	u32 max_offset = dt_get_struct_off() + dt_get_struct_size();
+	u32 max_offset = fdt->struct_off + fdt->struct_size;
 
 	while (curr_offset < max_offset) {
 		u32 tag;
@@ -115,19 +121,19 @@ dt_node_t dt_get_node_in_subtree_by_path(const void* fdt, dt_node_t node, const 
 	return 0;
 }
 
-dt_node_t dt_get_node_by_path(const void* fdt, const char* node_path) {
+dt_node_t dt_get_node_by_path(const fdt_t* fdt, const char* node_path) {
 	return dt_get_node_in_subtree_by_path(fdt, (dt_node_t)0, node_path);
 }
 
-dt_node_t dt_get_node_child(const void* fdt, dt_node_t node) {
-	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
+dt_node_t dt_get_node_child(const fdt_t* fdt, dt_node_t node) {
+	buffer_t fdt_buf = fdt->fdt_buffer;
 
 	u32 curr_offset = dt_skip_node_header(fdt, node);
 
 	if (curr_offset == 0)
 		return 0;
 
-	u32 max_offset = dt_get_struct_off() + dt_get_struct_size();
+	u32 max_offset = fdt->struct_off + fdt->struct_size;
 
 	while (curr_offset < max_offset) {
 		u32 tag;
@@ -150,12 +156,11 @@ dt_node_t dt_get_node_child(const void* fdt, dt_node_t node) {
 			return 0;
 		}
 	}
-
 	return 0;
 }
 
-dt_node_t dt_get_node_sibling(const void* fdt, dt_node_t node) {
-	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
+dt_node_t dt_get_node_sibling(const fdt_t* fdt, dt_node_t node) {
+	buffer_t fdt_buf = fdt->fdt_buffer;
 
 	u32 curr_offset = dt_skip_node_header(fdt, node);
 
@@ -164,7 +169,7 @@ dt_node_t dt_get_node_sibling(const void* fdt, dt_node_t node) {
 
 	bool not_nested = false;
 
-	u32 max_offset = dt_get_struct_off() + dt_get_struct_size();
+	u32 max_offset = fdt->struct_off + fdt->struct_size;
 
 	while (curr_offset < max_offset) {
 		u32 tag;
@@ -199,8 +204,8 @@ dt_node_t dt_get_node_sibling(const void* fdt, dt_node_t node) {
 	return 0;
 }
 
-buffer_t dt_get_node_name(const void* fdt, dt_node_t node) {
-	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
+buffer_t dt_get_node_name(const fdt_t* fdt, dt_node_t node) {
+	buffer_t fdt_buf = fdt->fdt_buffer;
 
 	u32 curr_offset = node;
 
@@ -215,15 +220,15 @@ buffer_t dt_get_node_name(const void* fdt, dt_node_t node) {
 	if (!buffer_read_cstring_len(fdt_buf, curr_offset + sizeof(fdt_token_t), &name, &name_len))
 		return make_buffer(nullptr, 0);
 
-	return make_buffer(fdt + curr_offset + sizeof(fdt_token_t), name_len + 1);
+	return buffer_sub_buffer(fdt_buf, curr_offset + sizeof(fdt_token_t), name_len + 1);
 }
 
-dt_prop_t dt_get_prop_by_name(const void* fdt, dt_node_t node, const char* prop_name) {
-	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
+dt_prop_t dt_get_prop_by_name(const fdt_t* fdt, dt_node_t node, const char* prop_name) {
+	buffer_t fdt_buf = fdt->fdt_buffer;
 
-	u32 max_offset = dt_get_struct_off() + dt_get_struct_size();
+	u32 max_offset = fdt->struct_off + fdt->struct_size;
 
-	u32 str_offset = dt_get_strings_off();
+	u32 str_offset = fdt->strings_off;
 
 	u32 curr_offset = node + sizeof(fdt_token_t);
 
@@ -268,8 +273,8 @@ dt_prop_t dt_get_prop_by_name(const void* fdt, dt_node_t node, const char* prop_
 	return 0;
 }
 
-dt_prop_t dt_get_first_prop(const void* fdt, dt_node_t node) {
-	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
+dt_prop_t dt_get_first_prop(const fdt_t* fdt, dt_node_t node) {
+	buffer_t fdt_buf = fdt->fdt_buffer;
 
 	u32 curr_offset = dt_skip_node_name(fdt, node);
 
@@ -278,7 +283,7 @@ dt_prop_t dt_get_first_prop(const void* fdt, dt_node_t node) {
 
 	u32 tag;
 
-	u32 max_offset = dt_get_struct_off() + dt_get_struct_size();
+	u32 max_offset = fdt->struct_off + fdt->struct_size;
 
 	while (curr_offset < max_offset) {
 		if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
@@ -297,8 +302,8 @@ dt_prop_t dt_get_first_prop(const void* fdt, dt_node_t node) {
 	return 0;
 }
 
-dt_prop_t dt_get_next_prop(const void* fdt, dt_prop_t prop) {
-	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
+dt_prop_t dt_get_next_prop(const fdt_t* fdt, dt_prop_t prop) {
+	buffer_t fdt_buf = fdt->fdt_buffer;
 
 	u32 curr_offset = prop;
 
@@ -317,7 +322,7 @@ dt_prop_t dt_get_next_prop(const void* fdt, dt_prop_t prop) {
 	curr_offset += 3 * sizeof(u32); // Skip tag, length, name_offset
 	curr_offset = align_u32(curr_offset + p_len, sizeof(u32));
 
-	u32 max_offset = dt_get_struct_off() + dt_get_struct_size();
+	u32 max_offset = fdt->struct_off + fdt->struct_size;
 
 	while (curr_offset < max_offset) {
 		if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
@@ -336,8 +341,8 @@ dt_prop_t dt_get_next_prop(const void* fdt, dt_prop_t prop) {
 	return 0;
 }
 
-buffer_t dt_get_prop_name(const void* fdt, dt_prop_t prop) {
-	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
+buffer_t dt_get_prop_name(const fdt_t* fdt, dt_prop_t prop) {
+	buffer_t fdt_buf = fdt->fdt_buffer;
 
 	u32 name_offset;
 	if (!buffer_read_u32_be(fdt_buf, prop + 2 * sizeof(fdt_token_t), &name_offset))
@@ -345,18 +350,18 @@ buffer_t dt_get_prop_name(const void* fdt, dt_prop_t prop) {
 
 	const char* name;
 	u64 name_len;
-	if (!buffer_read_cstring_len(fdt_buf, dt_get_strings_off() + name_offset, &name, &name_len))
+	if (!buffer_read_cstring_len(fdt_buf, fdt->strings_off + name_offset, &name, &name_len))
 		return make_buffer(nullptr, 0);
 
-	return make_buffer(fdt + dt_get_strings_off() + name_offset, name_len + 1);
+	return buffer_sub_buffer(fdt_buf, fdt->strings_off + name_offset, name_len + 1);
 }
 
-buffer_t dt_get_prop_buffer(const void* fdt, dt_prop_t prop) {
-	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
+buffer_t dt_get_prop_buffer(const fdt_t* fdt, dt_prop_t prop) {
+	buffer_t fdt_buf = fdt->fdt_buffer;
 
 	u32 prop_len;
 	if (!buffer_read_u32_be(fdt_buf, prop + sizeof(fdt_token_t), &prop_len))
 		return make_buffer(nullptr, 0);
 
-	return make_buffer(fdt + prop + 3 * sizeof(fdt_token_t), prop_len);
+	return buffer_sub_buffer(fdt_buf, prop + 3 * sizeof(fdt_token_t), prop_len);
 }

@@ -1,5 +1,5 @@
-#ifndef DT_DEFINES_H
-#define DT_DEFINES_H
+#ifndef SRC_LIB_DT_DEFINES
+#define SRC_LIB_DT_DEFINES
 
 // Magic number and offsets for the device tree
 
@@ -27,4 +27,4 @@ typedef enum : u32 {
 	FDT_END = 0x9
 } fdt_token_t;
 
-#endif // !DT_DEFINES_H
+#endif // !SRC_LIB_DT_DEFINES

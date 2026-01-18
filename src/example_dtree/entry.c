@@ -5,45 +5,40 @@
 
 void main([[maybe_unused]] u32 hartid, const void* fdt) {
 	int a;
+	fdt_t fdt_obj;
 
-	if ((a = dt_init(fdt)) < 0) {
+	if ((a = dt_init(fdt, &fdt_obj)) < 0) {
 		DEBUG_PRINTF("DT_INIT FAILED %d", a);
-		return;
-	}
-
-	dt_node_t root = dt_get_root();
-	if (!root) {
-		DEBUG_PRINTF("GETTING ROOT FAILED");
 		return;
 	}
 
 	const char* path = "/cpus";
 
-	u32 main_node = dt_get_node_by_path(fdt, path);
+	u32 main_node = dt_get_node_by_path(&fdt_obj, path);
 
 	DEBUG_PRINTF("Main node: %u\n", main_node);
 
-	u32 child = dt_get_node_child(fdt, main_node);
+	u32 child = dt_get_node_child(&fdt_obj, main_node);
 
-	buffer_t child_name = dt_get_node_name(fdt, child);
+	buffer_t child_name = dt_get_node_name(&fdt_obj, child);
 
 	const char* c_name;
 	(void)buffer_read_cstring(child_name, 0, &c_name);
 
 	DEBUG_PRINTF("Child: %s\n", c_name);
 
-	u32 sibling = dt_get_node_sibling(fdt, main_node);
+	u32 sibling = dt_get_node_sibling(&fdt_obj, main_node);
 
-	buffer_t sibling_name = dt_get_node_name(fdt, sibling);
+	buffer_t sibling_name = dt_get_node_name(&fdt_obj, sibling);
 
 	const char* s_name;
 	(void)buffer_read_cstring(sibling_name, 0, &s_name);
 
 	DEBUG_PRINTF("Sibling: %s\n", s_name);
 
-	u32 main_prop = dt_get_prop_by_name(fdt, main_node, "#address-cells");
+	u32 main_prop = dt_get_prop_by_name(&fdt_obj, main_node, "#address-cells");
 
-	buffer_t main_prop_name = dt_get_prop_name(fdt, main_prop);
+	buffer_t main_prop_name = dt_get_prop_name(&fdt_obj, main_prop);
 
 	const char* m_prop;
 
@@ -51,16 +46,16 @@ void main([[maybe_unused]] u32 hartid, const void* fdt) {
 
 	DEBUG_PRINTF("Main node prop: %s\n", m_prop);
 
-	buffer_t buf = dt_get_prop_buffer(fdt, main_prop);
+	buffer_t buf = dt_get_prop_buffer(&fdt_obj, main_prop);
 
 	u32 prop_val;
 	(void)buffer_read_u32_be(buf, 0, &prop_val);
 
 	DEBUG_PRINTF("Prop val:%u\n", prop_val);
 
-	u32 first_prop = dt_get_first_prop(fdt, main_node);
+	u32 first_prop = dt_get_first_prop(&fdt_obj, main_node);
 
-	buffer_t first_prop_name = dt_get_prop_name(fdt, first_prop);
+	buffer_t first_prop_name = dt_get_prop_name(&fdt_obj, first_prop);
 
 	const char* f_prop;
 
@@ -68,9 +63,9 @@ void main([[maybe_unused]] u32 hartid, const void* fdt) {
 
 	DEBUG_PRINTF("First prop: %s\n", f_prop);
 
-	u32 next_prop = dt_get_next_prop(fdt, main_prop);
+	u32 next_prop = dt_get_next_prop(&fdt_obj, main_prop);
 
-	buffer_t next_prop_name = dt_get_prop_name(fdt, next_prop);
+	buffer_t next_prop_name = dt_get_prop_name(&fdt_obj, next_prop);
 
 	const char* n_prop;
 

@@ -1,15 +1,15 @@
 #include "dt_common.h"
 
+#include <dt/dt.h>
 #include <stdbigos/bitutils.h>
 #include <stdbigos/buffer.h>
 #include <stdbigos/string.h>
 #include <stdbigos/types.h>
 
-#include "dt.h"
 #include "dt_defines.h"
 
-u32 dt_skip_node_name(const void* fdt, dt_node_t node) {
-	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
+u32 dt_skip_node_name(const fdt_t* fdt, dt_node_t node) {
+	buffer_t fdt_buf = fdt->fdt_buffer;
 
 	u32 curr_offset = node;
 
@@ -33,12 +33,12 @@ u32 dt_skip_node_name(const void* fdt, dt_node_t node) {
 	return curr_offset;
 }
 
-u32 dt_skip_node_properties(const void* fdt, u32 offset) {
-	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
+u32 dt_skip_node_properties(const fdt_t* fdt, u32 offset) {
+	buffer_t fdt_buf = fdt->fdt_buffer;
 
 	u32 curr_offset = offset;
 
-	u32 max_offset = dt_get_struct_off() + dt_get_struct_size();
+	u32 max_offset = fdt->struct_off + fdt->struct_size;
 
 	// Skip properties of node
 	u32 props_off = curr_offset;
@@ -64,7 +64,7 @@ u32 dt_skip_node_properties(const void* fdt, u32 offset) {
 	return curr_offset;
 }
 
-u32 dt_skip_node_header(const void* fdt, dt_node_t node) {
+u32 dt_skip_node_header(const fdt_t* fdt, dt_node_t node) {
 	u32 curr_offset = node;
 
 	u32 name_skip = dt_skip_node_name(fdt, curr_offset);
@@ -78,12 +78,12 @@ u32 dt_skip_node_header(const void* fdt, dt_node_t node) {
 	return prop_skip;
 }
 
-u32 dt_skip_nested_nodes(const void* fdt, dt_node_t nested_node) {
-	buffer_t fdt_buf = make_buffer(fdt, dt_get_total_size());
+u32 dt_skip_nested_nodes(const fdt_t* fdt, dt_node_t nested_node) {
+	buffer_t fdt_buf = fdt->fdt_buffer;
 
 	u32 curr_offset = nested_node;
 
-	u32 max_offset = dt_get_struct_off() + dt_get_struct_size();
+	u32 max_offset = fdt->struct_off + fdt->struct_size;
 
 	// To actually go in for the first nested node
 	bool first = true;
