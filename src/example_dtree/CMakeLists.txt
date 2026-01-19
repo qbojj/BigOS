@@ -9,7 +9,7 @@ target_link_options(example_dtree PRIVATE -static -T ${LINKER_SCRIPT})
 set_target_properties(example_dtree
     PROPERTIES LINK_DEPENDS ${LINKER_SCRIPT})
 
-target_link_libraries(example_dtree PRIVATE stdbigos dt Debug)
+target_link_libraries(example_dtree PRIVATE stdbigos device_tree_access Debug)
 
 COMPILE_BINARY(example_dtree)
 ADD_QEMU_TARGET(example_dtree)

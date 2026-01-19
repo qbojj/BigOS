@@ -26,16 +26,19 @@ int dt_init(const void* fdt, fdt_t* obj) {
 		return -1;
 	}
 
+	u32 last_comp_version;
+
 	if (!buffer_read_u32_be(fdt_buf, FDT_OFF_TOTAL_SIZE, &obj->total_size) ||
 	    !buffer_read_u32_be(fdt_buf, FDT_OFF_OFF_DT_STRUCT, &obj->struct_off) ||
 	    !buffer_read_u32_be(fdt_buf, FDT_OFF_OFF_DT_STRINGS, &obj->strings_off) ||
 	    !buffer_read_u32_be(fdt_buf, FDT_OFF_SIZE_DT_STRUCT, &obj->struct_size) ||
-	    !buffer_read_u32_be(fdt_buf, FDT_OFF_VERSION, &obj->fdt_version)) {
+	    !buffer_read_u32_be(fdt_buf, FDT_OFF_VERSION, &obj->fdt_version) ||
+	    !buffer_read_u32_be(fdt_buf, FDT_OFF_VERSION, &last_comp_version)) {
 		obj->fdt_buffer = make_buffer(nullptr, 0);
 		return -2;
 	}
 
-	if (obj->fdt_version > FDT_COMPATIBLE_VERSION) {
+	if (FDT_COMPATIBLE_VERSION < last_comp_version || FDT_COMPATIBLE_VERSION > obj->fdt_version) {
 		obj->fdt_buffer = make_buffer(nullptr, 0);
 		return -3;
 	}
