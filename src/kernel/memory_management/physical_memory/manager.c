@@ -1,11 +1,17 @@
-#include "memory_managment/include/physical_memory/manager.h"
+#include "memory_management/include/physical_memory/manager.h"
 
 #include <logging/klog.h>
-#include <memory_managment/common_mem_types.h>
 #include <stdbigos/types.h>
 
 #include "allocator.h"
+#include "memory_management/common_types.h"
 #include "stdbigos/math.h"
+
+// Defs
+
+// NOLINTBEGIN
+static const u32 _4kB = 0x1000;
+// NOLINTEND
 
 // Globals
 
@@ -92,7 +98,7 @@ static error_t find_free_subregion(const memory_area_t* res_regs, u32 count, phy
 // 0x1000 = 2^12 = 4096 = 4kiB
 
 u64 phys_mem_get_frame_size_in_bytes(frame_size_t fs) {
-	return 0x1000ull * POW2(fs);
+	return (u64)_4kB * POW2(fs);
 }
 // NOLINTBEGIN(readability-function-cognitive-complexity)
 // NOTE: This is due to KLOG_DO_RETURN MACRO, something will have to be done about it.
@@ -106,7 +112,7 @@ error_t phys_mem_init(physical_memory_region_t prim_reg, const memory_area_t* re
 	}
 #endif
 	physical_memory_region_t res_regs_alloc_region = {0};
-	error_t err = find_free_subregion(res_regs, res_regs_count, prim_reg, 0x1000, &res_regs_alloc_region);
+	error_t err = find_free_subregion(res_regs, res_regs_count, prim_reg, _4kB, &res_regs_alloc_region);
 	if (err)
 		KLOG_DO_RETURN(err, KLRF_TRACE_ERR | KLRF_END_BLOCK);
 	g_reserved_regions.count = 0;
@@ -126,7 +132,7 @@ error_t phys_mem_init(physical_memory_region_t prim_reg, const memory_area_t* re
 		KLOG_DO_RETURN(err, KLRF_TRACE_ERR | KLRF_END_BLOCK);
 
 	physical_memory_region_t allocation_regions = {0};
-	err = find_free_subregion(reserved_areas_array, g_reserved_regions.count, prim_reg, 0x1000, &allocation_regions);
+	err = find_free_subregion(reserved_areas_array, g_reserved_regions.count, prim_reg, _4kB, &allocation_regions);
 	if (err)
 		KLOG_DO_RETURN(err, KLRF_TRACE_ERR | KLRF_END_BLOCK);
 	err = add_area(memory_area_expand_to_alignment_pow2(allocation_regions, 12), reserved_areas_array,

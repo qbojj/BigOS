@@ -6,14 +6,9 @@
 #define ALIGN_DOWN(x, align)     (((x) / (align) * (align)))
 #define ALIGN_DOWN_POW2(x, pow2) (((x) & ~((1 << pow2) - 1)))
 
-#define POW2(x) (1 << x)
+#define POW2(x) (1 << (x))
 
-#ifndef min
-	#define min(a, b) ((a) < (b) ? (a) : (b))
-#endif
-
-#ifndef max
-	#define max(a, b) ((a) > (b) ? (a) : (b))
-#endif
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 #endif

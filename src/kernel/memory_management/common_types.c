@@ -1,4 +1,4 @@
-#include "common_mem_types.h"
+#include "common_types.h"
 
 #include <stdbigos/math.h>
 

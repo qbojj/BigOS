@@ -1,7 +1,7 @@
-#ifndef BIGOS_KERNEL_MEMORY_MANAGMENT_PHYSICAL_MEMORY_ALLOCATOR
-#define BIGOS_KERNEL_MEMORY_MANAGMENT_PHYSICAL_MEMORY_ALLOCATOR
+#ifndef BIGOS_KERNEL_MEMORY_MANAGEMENT_PHYSICAL_MEMORY_ALLOCATOR
+#define BIGOS_KERNEL_MEMORY_MANAGEMENT_PHYSICAL_MEMORY_ALLOCATOR
 
-#include <memory_managment/include/physical_memory/manager.h>
+#include <memory_management/include/physical_memory/manager.h>
 #include <stdbigos/error.h>
 
 [[nodiscard]]
