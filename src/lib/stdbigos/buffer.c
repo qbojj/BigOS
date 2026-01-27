@@ -59,5 +59,5 @@ buffer_t buffer_sub_buffer(buffer_t buf, size_t offset, size_t max_size) {
 		return make_buffer(nullptr, 0);
 
 	size_t rest = buf.size - offset;
-	return make_buffer((const u8*)buf.data + offset, min(rest, max_size));
+	return make_buffer((const u8*)buf.data + offset, MIN(rest, max_size));
 }
