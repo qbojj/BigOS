@@ -1,5 +1,4 @@
-#include "common_types.h"
-
+#include <memory_management/include/common_types.h>
 #include <stdbigos/math.h>
 
 memory_area_t memory_region_get_area(memory_region_t reg) {

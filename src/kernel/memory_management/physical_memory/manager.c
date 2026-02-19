@@ -4,7 +4,7 @@
 #include <stdbigos/types.h>
 
 #include "allocator.h"
-#include "memory_management/common_types.h"
+#include "memory_management/include/common_types.h"
 #include "stdbigos/math.h"
 
 // Defs

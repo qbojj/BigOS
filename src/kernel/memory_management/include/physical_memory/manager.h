@@ -1,7 +1,7 @@
 #ifndef BIGOS_KERNEL_MEMORY_MANAGEMENT_PHYSICAL_MEMORY_MANAGER
 #define BIGOS_KERNEL_MEMORY_MANAGEMENT_PHYSICAL_MEMORY_MANAGER
 
-#include <memory_management/common_types.h>
+#include <memory_management/include/common_types.h>
 #include <stdbigos/error.h>
 #include <stdbigos/types.h>
 
