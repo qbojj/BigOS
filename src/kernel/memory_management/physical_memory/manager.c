@@ -5,6 +5,7 @@
 #include <stdbigos/string.h>
 
 #include "allocator.h"
+#include "hal/memory_regions.h"
 #include "stdbigos/address.h"
 #include "stdbigos/error.h"
 
@@ -20,6 +21,11 @@ typedef struct {
 } header_storage_node_t;
 
 static __phys header_storage_node_t* g_root_header_storage_node = nullptr;
+
+bool get_next_reserved_region(void* user, memory_area_t* areaOUT) {
+	hal_reserved_memory_iterator_t* iter = user;
+	return hal_get_next_reserved_region(iter, areaOUT) == ERR_NONE;
+}
 
 static error_t init_header_storage_node(physical_memory_region_t storage_region) {
 	header_storage_node_t* effective_hsn = physical_to_effective(g_root_header_storage_node);
@@ -77,26 +83,34 @@ u64 phys_mem_get_frame_size_in_bytes(frame_size_t fs) {
 
 // NOLINTBEGIN readability-function-cognitive-complexity
 // TODO: Deal with this nolint
-error_t phys_mem_init(const physical_memory_region_t* pmrs, size_t pmr_count, const memory_area_t* reserved_areas,
-                      size_t reserved_areas_count) {
+error_t phys_mem_init() {
 	static bool s_is_init = false;
 	if (s_is_init)
 		KLOG_DO_RETURN(ERR_REPEATED_INITIALIZATION, KLRF_TRACE_ERR);
-	if (pmr_count == 0)
-		KLOG_DO_RETURN(ERR_BAD_ARG, KLRF_TRACE_ERR);
-
 	KLOG_INDENT_BLOCK_START;
 
-	for (size_t i = 0; i < pmr_count; ++i) {
-		physical_memory_region_t pmr = pmrs[i];
+	hal_memory_iterator_t pmr_iterator = {0};
+	error_t err = hal_get_memory_regions_iterator(&pmr_iterator);
+	if (err == ERR_NOT_INITIALIZED) {
+		KLOGLN_ERROR("HAL failed with error: %d during pmm initialization", err);
+		return ERR_NOT_VALID;
+	}
+
+	physical_memory_region_t pmr = {0};
+	while (hal_get_next_memory_region(&pmr_iterator, &pmr) == ERR_NONE) {
 		pmr = physical_memory_region_shrink_to_alignment(pmr, 0x1000);
 
 		memory_area_t header_area = {0};
 		memory_area_t pmr_area = physical_memory_region_to_area(pmr);
-		error_t err = pmallocator_get_header(pmr_area, reserved_areas, reserved_areas_count, &header_area);
+		hal_reserved_memory_iterator_t iter = {0};
+		err = hal_get_reserved_regions_iterator(&iter);
 		if (err) {
-			KLOGLN_WARNING("Failed to get header region of memory region [%p - %p]", pmrs[i].addr,
-			               pmrs[i].addr + pmrs[i].size);
+			KLOGLN_ERROR("Failed to reset reserved memory regions iterator");
+			return ERR_NOT_VALID;
+		}
+		err = pmallocator_get_header(pmr_area, get_next_reserved_region, &iter, &header_area);
+		if (err) {
+			KLOGLN_WARNING("Failed to get header region of memory region [%p - %p]", pmr.addr, pmr.addr + pmr.size);
 			continue;
 		}
 
@@ -106,10 +120,14 @@ error_t phys_mem_init(const physical_memory_region_t* pmrs, size_t pmr_count, co
 		};
 		memory_region_t header_eff_reg = physical_memory_region_to_effective(header_pmr);
 
-		err = pmallocator_init_region(pmr_area, header_eff_reg, reserved_areas, reserved_areas_count);
+		err = hal_get_reserved_regions_iterator(&iter);
 		if (err) {
-			KLOGLN_WARNING("Failed to init header region of memory region [%p - %p]", pmrs[i].addr,
-			               pmrs[i].addr + pmrs[i].size);
+			KLOGLN_ERROR("Failed to reset reserved memory regions iterator");
+			return ERR_NOT_VALID;
+		}
+		err = pmallocator_init_region(pmr_area, header_eff_reg, get_next_reserved_region, &iter);
+		if (err) {
+			KLOGLN_WARNING("Failed to init header region of memory region [%p - %p]", pmr.addr, pmr.addr + pmr.size);
 			continue;
 		}
 		if (g_root_header_storage_node == nullptr) {
@@ -120,7 +138,7 @@ error_t phys_mem_init(const physical_memory_region_t* pmrs, size_t pmr_count, co
 			if (err) {
 				KLOGLN_WARNING("Failed to allocate a frame of size %zu from region [%p - %p]. This region will be "
 				               "ignored from now",
-				               new_area.size, pmrs[i].addr, pmrs[i].addr + pmrs[i].size);
+				               new_area.size, pmr.addr, pmr.addr + pmr.size);
 				continue;
 			}
 

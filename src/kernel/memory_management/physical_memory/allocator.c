@@ -2,21 +2,21 @@
 
 #include "stdbigos/error.h"
 
-error_t pmallocator_get_header(memory_area_t area, const memory_area_t* reserved_areas, u32 count,
+error_t pmallocator_get_header(memory_area_t area, get_next_reserved_region_t enumerator, void* user,
                                memory_area_t* headerOUT) {
 	(void)area;
-	(void)reserved_areas;
-	(void)count;
+	(void)enumerator;
+	(void)user;
 	(void)headerOUT;
 	return ERR_NOT_IMPLEMENTED;
 }
 
-error_t pmallocator_init_region(memory_area_t area, memory_region_t header, const memory_area_t* reserved_areas,
-                                u32 count) {
+error_t pmallocator_init_region(memory_area_t area, memory_region_t header, get_next_reserved_region_t enumerator,
+                                void* user) {
 	(void)area;
 	(void)header;
-	(void)reserved_areas;
-	(void)count;
+	(void)enumerator;
+	(void)user;
 	return ERR_NOT_IMPLEMENTED;
 }
 

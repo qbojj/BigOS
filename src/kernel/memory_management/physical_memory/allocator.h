@@ -8,6 +8,13 @@
 #include "stdbigos/types.h"
 
 /**
+ *
+ *	@retval true @p areaOUT is valid
+ *	@retval false no more reserved regions
+ * */
+typedef bool (*get_next_reserved_region_t)(void* user, memory_area_t* areaOUT);
+
+/**
  *	@ingroup kmm
  *	@ingroup palloc
  *
@@ -15,14 +22,14 @@
  * needs
  *
  *	@param area The phiscal memory area to allocate from. Will be aligned to at least 4KiB boundry
- *	@param reserved_areas An array of reserved areas from which allocations are not allowed
- *	@param count The count of reserved areas
+ *	@param iterator A pointer to a function that returns reserved regions. Should be nullptr if there are no reserved
+ *					regions.
  *
  *	@retval ERR_NONE Success
- *	@retval ERR_BAD_ARG if @p reserved_areas is null and @p count is non zero or vice versa.
+ *	@retval ERR_OUT_OF_MEMORY Failed to find enough space for the header reagion
  * */
-[[gnu::nonnull(4)]]
-error_t pmallocator_get_header(memory_area_t area, const memory_area_t* reserved_areas, u32 count,
+[[gnu::nonnull(3)]]
+error_t pmallocator_get_header(memory_area_t area, get_next_reserved_region_t enumerator, void* user,
                                memory_area_t* headerOUT);
 
 /**
@@ -31,19 +38,17 @@ error_t pmallocator_get_header(memory_area_t area, const memory_area_t* reserved
  *
  *	@param area The phiscal memory area to allocate from. Will be aligned to at least 4KiB boundry
  *	@param header A memory region of size at least `pmallocator_get_header_size(@p area)` aligned to 4KiB boundry
- *	@param reserved_areas An array of reserved areas from which allocations are not allowed
- *	@param count The count of reserved areas
+ *	@param iterator A pointer to a function that returns reserved regions. Should be nullptr if there are no reserved
+ *					regions.
  *
  *	@retval ERR_NONE Success
- *	@retval ERR_BAD_ARG if @p reserved_areas is null and @p count is non zero or vice versa.
  *
- *	@note The header region overlaps with area, it must be marked and not be allocated from.
- * area.
+ *	@note The header region overlaps with area, it must be marked and not be allocated from. area.
  *	@note All pointers will break upon change of address space, because this is initialized before and will be used
- * after the change, no pointers can be stored inside the `header` region.
+ *		  after the change, no pointers can be stored inside the `header` region.
  * */
-error_t pmallocator_init_region(memory_area_t area, memory_region_t header, const memory_area_t* reserved_areas,
-                                u32 count);
+error_t pmallocator_init_region(memory_area_t area, memory_region_t header, get_next_reserved_region_t enumerator,
+                                void* user);
 
 /**
  *	@ingroup kmm
@@ -61,7 +66,7 @@ error_t pmallocator_init_region(memory_area_t area, memory_region_t header, cons
  *
  *	@note 4KiB frame (or @p frame_order = 12) must be a valid frame size.
  * */
-[[gnu::nonnull]]
+[[gnu::nonnull(3)]]
 error_t pmallocator_allocate(u8 frame_order, memory_region_t header, memory_area_t* areaOUT);
 
 /**
