@@ -5,7 +5,10 @@ copyright: Copyright © 2025 BigOS
 nav:
   - Home: index.md
   - About: about.md
+  - Build System: build_system.md
   - Issues: https://github.com/Operacja-System/BigOS/issues
+  - Contributing: contributing_rules.md
+  - Acronyms: acronyms.md
 
 theme:
   name: mkdocs
