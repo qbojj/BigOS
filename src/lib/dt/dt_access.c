@@ -163,51 +163,20 @@ const char* dt_get_node_name_ptr(const fdt_t* fdt, dt_node_t node) {
 }
 
 dt_prop_t dt_get_prop_by_name(const fdt_t* fdt, dt_node_t node, const char* prop_name) {
-	buffer_t fdt_buf = fdt->fdt_buffer;
+	if (!node && !fdt->root_node)
+		return 0;
+	if (fdt->root_node)
+		node = fdt->root_node;
 
-	u32 max_offset = fdt->struct_off + fdt->struct_size;
-
-	u32 str_offset = fdt->strings_off;
-
-	u32 curr_offset = node + sizeof(fdt_token_t);
-
-	while (curr_offset < max_offset) {
-		u32 tag;
-
-		if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
-			return 0;
-		u32 prop_offset = curr_offset;
-
-		curr_offset += sizeof(fdt_token_t);
-
-		switch ((fdt_token_t)tag) {
-		case FDT_PROP:
-			u32 p_len;
-			u32 name_offset;
-
-			if (!buffer_read_u32_be(fdt_buf, curr_offset + 0, &p_len) ||
-			    !buffer_read_u32_be(fdt_buf, curr_offset + sizeof(u32), &name_offset))
-				return 0;
-
-			curr_offset += 2 * sizeof(u32);
-
-			const char* name;
-			if (!buffer_read_cstring(fdt_buf, str_offset + name_offset, &name))
-				return 0;
-
-			if (!strcmp(name, prop_name))
-				return prop_offset;
-
-			curr_offset = align_u32(curr_offset + p_len, sizeof(u32));
-
-			break;
-
-		case FDT_NOP: continue;
-
-		case FDT_BEGIN_NODE:
-		case FDT_END_NODE:
-		case FDT_END:        return 0; // No such node found
+	buffer_t name = make_buffer(prop_name, strlen(prop_name));
+	dt_prop_t prop = dt_get_first_prop(fdt, node);
+	while (prop) {
+		buffer_t child_name = dt_get_node_name(fdt, node);
+		if (buffer_equal(child_name, name)) {
+			return prop;
 		}
+
+		prop = dt_get_next_prop(fdt, prop);
 	}
 	return 0;
 }
