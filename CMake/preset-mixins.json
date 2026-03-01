@@ -20,7 +20,7 @@
         {
             "name": "compile-commands",
             "hidden": true,
-            "environment": {
+            "cacheVariables": {
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
             }
         },
@@ -48,42 +48,42 @@
         {
             "name": "debug-type",
             "hidden": true,
-            "environment": {
+            "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug"
             }
         },
         {
             "name": "release-type",
             "hidden": true,
-            "environment": {
+            "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }
         },
         {
             "name": "release-size-type",
             "hidden": true,
-            "environment": {
+            "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "MinSizeRel"
             }
         },
         {
             "name": "release-debug-type",
             "hidden": true,
-            "environment": {
+            "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo"
             }
         },
         {
           "name": "build-release-lto",
           "hidden": true,
-          "environment": {
+          "cacheVariables": {
             "CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE": "ON"
           }
         },
         {
           "name": "build-lto",
           "hidden": true,
-          "environment": {
+          "cacheVariables": {
             "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON"
           }
         }

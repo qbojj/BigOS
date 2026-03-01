@@ -44,7 +44,7 @@ void _Exit([[maybe_unused]] int return_code) {
 	while (1) wfi();
 }
 
-[[noreturn]]
+[[noreturn, gnu::used]]
 void _start(u32 hartid, const void* fdt) {
 	memset(&__bss_start, 0, &__bss_end - &__bss_start);
 
