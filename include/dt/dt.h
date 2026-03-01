@@ -43,6 +43,7 @@ dt_node_t dt_get_node_sibling(const fdt_t* fdt, dt_node_t node);
 
 // Get a node's name as a buffer in fdt, valid buffer if success, invalid buffer if error
 buffer_t dt_get_node_name(const fdt_t* fdt, dt_node_t node);
+const char* dt_get_node_name_ptr(const fdt_t* fdt, dt_node_t node);
 
 // Get a node's prop_name property in fdt, >0 if success, 0 if error
 dt_prop_t dt_get_prop_by_name(const fdt_t* fdt, dt_node_t node, const char* prop_name);
@@ -56,6 +57,7 @@ dt_prop_t dt_get_next_prop(const fdt_t* fdt, dt_prop_t prop);
 
 // Get a prop's name as a buffer in fdt, valid buffer if success, invalid buffer if error
 buffer_t dt_get_prop_name(const fdt_t* fdt, dt_prop_t prop);
+const char* dt_get_prop_name_ptr(const fdt_t* fdt, dt_prop_t prop);
 
 // Get a buffer for prop's data
 buffer_t dt_get_prop_buffer(const fdt_t* fdt, dt_prop_t prop);

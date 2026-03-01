@@ -54,4 +54,10 @@ bool buffer_read_cstring(buffer_t buf, size_t offset, const char** out_str);
 [[nodiscard]]
 buffer_t buffer_sub_buffer(buffer_t buf, size_t offset, size_t max_size);
 
+[[nodiscard]]
+int buffer_memcmp(buffer_t lhs, buffer_t rhs);
+
+[[nodiscard]]
+bool buffer_equal(buffer_t lhs, buffer_t rhs);
+
 #endif

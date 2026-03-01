@@ -5,7 +5,7 @@
 #include <stdbigos/types.h>
 
 // NOLINTBEGIN
-extern u8 bss_start[];
+extern u8 bss_start;
 extern u8 bss_end;
 // NOLINTEND
 
@@ -40,9 +40,11 @@ void int_handler() {
 	}
 }
 
-[[noreturn, gnu::used, clang::suppress]]
+[[noreturn, gnu::used]]
 void start() {
-	memset(bss_start, '\0', &bss_end - bss_start);
+	const size_t bss_sz = (uintptr_t)&bss_end - (uintptr_t)&bss_start;
+
+	memset(&bss_start, '\0', bss_sz);
 
 	// register handler
 	CSR_WRITE(mtvec, int_handler);

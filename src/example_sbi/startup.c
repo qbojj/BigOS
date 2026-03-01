@@ -17,7 +17,7 @@ typedef void (*function_t)(void);
 // See linker.lds
 
 // NOLINTBEGIN
-extern u8 __bss_start[];
+extern u8 __bss_start;
 extern u8 __bss_end;
 
 extern function_t __preinit_array_start;
@@ -28,6 +28,7 @@ extern function_t __init_array_end;
 
 extern function_t __fini_array_start;
 extern function_t __fini_array_end;
+// NOLINTEND
 
 extern int main(u32 hartid, const void* fdt);
 
@@ -66,7 +67,8 @@ static void _call_destructors() {
 
 [[gnu::section(".init"), noreturn, gnu::used]]
 static void _start(u32 hartid, const void* fdt) {
-	memset(__bss_start, 0, &__bss_end - __bss_start);
+	size_t bss_size = (uintptr_t)&__bss_end - (uintptr_t)&__bss_start;
+	memset(&__bss_start, 0, bss_size);
 	_call_constructors();
 
 	int rc = main(hartid, fdt);
@@ -74,4 +76,3 @@ static void _start(u32 hartid, const void* fdt) {
 	_call_destructors();
 	_Exit(rc);
 }
-// NOLINTEND
