@@ -2,10 +2,10 @@
 #include <stdarg.h>
 #include <stdbigos/stdio.h>
 
-static volatile unsigned char* uart = (volatile unsigned char*)0x10000000;
+static volatile unsigned char* g_uart = (volatile unsigned char*)0x10000000;
 
 void dputc(char c) {
-	*uart = c;
+	*g_uart = c;
 }
 
 void dputs(const char* s) {
