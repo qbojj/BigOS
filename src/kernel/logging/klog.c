@@ -19,17 +19,35 @@ void klog_indent_decrease() {
 		--g_indent_level;
 }
 
-void klog(klog_severity_level_t loglvl, const char* fmt, ...) {
-	(void)loglvl;
+static void klogv(klog_severity_level_t loglvl, const char* fmt, va_list va) {
 	(void)fmt;
-	va_list args;
-	va_start(args, fmt);
+	(void)va;
+
 	if (loglvl > KLSL_TRACE) {
 		KLOGLN_ERROR("Invalid loglvl passed to klog");
-		return;
+		loglvl = KLSL_ERROR;
 	}
+
 	DEBUG_PUTGAP(g_indent_level);
 	DEBUG_PRINTF("%s ", g_prefixes[loglvl]);
-	DEBUG_VPRINTF(fmt, args);
+	DEBUG_VPRINTF(fmt, va);
+}
+
+static void kloglnv(klog_severity_level_t loglvl, const char* fmt, va_list va) {
+	klogv(loglvl, fmt, va);
+	DEBUG_PUTC('\n');
+}
+
+void klog(klog_severity_level_t loglvl, const char* fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+	klogv(loglvl, fmt, args);
+	va_end(args);
+}
+
+void klogln(klog_severity_level_t loglvl, const char* fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+	kloglnv(loglvl, fmt, args);
 	va_end(args);
 }
