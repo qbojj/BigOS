@@ -4,15 +4,17 @@
 #include <stdbigos/trap.h>
 #include <stdbigos/types.h>
 
+// NOLINTBEGIN
 extern u8 bss_start[];
 extern u8 bss_end;
+// NOLINTEND
 
-static const u64 clint_base = 0x02000000;
+static const u64 g_clint_base = 0x02000000;
 
-static volatile u64* mtime = (u64*)(clint_base + 0xBFF8);
-static volatile u64* mtimecmp = (u64*)(clint_base + 0x4000);
+static volatile u64* g_mtime = (u64*)(g_clint_base + 0xBFF8);
+static volatile u64* g_mtimecmp = (u64*)(g_clint_base + 0x4000);
 
-static const u64 quant = 50000llu;
+static const u64 g_quant = 50000llu;
 
 void main() {
 	for (u32 i = 0;; ++i) dprintf("hello OS %u\n", i);
@@ -28,7 +30,7 @@ void int_handler() {
 		switch (int_no) {
 		case IntMTimer:
 			dputs("\n\tgot timer interrupt\n");
-			mtimecmp[hartid()] = *mtime + quant;
+			g_mtimecmp[hartid()] = *g_mtime + g_quant;
 			break;
 		default: dprintf("\n\tunknown interrupt (%ld)\n", int_no); break;
 		}
@@ -38,7 +40,7 @@ void int_handler() {
 	}
 }
 
-[[noreturn, gnu::used]]
+[[noreturn, gnu::used, clang::suppress]]
 void start() {
 	memset(bss_start, '\0', &bss_end - bss_start);
 
@@ -46,7 +48,7 @@ void start() {
 	CSR_WRITE(mtvec, int_handler);
 
 	// request a timer interrupt
-	mtimecmp[hartid()] = *mtime + quant;
+	g_mtimecmp[hartid()] = *g_mtime + g_quant;
 
 	// set MIE in mstatus
 	CSR_SET(mstatus, 8);
@@ -60,7 +62,7 @@ void start() {
 }
 
 [[gnu::section(".init"), gnu::naked]]
-void _start() {
+void _start() { // NOLINT
 	__asm__(".option push\n\t"
 	        ".option norelax\n\t"
 	        "la    gp, __global_pointer$\n\t"

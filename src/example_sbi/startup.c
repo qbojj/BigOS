@@ -15,6 +15,8 @@ typedef void (*function_t)(void);
 
 // These symbols are defined by the linker script.
 // See linker.lds
+
+// NOLINTBEGIN
 extern u8 __bss_start[];
 extern u8 __bss_end;
 
@@ -72,3 +74,4 @@ static void _start(u32 hartid, const void* fdt) {
 	_call_destructors();
 	_Exit(rc);
 }
+// NOLINTEND

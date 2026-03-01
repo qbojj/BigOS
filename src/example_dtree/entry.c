@@ -4,10 +4,10 @@
 #include <stdbigos/types.h>
 
 void main([[maybe_unused]] u32 hartid, const void* fdt) {
-	int a;
 	fdt_t fdt_obj;
 
-	if ((a = dt_init(fdt, &fdt_obj)) < 0) {
+	int a = dt_init(fdt, &fdt_obj);
+	if (a < 0) {
 		DEBUG_PRINTF("DT_INIT FAILED %d", a);
 		return;
 	}

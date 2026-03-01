@@ -6,6 +6,7 @@ Checks: >
     google-runtime-int,
     -misc-no-recursion,
     -readability-magic-numbers,
+    -readability-math-missing-parentheses,
     -clang-analyzer-security.insecureAPI.strcpy,
     -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
     -bugprone-easily-swappable-parameters,

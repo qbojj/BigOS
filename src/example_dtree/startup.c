@@ -13,6 +13,8 @@
 // Generic C function pointer.
 typedef void (*function_t)(void);
 
+// NOLINTBEGIN
+
 // These symbols are defined by the linker script.
 // See linker.lds
 extern u8 __bss_start [[gnu::weak]][];
@@ -27,10 +29,12 @@ extern function_t __init_array_end [[gnu::weak]][];
 extern function_t __fini_array_start [[gnu::weak]][];
 extern function_t __fini_array_end [[gnu::weak]][];
 
+// NOLINTEND
+
 extern int main(u32 hartid, const void* fdt);
 
 [[gnu::section(".init.enter"), gnu::naked]]
-void _enter(void) {
+void _enter(void) { // NOLINT
 	__asm__ volatile(".option push\n\t"
 	                 ".option norelax\n\t"
 	                 "la    gp, __global_pointer$\n\t"
@@ -40,7 +44,7 @@ void _enter(void) {
 }
 
 [[noreturn, gnu::noinline]]
-void _Exit([[maybe_unused]] int return_code) {
+void _Exit([[maybe_unused]] int return_code) { // NOLINT
 	while (1) wfi();
 }
 
