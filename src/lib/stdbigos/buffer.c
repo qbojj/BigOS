@@ -64,7 +64,11 @@ buffer_t buffer_sub_buffer(buffer_t buf, size_t offset, size_t max_size) {
 
 int buffer_memcmp(buffer_t lhs, buffer_t rhs) {
 	size_t sz = MIN(lhs.size, rhs.size);
-	return memcmp(lhs.data, rhs.data, sz);
+	int ret = memcmp(lhs.data, rhs.data, sz);
+	if (ret) return ret;
+	if (lhs.size < rhs.size) return -1;
+	if (lhs.size > rhs.size) return 1;
+	return 0;
 }
 
 bool buffer_equal(buffer_t lhs, buffer_t rhs) {
