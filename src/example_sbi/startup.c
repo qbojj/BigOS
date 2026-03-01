@@ -16,7 +16,7 @@ typedef void (*function_t)(void);
 // These symbols are defined by the linker script.
 // See linker.lds
 
-// NOLINTBEGIN
+// NOLINTBEGIN(readability-identifier-naming)
 extern u8 __bss_start;
 extern u8 __bss_end;
 
@@ -28,7 +28,6 @@ extern function_t __init_array_end;
 
 extern function_t __fini_array_start;
 extern function_t __fini_array_end;
-// NOLINTEND
 
 extern int main(u32 hartid, const void* fdt);
 
@@ -47,6 +46,7 @@ static void _Exit([[maybe_unused]] int return_code) {
 	while (1) wfi();
 }
 
+// NOLINTBEGIN(clang-analyzer-security.ArrayBound)
 [[gnu::section(".init")]]
 static void _call_constructors() {
 	for (const function_t* entry = &__preinit_array_start; entry < &__preinit_array_end; ++entry) {
@@ -76,3 +76,5 @@ static void _start(u32 hartid, const void* fdt) {
 	_call_destructors();
 	_Exit(rc);
 }
+// NOLINTEND(clang-analyzer-security.ArrayBound)
+// NOLINTEND(readability-identifier-naming)

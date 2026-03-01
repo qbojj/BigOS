@@ -4,10 +4,10 @@
 #include <stdbigos/trap.h>
 #include <stdbigos/types.h>
 
-// NOLINTBEGIN
+// NOLINTBEGIN(readability-identifier-naming)
 extern u8 bss_start;
 extern u8 bss_end;
-// NOLINTEND
+// NOLINTEND(readability-identifier-naming)
 
 static const u64 g_clint_base = 0x02000000;
 
@@ -64,7 +64,7 @@ void start() {
 }
 
 [[gnu::section(".init"), gnu::naked]]
-void _start() { // NOLINT
+void _start() { // NOLINT(readability-identifier-naming)
 	__asm__(".option push\n\t"
 	        ".option norelax\n\t"
 	        "la    gp, __global_pointer$\n\t"
