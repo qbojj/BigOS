@@ -17,14 +17,14 @@ typedef struct {
 	phys_addr_t addr __sized_by(size);
 } physical_memory_region_t;
 
-static inline memory_area_t pmr_to_area(physical_memory_region_t region) {
+static inline memory_area_t phys_mem_reg_to_area(physical_memory_region_t region) {
 	memory_area_t area;
 	area.addr = (uintptr_t)region.addr;
 	area.size = region.size;
 	return area;
 }
 
-static inline physical_memory_region_t area_to_pmr(memory_area_t area) {
+static inline physical_memory_region_t area_to_phys_mem_reg(memory_area_t area) {
 	physical_memory_region_t region;
 	region.addr = (phys_addr_t)area.addr;
 	region.size = area.size;
@@ -35,26 +35,23 @@ static inline void* physical_to_effective([[maybe_unused]] __phys void* addr) {
 	return nullptr;
 } // TODO: this is here temporarly
 
-// NOLINTBEGIN
-// NOTE: Clang tidy has problem with k being lowercase
 typedef enum : u8 {
-	FRAME_SIZE_4kB = 0,
-	FRAME_SIZE_8kB = 1,
-	FRAME_SIZE_16kB = 2,
-	FRAME_SIZE_32kB = 3,
-	FRAME_SIZE_64kB = 4,
-	FRAME_SIZE_128kB = 5,
-	FRAME_SIZE_256kB = 6,
-	FRAME_SIZE_512kB = 7,
-	FRAME_SIZE_1MB = 8,
-	FRAME_SIZE_2MB = 9,
-	FRAME_SIZE_1GB = 18,
-} frame_size_t; // NOTE: value of frame_size_t is 4kB + 2 ^ (frame_size)
-// NOLINTEND
+	FRAME_SIZE_4KiB = 0,
+	FRAME_SIZE_8KiB = 1,
+	FRAME_SIZE_16KiB = 2,
+	FRAME_SIZE_32KiB = 3,
+	FRAME_SIZE_64KiB = 4,
+	FRAME_SIZE_128KiB = 5,
+	FRAME_SIZE_256KiB = 6,
+	FRAME_SIZE_512KiB = 7,
+	FRAME_SIZE_1MiB = 8,
+	FRAME_SIZE_2MiB = 9,
+	FRAME_SIZE_1GiB = 18,
+} frame_size_t; // NOTE: value of frame_size_t is 4KiB + 2 ^ (frame_size)
 
 u64 phys_mem_get_frame_size_in_bytes(frame_size_t fs);
 
-error_t phys_mem_init(physical_memory_region_t prim_reg, const memory_area_t* res_regs, u16 res_regs_count);
+error_t phys_mem_init(physical_memory_region_t region, const memory_area_t* reserved_regions, u16 reserved_regs_count);
 
 error_t phys_mem_add_region(physical_memory_region_t reg);
 

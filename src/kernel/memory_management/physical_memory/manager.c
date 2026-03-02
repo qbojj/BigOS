@@ -9,11 +9,7 @@
 #include "stdbigos/error.h"
 #include "stdbigos/math.h"
 
-// Defs
-
-// NOLINTBEGIN
-static const u32 _4kB = 0x1000;
-// NOLINTEND
+const u64 g_4KiB = 0x1000;
 
 // Globals
 
@@ -79,7 +75,7 @@ static error_t find_free_subregion(const memory_area_t* res_regs, u32 count, phy
 	while (reg.addr < reg_end) {
 		found = true;
 		for (u32 i = 0; i < count; ++i) {
-			if (do_memory_areas_overlap(pmr_to_area(reg), res_regs[i])) {
+			if (do_memory_areas_overlap(phys_mem_reg_to_area(reg), res_regs[i])) {
 				found = false;
 				break;
 			}
@@ -97,14 +93,13 @@ static error_t find_free_subregion(const memory_area_t* res_regs, u32 count, phy
 
 // Public
 
-// 0x1000 = 2^12 = 4096 = 4kiB
+// 0x1000 = 2^12 = 4096 = 4KiB
 
 u64 phys_mem_get_frame_size_in_bytes(frame_size_t fs) {
-	return (u64)_4kB * POW2(fs);
+	return g_4KiB * POW2(fs);
 }
-// NOLINTBEGIN(readability-function-cognitive-complexity)
-// NOTE: This is due to KLOG_DO_RETURN MACRO, something will have to be done about it.
-error_t phys_mem_init(physical_memory_region_t prim_reg, const memory_area_t* res_regs, u16 res_regs_count) {
+error_t phys_mem_init(physical_memory_region_t primary_region, const memory_area_t* reserved_regions,
+                      u16 reserved_regs_count) {
 	KLOG_INDENT_BLOCK_START;
 	KLOGLN_NOTE("Initializing physical memory manager...");
 #ifdef __DEBUG__
@@ -114,7 +109,8 @@ error_t phys_mem_init(physical_memory_region_t prim_reg, const memory_area_t* re
 	}
 #endif
 	physical_memory_region_t res_regs_alloc_region = {0};
-	error_t err = find_free_subregion(res_regs, res_regs_count, prim_reg, _4kB, &res_regs_alloc_region);
+	error_t err =
+	    find_free_subregion(reserved_regions, reserved_regs_count, primary_region, g_4KiB, &res_regs_alloc_region);
 	if (err)
 		KLOG_DO_RETURN(err, KLRF_TRACE_ERR | KLRF_END_BLOCK);
 	g_reserved_regions.count = 0;
@@ -122,23 +118,24 @@ error_t phys_mem_init(physical_memory_region_t prim_reg, const memory_area_t* re
 	g_reserved_regions.data = res_regs_alloc_region.addr;
 	memory_area_t* reserved_areas_array = get_reserved_areas_array();
 
-	for (u16 i = 0; i < res_regs_count; ++i) {
-		err = add_area(memory_area_expand_to_alignment_pow2(res_regs[i], 12), reserved_areas_array,
+	for (u16 i = 0; i < reserved_regs_count; ++i) {
+		err = add_area(memory_area_expand_to_alignment_pow2(reserved_regions[i], 12), reserved_areas_array,
 		               &g_reserved_regions.count, g_reserved_regions.max_count);
 		if (err)
 			KLOG_DO_RETURN(err, KLRF_TRACE_ERR | KLRF_END_BLOCK);
 	}
-	err = add_area(memory_area_expand_to_alignment_pow2(pmr_to_area(res_regs_alloc_region), 12), reserved_areas_array,
-	               &g_reserved_regions.count, g_reserved_regions.max_count);
+	err = add_area(memory_area_expand_to_alignment_pow2(phys_mem_reg_to_area(res_regs_alloc_region), 12),
+	               reserved_areas_array, &g_reserved_regions.count, g_reserved_regions.max_count);
 	if (err)
 		KLOG_DO_RETURN(err, KLRF_TRACE_ERR | KLRF_END_BLOCK);
 
 	physical_memory_region_t allocation_regions = {0};
-	err = find_free_subregion(reserved_areas_array, g_reserved_regions.count, prim_reg, _4kB, &allocation_regions);
+	err = find_free_subregion(reserved_areas_array, g_reserved_regions.count, primary_region, g_4KiB,
+	                          &allocation_regions);
 	if (err)
 		KLOG_DO_RETURN(err, KLRF_TRACE_ERR | KLRF_END_BLOCK);
-	err = add_area(memory_area_expand_to_alignment_pow2(pmr_to_area(allocation_regions), 12), reserved_areas_array,
-	               &g_reserved_regions.count, g_reserved_regions.max_count);
+	err = add_area(memory_area_expand_to_alignment_pow2(phys_mem_reg_to_area(allocation_regions), 12),
+	               reserved_areas_array, &g_reserved_regions.count, g_reserved_regions.max_count);
 	if (err)
 		KLOG_DO_RETURN(err, KLRF_TRACE_ERR | KLRF_END_BLOCK);
 	g_allocation_regions.count = 0;
@@ -149,19 +146,18 @@ error_t phys_mem_init(physical_memory_region_t prim_reg, const memory_area_t* re
 	KLOGLN_NOTE("Physical memory manager initialized!");
 	KLOG_DO_RETURN(err, KLRF_END_BLOCK);
 }
-// NOLINTEND(readability-function-cognitive-complexity)
 
 error_t phys_mem_add_region(physical_memory_region_t reg) {
 	KLOG_INDENT_BLOCK_START;
 	KLOGLN_TRACE("Adding a region [%p - %p] to physical memory manager...", reg.addr, reg.addr + reg.size);
 	memory_area_t* reserved_areas_array = get_reserved_areas_array();
-	size_t header_size = pmallocator_get_header_size(pmr_to_area(reg));
+	size_t header_size = pmallocator_get_header_size(phys_mem_reg_to_area(reg));
 	physical_memory_region_t header_reg = {0};
 	KLOGLN_TRACE("Allocating header region...");
 	error_t err = find_free_subregion(reserved_areas_array, g_reserved_regions.count, reg, header_size, &header_reg);
 	if (err)
 		KLOG_DO_RETURN(err, KLRF_TRACE_ERR | KLRF_END_BLOCK);
-	reg = area_to_pmr(memory_area_shrink_to_alignment_pow2(pmr_to_area(reg), 12));
+	reg = area_to_phys_mem_reg(memory_area_shrink_to_alignment_pow2(phys_mem_reg_to_area(reg), 12));
 	KLOGLN_TRACE("Region aligned to [%p - %p]", reg.addr, reg.addr + reg.size);
 
 	memory_region_pair_t* mem_regs = get_allocation_regions_array();
@@ -172,12 +168,13 @@ error_t phys_mem_add_region(physical_memory_region_t reg) {
 
 	KLOGLN_TRACE("Initializing header region...");
 	memory_region_t eff_header_reg = physical_region_to_effective(header_reg);
-	err = pmallocator_init_region(pmr_to_area(reg), eff_header_reg, reserved_areas_array, g_reserved_regions.count);
+	err = pmallocator_init_region(phys_mem_reg_to_area(reg), eff_header_reg, reserved_areas_array,
+	                              g_reserved_regions.count);
 	if (err)
 		KLOG_DO_RETURN(err, KLRF_TRACE_ERR | KLRF_END_BLOCK);
 
 	KLOGLN_TRACE("Adding a reserved region...");
-	err = add_area(memory_area_expand_to_alignment_pow2(pmr_to_area(header_reg), 12), reserved_areas_array,
+	err = add_area(memory_area_expand_to_alignment_pow2(phys_mem_reg_to_area(header_reg), 12), reserved_areas_array,
 	               &g_reserved_regions.count, g_reserved_regions.max_count);
 	if (err)
 		KLOG_DO_RETURN(err, KLRF_TRACE_ERR | KLRF_END_BLOCK);
@@ -196,7 +193,8 @@ error_t phys_mem_alloc_frame(frame_size_t frame_size, phys_addr_t* addrOUT) {
 	for (u32 i = 0; i < g_allocation_regions.count; ++i) {
 		memory_region_pair_t* alloc_regs_array = get_allocation_regions_array();
 		memory_region_t header_reg = physical_region_to_effective(alloc_regs_array[i].header);
-		error_t err = pmallocator_allocate(frame_size, &out, pmr_to_area(alloc_regs_array[i].allocatable), header_reg);
+		error_t err =
+		    pmallocator_allocate(frame_size, &out, phys_mem_reg_to_area(alloc_regs_array[i].allocatable), header_reg);
 		if (err) {
 			KLOG_DO_RETURN(err, KLRF_TRACE_ERR);
 		}
@@ -213,7 +211,7 @@ error_t phys_mem_free_frame(phys_addr_t addr) {
 		const physical_memory_region_t* alloc_reg = &alloc_regs_array[i].allocatable;
 		if (alloc_reg->addr >= addr && addr < alloc_reg->addr + alloc_reg->size) {
 			memory_region_t header_reg = physical_region_to_effective(alloc_regs_array[i].header);
-			error_t err = pmallocator_free(addr, pmr_to_area(alloc_regs_array[i].allocatable), header_reg);
+			error_t err = pmallocator_free(addr, phys_mem_reg_to_area(alloc_regs_array[i].allocatable), header_reg);
 			if (err)
 				KLOG_DO_RETURN(err, KLRF_TRACE_ERR);
 			return ERR_NONE;
