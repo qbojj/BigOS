@@ -5,8 +5,8 @@
 #include <stdbigos/types.h>
 
 // NOLINTBEGIN(readability-identifier-naming)
-extern u8 bss_start;
-extern u8 bss_end;
+extern u8 bss_start[];
+extern u8 bss_end[];
 // NOLINTEND(readability-identifier-naming)
 
 static const u64 g_clint_base = 0x02000000;
@@ -42,9 +42,9 @@ void int_handler() {
 
 [[noreturn, gnu::used]]
 void start() {
-	const size_t bss_sz = (uintptr_t)&bss_end - (uintptr_t)&bss_start;
+	const size_t bss_sz = (uintptr_t)bss_end - (uintptr_t)bss_start;
 
-	memset(&bss_start, '\0', bss_sz);
+	memset(bss_start, '\0', bss_sz);
 
 	// register handler
 	CSR_WRITE(mtvec, int_handler);
