@@ -8,117 +8,51 @@
 #include "dt_common.h"
 #include "dt_defines.h"
 
-// Returns the shortened path, while outputting the name with a pointer to it's start and length, nullptr if error
-// TODO: Maybe put this in some string lib
-static const char* dt_walk(const char* path, const char** name, u32* name_len) {
-	if (!path || path[0] != '/')
-		return nullptr;
+static buffer_t buffer_strtok(const char** path, const char* sep) {
+	if (!path)
+		return make_buffer(nullptr, 0);
 
-	const char* p = path;
+	const char* p = *path;
+	p += strspn(p, sep);
 
-	// Skip leading slashes
-	while (*p == '/') p++;
+	if (*p == '\0') {
+		*path = nullptr;
+		return make_buffer(nullptr, 0);
+	}
 
-	if (*p == '\0')
-		return nullptr;
+	size_t sz = strcspn(p, sep);
 
-	const char* start = p;
-	while (*p && *p != '/') p++;
-
-	*name = start;
-	*name_len = (u32)(p - start);
-
-	while (*p == '/') p += 1;
-
-	// If this is the last node, dt_walk will return the null terminator
-	if (*p != '\0')
-		p -= 1;
-
-	return (*p) ? p : nullptr;
+	*path = p + sz;
+	return make_buffer(p, sz);
 }
 
 dt_node_t dt_get_node_in_subtree_by_path(const fdt_t* fdt, dt_node_t node, const char* node_path) {
-	if (!node) {
-		if (fdt->root_node)
-			node = fdt->root_node;
-		else
-			return 0;
-	}
-
-	buffer_t fdt_buf = fdt->fdt_buffer;
-
-	u32 curr_offset = dt_skip_node_header(fdt, node);
-
-	if (curr_offset == 0)
+	if (!node && !fdt->root_node)
 		return 0;
+	if (fdt->root_node)
+		node = fdt->root_node;
 
-	const char* next_node = nullptr;
-	u32 node_name_len = 0;
-	node_path = dt_walk(node_path, &next_node, &node_name_len);
-
-	u32 max_offset = fdt->struct_off + fdt->struct_size;
-
-	while (curr_offset < max_offset) {
-		u32 tag;
-		if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
-			return 0;
-
-		u32 node_offset = curr_offset;
-
-		curr_offset += sizeof(fdt_token_t);
-		switch ((fdt_token_t)tag) {
-		case FDT_BEGIN_NODE:
-
-			const char* name;
-			u64 name_len;
-			if (!buffer_read_cstring_len(fdt_buf, curr_offset, &name, &name_len))
-				return 0;
-
-			// \0
-			name_len += 1;
-
-			curr_offset = align_u32(curr_offset + name_len, sizeof(u32));
-
-			// Not using strcmp due do the length mismatch
-			bool wrong_child = false;
-
-			// Check if this is the node we're looking for
-			if (name_len - 1 != node_name_len) {
-				wrong_child = true;
-			}
-
-			if (!wrong_child && memcmp(next_node, name, node_name_len) != 0) {
-				wrong_child = true;
-			}
-
-			if (!wrong_child) {
-				// If no path left to follow, this is the sought node
-				if (node_path == NULL) {
-					return node_offset;
-				} else {
-					return dt_get_node_in_subtree_by_path(fdt, node_offset, node_path);
-				}
-			} else {
-				curr_offset = dt_skip_nested_nodes(fdt, node_offset);
-
-				if (curr_offset == 0)
-					return 0;
-			}
-			break;
-
-		case FDT_NOP: continue;
-
-		case FDT_END_NODE:
-		case FDT_END:      return 0; // No such node found
-
-		default:                // Unknown element type (not defined in v17)
-			DEBUG_PRINTF("Invalid FDT structure\n");
-			return 0;
+	while (true) {
+		buffer_t segment_name = buffer_strtok(&node_path, "/");
+		if (!buffer_is_valid(segment_name)) {
+			return node;
 		}
-	}
 
-	DEBUG_PRINTF("Invalid FDT structure\n");
-	return 0;
+		node = dt_get_node_child(fdt, node);
+		bool found = false;
+		while (node) {
+			buffer_t child_name = dt_get_node_name(fdt, node);
+			if (buffer_equal(child_name, segment_name)) {
+				found = true;
+				break;
+			}
+
+			node = dt_get_node_sibling(fdt, node);
+		}
+
+		if (!found)
+			return 0;
+	}
 }
 
 dt_node_t dt_get_node_by_path(const fdt_t* fdt, const char* node_path) {
@@ -181,14 +115,13 @@ dt_node_t dt_get_node_sibling(const fdt_t* fdt, dt_node_t node) {
 		curr_offset += sizeof(fdt_token_t);
 		switch ((fdt_token_t)tag) {
 		case FDT_BEGIN_NODE:
-			if (not_nested == true)
+			if (not_nested)
 				return node_offset;
-			else {
-				curr_offset = dt_skip_nested_nodes(fdt, node_offset);
-				if (curr_offset == 0)
-					return 0;
-				break;
-			}
+
+			curr_offset = dt_skip_nested_nodes(fdt, node_offset);
+			if (curr_offset == 0)
+				return 0;
+			break;
 
 		case FDT_NOP: continue;
 
@@ -220,55 +153,29 @@ buffer_t dt_get_node_name(const fdt_t* fdt, dt_node_t node) {
 	if (!buffer_read_cstring_len(fdt_buf, curr_offset + sizeof(fdt_token_t), &name, &name_len))
 		return make_buffer(nullptr, 0);
 
-	return buffer_sub_buffer(fdt_buf, curr_offset + sizeof(fdt_token_t), name_len + 1);
+	return buffer_sub_buffer(fdt_buf, curr_offset + sizeof(fdt_token_t), name_len);
+}
+
+const char* dt_get_node_name_ptr(const fdt_t* fdt, dt_node_t node) {
+	buffer_t b = dt_get_node_name(fdt, node);
+	return b.data;
 }
 
 dt_prop_t dt_get_prop_by_name(const fdt_t* fdt, dt_node_t node, const char* prop_name) {
-	buffer_t fdt_buf = fdt->fdt_buffer;
+	if (!node && !fdt->root_node)
+		return 0;
+	if (fdt->root_node)
+		node = fdt->root_node;
 
-	u32 max_offset = fdt->struct_off + fdt->struct_size;
-
-	u32 str_offset = fdt->strings_off;
-
-	u32 curr_offset = node + sizeof(fdt_token_t);
-
-	while (curr_offset < max_offset) {
-		u32 tag;
-
-		if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
-			return 0;
-		u32 prop_offset = curr_offset;
-
-		curr_offset += sizeof(fdt_token_t);
-
-		switch ((fdt_token_t)tag) {
-		case FDT_PROP:
-			u32 p_len;
-			u32 name_offset;
-
-			if (!buffer_read_u32_be(fdt_buf, curr_offset + 0, &p_len) ||
-			    !buffer_read_u32_be(fdt_buf, curr_offset + sizeof(u32), &name_offset))
-				return 0;
-
-			curr_offset += 2 * sizeof(u32);
-
-			const char* name;
-			if (!buffer_read_cstring(fdt_buf, str_offset + name_offset, &name))
-				return 0;
-
-			if (!strcmp(name, prop_name))
-				return prop_offset;
-
-			curr_offset = align_u32(curr_offset + p_len, sizeof(u32));
-
-			break;
-
-		case FDT_NOP: continue;
-
-		case FDT_BEGIN_NODE:
-		case FDT_END_NODE:
-		case FDT_END:        return 0; // No such node found
+	buffer_t name = make_buffer(prop_name, strlen(prop_name));
+	dt_prop_t prop = dt_get_first_prop(fdt, node);
+	while (prop) {
+		buffer_t child_name = dt_get_node_name(fdt, node);
+		if (buffer_equal(child_name, name)) {
+			return prop;
 		}
+
+		prop = dt_get_next_prop(fdt, prop);
 	}
 	return 0;
 }
@@ -353,7 +260,12 @@ buffer_t dt_get_prop_name(const fdt_t* fdt, dt_prop_t prop) {
 	if (!buffer_read_cstring_len(fdt_buf, fdt->strings_off + name_offset, &name, &name_len))
 		return make_buffer(nullptr, 0);
 
-	return buffer_sub_buffer(fdt_buf, fdt->strings_off + name_offset, name_len + 1);
+	return buffer_sub_buffer(fdt_buf, fdt->strings_off + name_offset, name_len);
+}
+
+const char* dt_get_prop_name_ptr(const fdt_t* fdt, dt_prop_t prop) {
+	buffer_t buf = dt_get_prop_name(fdt, prop);
+	return buf.data;
 }
 
 buffer_t dt_get_prop_buffer(const fdt_t* fdt, dt_prop_t prop) {

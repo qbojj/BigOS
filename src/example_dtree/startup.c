@@ -13,24 +13,19 @@
 // Generic C function pointer.
 typedef void (*function_t)(void);
 
+// NOLINTBEGIN
+
 // These symbols are defined by the linker script.
 // See linker.lds
 extern u8 __bss_start [[gnu::weak]][];
 extern u8 __bss_end [[gnu::weak]][];
 
-extern function_t __preinit_array_start [[gnu::weak]][];
-extern function_t __preinit_array_end [[gnu::weak]][];
-
-extern function_t __init_array_start [[gnu::weak]][];
-extern function_t __init_array_end [[gnu::weak]][];
-
-extern function_t __fini_array_start [[gnu::weak]][];
-extern function_t __fini_array_end [[gnu::weak]][];
+// NOLINTEND
 
 extern int main(u32 hartid, const void* fdt);
 
 [[gnu::section(".init.enter"), gnu::naked]]
-void _enter(void) {
+void _enter(void) { // NOLINT
 	__asm__ volatile(".option push\n\t"
 	                 ".option norelax\n\t"
 	                 "la    gp, __global_pointer$\n\t"
@@ -40,27 +35,16 @@ void _enter(void) {
 }
 
 [[noreturn, gnu::noinline]]
-void _Exit([[maybe_unused]] int return_code) {
+void _Exit([[maybe_unused]] int return_code) { // NOLINT
 	while (1) wfi();
 }
 
 [[noreturn, gnu::used]]
-void _start(u32 hartid, const void* fdt) {
-	memset(__bss_start, 0, __bss_end - __bss_start);
-
-	for (const function_t* entry = __preinit_array_start; entry < __preinit_array_end; ++entry) {
-		(*entry)();
-	}
-
-	for (const function_t* entry = __init_array_start; entry < __init_array_end; ++entry) {
-		(*entry)();
-	}
+void _start(u32 hartid, const void* fdt) { // NOLINT
+	size_t bss_size = (uintptr_t)__bss_end - (uintptr_t)__bss_start;
+	memset(__bss_start, 0, bss_size);
 
 	int rc = main(hartid, fdt);
-
-	for (const function_t* entry = __fini_array_start; entry < __fini_array_end; ++entry) {
-		(*entry)();
-	}
 
 	_Exit(rc);
 }
