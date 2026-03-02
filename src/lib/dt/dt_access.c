@@ -115,14 +115,13 @@ dt_node_t dt_get_node_sibling(const fdt_t* fdt, dt_node_t node) {
 		curr_offset += sizeof(fdt_token_t);
 		switch ((fdt_token_t)tag) {
 		case FDT_BEGIN_NODE:
-			if (not_nested) {
+			if (not_nested)
 				return node_offset;
-			} else {
-				curr_offset = dt_skip_nested_nodes(fdt, node_offset);
-				if (curr_offset == 0)
-					return 0;
-				break;
-			}
+
+			curr_offset = dt_skip_nested_nodes(fdt, node_offset);
+			if (curr_offset == 0)
+				return 0;
+			break;
 
 		case FDT_NOP: continue;
 
