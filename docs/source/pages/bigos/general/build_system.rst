@@ -288,6 +288,27 @@ After that you can add any customizations needed, e.g:
                     PRIVATE lib3 lib4 ...  # for libraries for internal use (not visible in public headers)
         )
 
+Please make sure that when linking multiple libraries, you are not defining a
+circular dependency.
+When defining dependencies you also need to define them in natural order:
+* if `b` depends on `a`, `b` must be before `a` in any `target_link_libraries` calls
+
+Take note that if you define:
+    .. code-block:: cmake
+        target_link_libraries(b PUBLIC a)
+
+        # correct
+        # `c-good` links to `b` that links to `a`
+        # -> only one instanciation of the library
+        target_link_libraries(c-good PUBLIC b a)
+
+        # bad
+        target_link_libraries(c-bad PUBLIC a b)
+        # here we give additional constraint for
+        # `c-bad` to link to `a` first and `b` second,
+        # so the linking will have double instanciation of `a`
+        # -> this will break the LTO compilation on clang
+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 Executable Example: newbin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
