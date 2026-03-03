@@ -6,3 +6,4 @@ If You are using a different operating system and a guide for it doesn't work or
 
 .. toctree::
    arch_linux
+   macos
