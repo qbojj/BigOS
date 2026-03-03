@@ -170,7 +170,7 @@ dt_prop_t dt_get_prop_by_name(const fdt_t* fdt, dt_node_t node, const char* prop
 	buffer_t name = make_buffer(prop_name, strlen(prop_name));
 	dt_prop_t prop = dt_get_first_prop(fdt, node);
 	while (prop) {
-		buffer_t child_name = dt_get_node_name(fdt, node);
+		buffer_t child_name = dt_get_prop_name(fdt, prop);
 		if (buffer_equal(child_name, name)) {
 			return prop;
 		}
