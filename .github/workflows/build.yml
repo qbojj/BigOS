@@ -141,3 +141,59 @@ jobs:
         with:
           name: build-artifacts-clang-lto
           path: build/
+
+  build-clang-macos:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: '~3.24.0'
+
+      - name: Install dependencies
+        run: |
+          brew install llvm lld cmake qemu dosfstools e2fsprogs mtools include-what-you-use
+
+      - name: Generate and build
+        uses: lukka/run-cmake@v10
+        with:
+          configurePreset: 'ci-clang'
+          buildPreset: 'ci-clang'
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts-clang-macos
+          path: build/
+
+  build-clang-macos-lto:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: '~3.24.0'
+
+      - name: Install dependencies
+        run: |
+          brew install llvm lld cmake qemu dosfstools e2fsprogs mtools include-what-you-use
+
+      - name: Generate and build
+        uses: lukka/run-cmake@v10
+        with:
+          configurePreset: 'ci-clang-lto'
+          buildPreset: 'ci-clang-lto'
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts-clang-macos-lto
+          path: build/

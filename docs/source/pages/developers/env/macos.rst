@@ -9,4 +9,11 @@ To install all necessary packages, run:
 
     .. code-block:: bash
 
-        brew install riscv64-elf-gcc cmake qemu clang-format dosfstools e2fsprogs mtools
+        brew install llvm lld cmake qemu dosfstools e2fsprogs mtools include-what-you-use
+
+To build the project, use one of the Clang presets, e.g.:
+
+    .. code-block:: bash
+
+        cmake --preset debug-clang
+        cmake --build build
