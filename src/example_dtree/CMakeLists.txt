@@ -1,5 +1,10 @@
 SETUP_EXECUTABLE(example_dtree)
 
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+    # Disable LTO to avoid relocation issues on macOS
+    set_source_files_properties(startup.c PROPERTIES COMPILE_OPTIONS "-fno-lto")
+endif()
+
 target_include_directories(example_dtree PRIVATE ${CMAKE_SOURCE_DIR}/src/kernel)
 
 set(LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld)
