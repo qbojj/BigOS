@@ -29,7 +29,7 @@ typedef struct {
 } memory_area_t;
 
 [[nodiscard]]
-memory_area_t memory_region_get_area(memory_region_t reg);
+memory_area_t memory_region_to_area(memory_region_t reg);
 
 [[nodiscard]]
 bool do_memory_areas_overlap(memory_area_t area1, memory_area_t area2);
