@@ -1,11 +1,21 @@
+#include <debug/debug_stdio.h>
 #include <stdbigos/csr.h>
 #include <stdbigos/trap.h>
+#include <stdbigos/types.h>
 
 #include "trap.h"
 
 void handle_irq(InterruptType irq) {
 	switch (irq) {
-	default: return;
+	case IntSTimer:
+	case IntSSoftware:
+	case IntSExternal:
+	case IntCounterOverflow: return;
+
+	default:
+		// we've got reserved signal
+		DEBUG_PRINTF("interrupt: got reserved number %lu\n", (u64)irq);
+		return;
 	}
 }
 
@@ -20,7 +30,10 @@ void handle_exc(ExceptionType exc, struct trap_frame* tf) {
 
 		intr_disable();
 		return;
-	default: return;
+	default:
+		// we've got reserved exception
+		DEBUG_PRINTF("exception: got reserved number %lu\n", (u64)exc);
+		return;
 	}
 }
 

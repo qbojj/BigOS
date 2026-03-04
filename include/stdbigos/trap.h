@@ -5,22 +5,14 @@
 
 typedef enum InterruptType {
 	IntSSoftware = 1,
-	// 2 is reserved
-	IntMSoftware = 3,
-	// 4 is reserved
 	IntSTimer = 5,
-	// 6 is reserved
-	IntMTimer = 7,
-	// 8 is reserved
 	IntSExternal = 9,
-	// 10 is reserved
-	IntMExternal = 11,
-	// 12-15 reserved
+	IntCounterOverflow = 13,
 	// >=16 are for platform use
 } InterruptType;
 
 typedef enum ExceptionType {
-	ExcAddressMisaligned = 0,
+	ExcInstrAddressMisaligned = 0,
 	ExcInstrAccessFault = 1,
 	ExcIllegalInstr = 2,
 	ExcBreakpoint = 3,
@@ -30,16 +22,13 @@ typedef enum ExceptionType {
 	ExcStoreAccessFault = 7,
 	ExcEnvCallU = 8,
 	ExcEnvCallS = 9,
-	// 12 is reserved
-	ExcEnvCallM = 11,
 	ExcInstrPageFault = 12,
 	ExcLoadPageFault = 13,
-	// 14 is reserved
-	ExcStorePageFault = 15,
-	// 16-23 reserved
+	ExcSoftwareCheck = 18,
+	ExcHardwareError = 19,
 	// 24-31 designated for custom use
-	// 32-47 reserved
-	// 48-64 designated for custom use
+	// 48-63 designated for custom use
+	// >=64 reserved
 } ExceptionType;
 
 static inline bool is_interrupt(reg_t cause) {

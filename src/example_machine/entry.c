@@ -33,7 +33,7 @@ void int_handler() {
 		reg_t int_no = get_interrupt_code(cause);
 
 		switch (int_no) {
-		case IntMTimer:
+		case 7: // M-mode timer
 			dputs("got timer interrupt\n");
 			g_mtimecmp[hartid()] = *g_mtime + g_quant;
 			break;
@@ -62,7 +62,7 @@ void start() {
 	CSR_SET(mstatus, 8);
 
 	// set TIMER in mie
-	CSR_SET(mie, 1lu << IntMTimer);
+	CSR_SET(mie, 1lu << 7);
 
 	main();
 
