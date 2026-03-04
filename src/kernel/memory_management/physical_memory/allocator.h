@@ -22,8 +22,9 @@
  *	@retval ERR_NONE Success
  *	@retval ERR_BAD_ARG if @p reserved_areas is null and @p count is non zero or vice versa.
  * */
+[[gnu::nonnull(4)]]
 error_t pmallocator_get_header(memory_area_t area, const memory_area_t* reserved_areas, u32 count,
-                               [[gnu::nonnull]] memory_area_t* headerOUT);
+                               memory_area_t* headerOUT);
 
 /**
  *	@ingroup kmm
@@ -61,7 +62,8 @@ error_t pmallocator_init_region(memory_area_t area, memory_region_t header, cons
  *
  *	@note 4KiB frame (or @p frame_order = 12) must be a valid frame size.
  * */
-error_t pmallocator_allocate(u8 frame_order, memory_region_t header, [[gnu::nonnull]] phys_addr_t* addrOUT);
+[[gnu::nonnull]]
+error_t pmallocator_allocate(u8 frame_order, memory_region_t header, phys_addr_t* addrOUT);
 
 /**
  *	@ingroup kmm

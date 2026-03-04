@@ -31,7 +31,8 @@ static error_t init_header_storage_node(physical_memory_region_t storage_region)
 	return ERR_NONE;
 }
 
-static error_t get_header_pmr(u32 idx, [[gnu::nonnull]] physical_memory_region_t* headerOUT) {
+[[gnu::nonnull]]
+static error_t get_header_pmr(u32 idx, physical_memory_region_t* headerOUT) {
 	header_storage_node_t* effective_hsn = physical_to_effective(g_root_header_storage_node);
 	while (idx > (effective_hsn->count - 1)) {
 		idx -= effective_hsn->count;
@@ -59,6 +60,8 @@ static error_t store_header(physical_memory_region_t header) {
 			err = init_header_storage_node(new_reg);
 			if (err)
 				return err;
+			KLOGLN_TRACE("New region for storage of physical region headers was added of size: %zu at addra: %p",
+			             new_reg.size, new_reg.addr);
 			effective_hsn->next = new_reg.addr;
 		}
 	}
@@ -75,13 +78,17 @@ u64 phys_mem_get_frame_size_in_bytes(frame_size_t fs) {
 	return (size_4KiB << fs);
 }
 
+// NOLINTBEGIN readability-function-cognitive-complexity
+// TODO: Deal with this nolint
 error_t phys_mem_init(const physical_memory_region_t* pmrs, size_t pmr_count, const memory_area_t* reserved_areas,
                       size_t reserved_areas_count) {
 	static bool s_is_init = false;
 	if (s_is_init)
-		return ERR_REPEATED_INITIALIZATION;
-	if(pmr_count == 0)
-		return ERR_BAD_ARG;
+		KLOG_DO_RETURN(ERR_REPEATED_INITIALIZATION, KLRF_TRACE_ERR);
+	if (pmr_count == 0)
+		KLOG_DO_RETURN(ERR_BAD_ARG, KLRF_TRACE_ERR);
+
+	KLOG_INDENT_BLOCK_START;
 
 	for (size_t i = 0; i < pmr_count; ++i) {
 		memory_area_t pmr_area = phys_mem_reg_to_area(pmrs[i]);
@@ -89,33 +96,58 @@ error_t phys_mem_init(const physical_memory_region_t* pmrs, size_t pmr_count, co
 		memory_area_t header_area = {0};
 
 		error_t err = pmallocator_get_header(pmr_area, reserved_areas, reserved_areas_count, &header_area);
+		if (err) {
+			KLOGLN_WARNING("Failed to get header region of memory region [%p - %p]", pmrs[i].addr,
+			               pmrs[i].addr + pmrs[i].size);
+			continue;
+		}
 
 		physical_memory_region_t header_pmr = area_to_phys_mem_reg(header_area);
 		memory_region_t header_region = phys_mem_reg_to_reg(header_pmr);
 
-		if (err)
-			continue;
 		err = pmallocator_init_region(pmr_area, header_region, reserved_areas, reserved_areas_count);
-		if (err)
+		if (err) {
+			KLOGLN_WARNING("Failed to init header region of memory region [%p - %p]", pmrs[i].addr,
+			               pmrs[i].addr + pmrs[i].size);
 			continue;
+		}
 		if (g_root_header_storage_node == nullptr) {
 			physical_memory_region_t new_reg = {
 			    .size = phys_mem_get_frame_size_in_bytes(FRAME_SIZE_4KiB),
 			    .addr = nullptr,
 			};
 			err = pmallocator_allocate(12, header_region, &new_reg.addr);
-			if (err) // NOTE: Since we failed to allocate the smallest possible frame size, we assume that this region
-			         // is useless.
+			// NOTE: Since we failed to allocate the smallest possible frame size, we assume that this region is
+			// useless.
+			if (err) {
+				KLOGLN_WARNING("Failed to allocate a frame of size %zu from region [%p - %p]. This region will be "
+				               "ignored from now",
+				               new_reg.size, pmrs[i].addr, pmrs[i].addr + pmrs[i].size);
 				continue;
+			}
+
+			KLOGLN_TRACE(
+			    "Memory region of size: %zu at addr: %p is used as primary node for physical region headers storage",
+			    new_reg.size, new_reg.addr);
+			err = init_header_storage_node(new_reg);
+			if (err) {
+				// No need to free this region since this error is, and should be, fatal
+				KLOG_ERROR("4KiB was not enough to store any header regions. A single header region should be nowhere "
+				           "near this size.");
+				KLOG_DO_RETURN(ERR_NOT_ENOUGH_MEMORY, KLRF_TRACE_ERR | KLRF_END_BLOCK);
+			}
+
+			g_root_header_storage_node = new_reg.addr;
 		}
 
 		err = store_header(header_pmr);
 		if (err)
-			return ERR_OUT_OF_BOUNDS;
+			KLOG_DO_RETURN(ERR_OUT_OF_BOUNDS, KLRF_TRACE_ERR | KLRF_END_BLOCK);
 	}
 	s_is_init = true;
-	return ERR_NONE;
+	KLOG_DO_RETURN(ERR_NONE, KLRF_END_BLOCK);
 }
+// NOLINTEND readability-function-cognitive-complexity
 
 error_t phys_mem_alloc_frame(frame_size_t frame_size, phys_addr_t* addrOUT) {
 	u32 idx = 0;
@@ -129,8 +161,7 @@ error_t phys_mem_alloc_frame(frame_size_t frame_size, phys_addr_t* addrOUT) {
 			continue;
 		}
 		*addrOUT = frame_data;
-		KLOGLN_TRACE("Allocated a physical frame of size: %lu at %p", phys_mem_get_frame_size_in_bytes(frame_size),
-		             frame_data);
+		KLOGLN_TRACE("Allocated a physical frame of size: %lu at %p", phys_mem_get_frame_size_in_bytes(frame_size), frame_data);
 		return ERR_NONE;
 	}
 	KLOGLN_WARNING("Allocation of physical frame of size: %lu failed", phys_mem_get_frame_size_in_bytes(frame_size));
@@ -149,5 +180,6 @@ error_t phys_mem_free_frame(phys_addr_t addr) {
 		}
 		return ERR_NONE;
 	}
+	KLOGLN_WARNING("Failed to free a physical frame at addr: %p", addr);
 	return ERR_NOT_VALID;
 }

@@ -12,7 +12,8 @@ error_t pmallocator_get_header(memory_area_t area, const memory_area_t* reserved
 	return ERR_NOT_IMPLEMENTED;
 }
 
-error_t pmallocator_init_region(memory_area_t area, memory_region_t header, const memory_area_t* reserved_areas, u32 count) {
+error_t pmallocator_init_region(memory_area_t area, memory_region_t header, const memory_area_t* reserved_areas,
+                                u32 count) {
 	(void)area;
 	(void)header;
 	(void)reserved_areas;
