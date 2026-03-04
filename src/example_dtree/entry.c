@@ -33,7 +33,7 @@ void main([[maybe_unused]] u32 hartid, const void* fdt) {
 	DEBUG_PRINTF("Main node prop: %s: %u\n", prop_name, prop_val);
 
 	u32 first_prop = dt_get_first_prop(&fdt_obj, main_node);
-	u32 next_prop = dt_get_next_prop(&fdt_obj, main_prop);
+	u32 next_prop = dt_get_next_prop(&fdt_obj, first_prop);
 
 	DEBUG_PRINTF("First prop: %s\n", dt_get_prop_name_ptr(&fdt_obj, first_prop));
 	DEBUG_PRINTF("Next prop: %s\n", dt_get_prop_name_ptr(&fdt_obj, next_prop));
