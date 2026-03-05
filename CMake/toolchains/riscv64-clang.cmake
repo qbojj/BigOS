@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.13)
-
 if(RISCV_CLANG_TOOLCHAIN_INCLUDED)
   return()
 endif()
@@ -13,12 +11,11 @@ if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
         OUTPUT_VARIABLE LLVM_PREFIX
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
-    set(CMAKE_ASM_COMPILER "${LLVM_PREFIX}/bin/clang")
-    set(CMAKE_C_COMPILER "${LLVM_PREFIX}/bin/clang")
-    set(CMAKE_EXE_LINKER_FLAGS    "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=lld")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fuse-ld=lld")
-    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -fuse-ld=lld")
-else()
-    set(CMAKE_ASM_COMPILER clang)
-    set(CMAKE_C_COMPILER clang)
+    list(APPEND CMAKE_PREFIX_PATH "${LLVM_PREFIX}")
+    set(CMAKE_C_USING_LINKER_LLD "-fuse-ld=lld")
+    set(CMAKE_ASM_USING_LINKER_LLD "-fuse-ld=lld")
+    set(CMAKE_LINKER_TYPE LLD)
 endif()
+
+find_program(CMAKE_C_COMPILER clang REQUIRED)
+find_program(CMAKE_ASM_COMPILER clang REQUIRED)
