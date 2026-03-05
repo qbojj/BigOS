@@ -1,9 +1,9 @@
+#include "trap.h"
+
 #include <debug/debug_stdio.h>
 #include <stdbigos/csr.h>
 #include <stdbigos/trap.h>
 #include <stdbigos/types.h>
-
-#include "trap.h"
 
 void handle_irq(InterruptType irq) {
 	switch (irq) {
@@ -19,7 +19,7 @@ void handle_irq(InterruptType irq) {
 	}
 }
 
-void handle_exc(ExceptionType exc, struct trap_frame* tf) {
+void handle_exc(ExceptionType exc, trap_frame_t* tf) {
 	switch (exc) {
 	case ExcEnvCallU:
 	case ExcEnvCallS:
@@ -37,7 +37,7 @@ void handle_exc(ExceptionType exc, struct trap_frame* tf) {
 	}
 }
 
-void kernel_trap_handler(struct trap_frame* tf) {
+void kernel_trap_handler(trap_frame_t* tf) {
 	if (is_interrupt(tf->scause)) {
 		handle_irq(get_interrupt_code(tf->scause));
 	} else {

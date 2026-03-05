@@ -1,7 +1,8 @@
 .text
 
 .global kernel_trap_entry
-.global kernel_trap_restore
+.global kernel_restore_cleanup_impl
+.global jump_with_stack
 
 .equ SSTATUS_SIE, 0x00000002 // Supervisor Interrupt Enable
 .equ SSTATUS_SPP, 0x00000100 // Supervisor Previous Privilege (1 = S-mode, 0 = U-mode)
@@ -58,8 +59,13 @@ save_regs:
 	ld tp, FRAME_SIZE(sp)
 
 run_handler:
-	mv a0, sp
+    mv a0, sp
+
+    // fixup the stack alignment (16-bytes)
+    mv s0, sp
+    and sp, sp, ~15
 	call kernel_trap_handler
+	mv sp, s0
 
 kernel_trap_restore:
 	.irp i, 3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
@@ -88,3 +94,10 @@ restore_finalize:
 	ld x1, 1*8(sp)
 	ld sp, 2*8(sp)
 	sret
+
+kernel_restore_cleanup_impl:
+	lla ra, kernel_trap_restore
+jump_with_stack:
+	mv sp, a0
+	mv a0, a1
+	jr a2
