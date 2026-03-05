@@ -77,3 +77,9 @@ CMakeUserPresets.json
 docs/xml/
 # HTML of the sphinx page
 docs/build/
+
+# JetBrains IDEs files
+.idea/
+
+# macOS files
+.DS_Store

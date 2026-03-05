@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.13)
-
 if(RISCV_GCC_TOOLCHAIN_INCLUDED)
   return()
 endif()

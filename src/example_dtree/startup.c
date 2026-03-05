@@ -24,16 +24,6 @@ extern u8 __bss_end [[gnu::weak]][];
 
 extern int main(u32 hartid, const void* fdt);
 
-[[gnu::section(".init.enter"), gnu::naked]]
-void _enter(void) { // NOLINT
-	__asm__ volatile(".option push\n\t"
-	                 ".option norelax\n\t"
-	                 "la    gp, __global_pointer$\n\t"
-	                 ".option pop\n\t"
-	                 "la    sp, _sp\n\t"
-	                 "jal   zero, _start");
-}
-
 [[noreturn, gnu::noinline]]
 void _Exit([[maybe_unused]] int return_code) { // NOLINT
 	while (1) wfi();
