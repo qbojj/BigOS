@@ -79,7 +79,7 @@ Approach to Documentation
 -------------------------
 
 The objective of BigOS documentation is to provide a comprehensive knowledge base for
-operating systems that enables readers with a basic understanding of low-level programming to fully comprehend
+operating systems that enables readers with a basic understanding of low-level programming to fully comprehend:
 
 * How BigOS systems function
 * How internal components interact
