@@ -4,7 +4,7 @@ Begginer's guide
 :Author: Kamil Zdancewicz
 :Date: 24-02-2026
 
-This `.md` file is a starting point for anyone's journey with the BigOS project.
+This page is a starting point for anyone's journey with the BigOS project.
 Containing advice from hints for basic procedures *(e.g. What should be in a PR?)* to links and FAQ.
 
 --------------------
