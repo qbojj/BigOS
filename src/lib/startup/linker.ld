@@ -11,10 +11,9 @@ PHDRS {
 
 SECTIONS
 {
-    . = 0x80200000;
     __stack_size = DEFINED(__stack_size) ? __stack_size : 32M;
 
-    .init : {
+    .init 0x80200000 : {
         *(SORT_NONE(.init))
     } :text
 
@@ -83,7 +82,7 @@ SECTIONS
 
     .stack (NOLOAD) : ALIGN(16) {
         . += __stack_size;
-        __stack_start = .;
+        PROVIDE(__stack_start = .);
     } :data
 
     /DISCARD/ : {
