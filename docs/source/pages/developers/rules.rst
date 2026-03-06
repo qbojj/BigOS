@@ -84,7 +84,7 @@ Comments
 Documentation
 -------------
 
-*To be defined...*
+See :doc:`the documentation rules </pages/developers/docs_guide>`.
 
 ---
 Git

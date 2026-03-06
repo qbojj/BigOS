@@ -17,21 +17,21 @@ Directory Structure
     .. code-block:: text
 
         BigOS/
-        ├── CMakeLists.txt              # Root CMake configuration
-        ├── CMakePresets.json           # Build presets for easy configuration
-        ├── CMake/                      # CMake modules and configuration
-        │   ├── CommonConfig.cmake      # Shared build functions and configuration
-        │   ├── Linters.cmake          # Linter integration (clang-tidy, include-what-you-use)
-        │   ├── preset-mixins.json     # Preset configuration mixins
-        │   └── toolchains/            # Cross-compilation toolchain definitions
-        │       ├── riscv64-common.cmake     # Common RISC-V settings
-        │       ├── riscv64-gcc.cmake        # GCC-specific toolchain
-        │       └── riscv64-clang.cmake      # Clang-specific toolchain
-        ├── src/                        # Source code for all components
+        ├── CMakeLists.txt                  # Root CMake configuration
+        ├── CMakePresets.json               # Build presets for easy configuration
+        ├── CMake/                          # CMake modules and configuration
+        │   ├── CommonConfig.cmake          # Shared build functions and configuration
+        │   ├── Linters.cmake               # Linter integration (clang-tidy, include-what-you-use)
+        │   ├── preset-mixins.json          # Preset configuration mixins
+        │   └── toolchains/                 # Cross-compilation toolchain definitions
+        │       ├── riscv64-common.cmake    # Common RISC-V settings
+        │       ├── riscv64-gcc.cmake       # GCC-specific toolchain
+        │       └── riscv64-clang.cmake     # Clang-specific toolchain
+        ├── src/                            # Source code for all components
         │   ├── CMakeLists.txt
-        │   ├── kernel/                # OS kernel
-        │   └── lib/                   # Libraries
-        └── build/                      # Build output directory
+        │   ├── kernel/                     # OS kernel
+        │   └── lib/                        # Libraries
+        └── build/                          # Build output directory
 
 --------------------
 Build Configurations

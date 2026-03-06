@@ -63,7 +63,7 @@ Version 1.0
 
 Once the above functionality is implemented, the project may be designated as BigOS 1.0.
 However, this declaration may be postponed, as we aim to avoid introducing breaking changes to core system APIs beyond this point.
-Further development will continue after 1.0.0, including additional implementations and refinements of core subsystems, such as the permissions model, but these changes should not fundamentally alter established interfaces.
+Further development will continue after 1.0, including additional implementations and refinements of core subsystems, such as the permissions model, but these changes should not fundamentally alter established interfaces.
 
 --------------------
 Ideas for the future
