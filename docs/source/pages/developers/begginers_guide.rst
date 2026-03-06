@@ -4,12 +4,12 @@ Begginer's guide
 :Author: Kamil Zdancewicz
 :Date: 24-02-2026
 
-This `.md` file is a starting point for anyone's journey with the BigOS project.
+This page is a starting point for anyone's journey with the BigOS project.
 Containing advice from hints for basic procedures *(e.g. What should be in a PR?)* to links and FAQ.
 
 --------------------
 Repository structure
---------------------
+--------------------    
 
 The *CMake* directory contains CMake config files and toolchain for the `RISC-V <https://en.wikipedia.org/wiki/RISC-V>`_ architecture.
 The *external* directory contains third-party dependencies,
