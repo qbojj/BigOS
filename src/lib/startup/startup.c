@@ -39,7 +39,7 @@ void _start(void) {
 	                 "lla   gp, __global_pointer$\n\t"
 	                 ".option pop\n\t"
 	                 "lla   sp, __stack_start\n\t"
-	                 "jal   zero, _start_c");
+	                 "j     _start_c");
 }
 
 [[gnu::section(".fini"), noreturn, gnu::noinline]]

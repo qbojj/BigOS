@@ -196,6 +196,27 @@
             ],
             "displayName": "CI Ninja Configuration",
             "description": "CI configuration using Ninja with warnings as errors."
+        },
+        {
+            "name": "ci-macos-clang",
+            "inherits": [
+                "build-dirs",
+                "cross-clang",
+                "warnings-as-errors"
+            ],
+            "displayName": "CI Ninja Configuration",
+            "description": "CI configuration using Ninja with warnings as errors."
+        },
+        {
+            "name": "ci-macos-clang-lto",
+            "inherits": [
+                "build-dirs",
+                "cross-clang",
+                "warnings-as-errors",
+                "build-lto"
+            ],
+            "displayName": "CI GCC Configuration",
+            "description": "CI configuration using Ninja with warnings as errors."
         }
     ],
     "buildPresets": [
@@ -222,6 +243,18 @@
             "configurePreset": "ci-clang-lto",
             "displayName": "CI Ninja Build - clang (LTO)",
             "description": "Build using CI Ninja configuration (clang) (LTO)."
+        },
+        {
+            "name": "ci-macos-clang",
+            "configurePreset": "ci-macos-clang",
+            "displayName": "CI Ninja Build for MacOS - clang",
+            "description": "Build using CI Ninja configuration on MacOS (clang)."
+        },
+        {
+            "name": "ci-macos-clang-lto",
+            "configurePreset": "ci-macos-clang-lto",
+            "displayName": "CI Ninja Build for MacOS - clang (LTO)",
+            "description": "Build using CI Ninja configuration on MacOS (clang) (LTO)."
         }
     ],
     "testPresets": [

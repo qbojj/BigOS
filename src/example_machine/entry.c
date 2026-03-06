@@ -21,7 +21,7 @@ void main() {
 	for (u32 i = 0;; ++i) {
 		CSR_CLEAR(mstatus, 8); // disable interrupts
 		dprintf("hello OS %u\n", i);
-		CSR_SET(mstatus, 8); // reenable interrupts
+		CSR_SET(mstatus, 8);   // reenable interrupts
 	}
 }
 
