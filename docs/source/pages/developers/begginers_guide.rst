@@ -9,7 +9,7 @@ Containing advice from hints for basic procedures *(e.g. What should be in a PR?
 
 --------------------
 Repository structure
---------------------    
+--------------------
 
 The *CMake* directory contains CMake config files and toolchain for the `RISC-V <https://en.wikipedia.org/wiki/RISC-V>`_ architecture.
 The *external* directory contains third-party dependencies,
