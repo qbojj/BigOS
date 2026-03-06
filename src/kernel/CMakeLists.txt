@@ -6,6 +6,4 @@ target_link_libraries(kernel PRIVATE Debug stdbigos)
 target_link_options(kernel PRIVATE -static-pie -e kinit)
 target_compile_options(kernel PRIVATE -fPIE -static)
 
-
-COMPILE_BINARY(kernel)
 ADD_QEMU_TARGET(kernel)

@@ -2,8 +2,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 OUTPUT_ARCH("riscv")
 
-ENTRY(_enter)
-
+ENTRY(_start)
 
 PHDRS {
     text PT_LOAD;
@@ -12,10 +11,10 @@ PHDRS {
 
 SECTIONS
 {
+    . = 0x80200000;
     __stack_size = DEFINED(__stack_size) ? __stack_size : 32M;
 
-    .init 0x80400000 : {
-        *(.init.enter)
+    .init : {
         *(SORT_NONE(.init))
     } :text
 

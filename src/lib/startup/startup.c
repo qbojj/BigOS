@@ -6,6 +6,7 @@
 
 */
 
+#include <relocations/reloc.h>
 #include <stdbigos/csr.h>
 #include <stdbigos/string.h>
 #include <stdbigos/types.h>
@@ -17,28 +18,28 @@ typedef void (*function_t)(void);
 // See linker.lds
 
 // NOLINTBEGIN(readability-identifier-naming)
-extern u8 __bss_start[];
-extern u8 __bss_end[];
+extern u8 __bss_start [[gnu::weak]][];
+extern u8 __bss_end [[gnu::weak]][];
 
-extern function_t __preinit_array_start[];
-extern function_t __preinit_array_end[];
+extern function_t __preinit_array_start [[gnu::weak]][];
+extern function_t __preinit_array_end [[gnu::weak]][];
 
-extern function_t __init_array_start[];
-extern function_t __init_array_end[];
+extern function_t __init_array_start [[gnu::weak]][];
+extern function_t __init_array_end [[gnu::weak]][];
 
-extern function_t __fini_array_start[];
-extern function_t __fini_array_end[];
+extern function_t __fini_array_start [[gnu::weak]][];
+extern function_t __fini_array_end [[gnu::weak]][];
 
 extern int main(u32 hartid, const void* fdt);
 
-[[gnu::section(".init.enter"), gnu::naked]]
-void _enter(void) {
+[[gnu::section(".init"), gnu::naked]]
+void _start(void) {
 	__asm__ volatile(".option push\n\t"
 	                 ".option norelax\n\t"
-	                 "la    gp, __global_pointer$\n\t"
+	                 "lla   gp, __global_pointer$\n\t"
 	                 ".option pop\n\t"
-	                 "la    sp, __stack_start\n\t"
-	                 "jal   zero, _start");
+	                 "lla   sp, __stack_start\n\t"
+	                 "jal   zero, _start_c");
 }
 
 [[gnu::section(".fini"), noreturn, gnu::noinline]]
@@ -66,9 +67,13 @@ static void _call_destructors() {
 }
 
 [[gnu::section(".init"), noreturn, gnu::used]]
-static void _start(u32 hartid, const void* fdt) {
-	size_t bss_size = (uintptr_t)__bss_end - (uintptr_t)__bss_start;
-	memset(__bss_start, 0, bss_size);
+static void _start_c(u32 hartid, const void* fdt) {
+	if (!self_relocate()) {
+		_Exit(-1);
+	}
+	if (__bss_start) {
+		memset(__bss_start, 0, (uintptr_t)__bss_end - (uintptr_t)__bss_start);
+	}
 	_call_constructors();
 
 	int rc = main(hartid, fdt);

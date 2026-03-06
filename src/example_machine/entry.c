@@ -67,8 +67,8 @@ void start() {
 void _start() { // NOLINT(readability-identifier-naming)
 	__asm__(".option push\n\t"
 	        ".option norelax\n\t"
-	        "la    gp, __global_pointer$\n\t"
+	        "lla    gp, __global_pointer$\n\t"
 	        ".option pop\n\t"
-	        "la    sp, __stack_top\n\t"
+	        "lla    sp, __stack_top\n\t"
 	        "j start");
 }

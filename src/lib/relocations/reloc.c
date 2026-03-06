@@ -3,13 +3,25 @@
 #include <stdbigos/types.h>
 
 #define R_RISCV_NONE     0
-#define R_RISCV_RELATIVE 8
+#define R_RISCV_RELATIVE 3
+
+// NOLINTNEXTLINE
+extern const reg_t _GLOBAL_OFFSET_TABLE_[] __attribute__((visibility("hidden")));
+
+/* Get link time address of _DYNAMIC e.g first entry in GOT */
+static inline Elf64_Addr elf_get_dynamic_linktime() {
+	return _GLOBAL_OFFSET_TABLE_[0];
+}
+
+static inline Elf64_Dyn* elf_get_dynamic_runtime() {
+	Elf64_Dyn* dynamic;
+	__asm__("lla %0, _DYNAMIC" : "=r"(dynamic));
+	return dynamic;
+}
 
 bool self_relocate() {
-	Elf64_Dyn* dynamic;
-	u8* load_addr;
-	__asm__("lla %0, _DYNAMIC" : "=r"(dynamic));
-	__asm__("lla %0, __executable_start" : "=r"(load_addr));
+	Elf64_Dyn* dynamic = elf_get_dynamic_runtime();
+	u8* load_addr = (u8*)((uintptr_t)dynamic - elf_get_dynamic_linktime());
 
 	Elf64_Xword relasz = 0;
 	Elf64_Xword relaent = 0;
