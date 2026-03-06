@@ -125,7 +125,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            clang llvm \
+            clang llvm lld \
             iwyu \
             gcc-riscv64-linux-gnu dosfstools e2fsprogs mtools \
             qemu-system-misc
