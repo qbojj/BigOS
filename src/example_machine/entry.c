@@ -18,7 +18,11 @@ static volatile u64* g_mtimecmp = (u64*)(g_clint_base + 0x4000);
 static const u64 g_quant = 50000llu;
 
 void main() {
-	for (u32 i = 0;; ++i) dprintf("hello OS %u\n", i);
+	for (u32 i = 0;; ++i) {
+		CSR_CLEAR(mstatus, 8); // disable interrupts
+		dprintf("hello OS %u\n", i);
+		CSR_SET(mstatus, 8); // reenable interrupts
+	}
 }
 
 [[gnu::interrupt("machine")]]
@@ -30,10 +34,10 @@ void int_handler() {
 
 		switch (int_no) {
 		case IntMTimer:
-			dputs("\n\tgot timer interrupt\n");
+			dputs("got timer interrupt\n");
 			g_mtimecmp[hartid()] = *g_mtime + g_quant;
 			break;
-		default: dprintf("\n\tunknown interrupt (%ld)\n", int_no); break;
+		default: dprintf("unknown interrupt (%ld)\n", int_no); break;
 		}
 
 		CSR_CLEAR(mip, (reg_t)1 << int_no);
