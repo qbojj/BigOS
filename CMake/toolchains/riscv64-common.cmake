@@ -24,7 +24,7 @@ set(CMAKE_ASM_COMPILER_TARGET riscv64-linux-gnu)
 
 set(RISCV_LINKER_FLAGS "-nostdlib")
 
-set(RISCV_SHARED_FLAGS "-march=${RISCV_ARCH} -mabi=${RISCV_ABI} -fPIC -fpic -fPIE")
+set(RISCV_SHARED_FLAGS "-march=${RISCV_ARCH} -mabi=${RISCV_ABI}")
 
 set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} ${RISCV_SHARED_FLAGS}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${RISCV_SHARED_FLAGS} -ffreestanding -mcmodel=${RISCV_CMODEL} -fno-stack-protector")

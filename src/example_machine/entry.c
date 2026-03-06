@@ -68,13 +68,3 @@ void start() {
 
 	while (true) wfi();
 }
-
-[[gnu::section(".init"), gnu::naked]]
-void _start() { // NOLINT(readability-identifier-naming)
-	__asm__(".option push\n\t"
-	        ".option norelax\n\t"
-	        "lla    gp, __global_pointer$\n\t"
-	        ".option pop\n\t"
-	        "lla    sp, __stack_top\n\t"
-	        "j start");
-}
