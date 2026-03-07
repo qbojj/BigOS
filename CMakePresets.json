@@ -161,7 +161,7 @@
                 "warnings-as-errors"
             ],
             "displayName": "CI GCC Configuration",
-            "description": "CI configuration using Ninja with warnings as errors."
+            "description": "CI GCC configuration using Ninja with warnings as errors"
         },
         {
             "name": "ci-clang",
@@ -172,8 +172,8 @@
                 "clang-tidy",
                 "include-what-you-use"
             ],
-            "displayName": "CI Ninja Configuration",
-            "description": "CI configuration using Ninja with warnings as errors."
+            "displayName": "CI Clang Configuration",
+            "description": "CI Clang configuration using Ninja with warnings as errors"
         },
         {
             "name": "ci-gcc-lto",
@@ -183,8 +183,8 @@
                 "warnings-as-errors",
                 "build-lto"
             ],
-            "displayName": "CI GCC Configuration",
-            "description": "CI configuration using Ninja with warnings as errors."
+            "displayName": "CI GCC Configuration with LTO",
+            "description": "CI GCC configuration with LTO using Ninja with warnings as errors"
         },
         {
             "name": "ci-clang-lto",
@@ -194,8 +194,8 @@
                 "warnings-as-errors",
                 "build-lto"
             ],
-            "displayName": "CI Ninja Configuration",
-            "description": "CI configuration using Ninja with warnings as errors."
+            "displayName": "CI Clang Configuration with LTO",
+            "description": "CI Clang configuration with LTO using Ninja with warnings as errors"
         },
         {
             "name": "ci-macos-clang",
@@ -204,8 +204,8 @@
                 "cross-clang",
                 "warnings-as-errors"
             ],
-            "displayName": "CI Ninja Configuration",
-            "description": "CI configuration using Ninja with warnings as errors."
+            "displayName": "CI MacOS Configuration",
+            "description": "CI MacOS configuration using Ninja with warnings as errors"
         },
         {
             "name": "ci-macos-clang-lto",
@@ -215,8 +215,8 @@
                 "warnings-as-errors",
                 "build-lto"
             ],
-            "displayName": "CI GCC Configuration",
-            "description": "CI configuration using Ninja with warnings as errors."
+            "displayName": "CI MacOS Configuration with LTO",
+            "description": "CI MacOS configuration with LTO using Ninja with warnings as errors"
         }
     ],
     "buildPresets": [
