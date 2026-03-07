@@ -14,27 +14,34 @@
 // the thread pointer should be at the base of the sscratch location if it is not 0
 
 kernel_trap_entry:
-	// Swap sscratch with sp IIF we come from user - mode
 	csrrw sp, sscratch, sp
-	bnez sp, from_umode
+	csrrw t0, sscratch, t0
+
+	// sp <- sscratch
+	// t0 <- old sp
+	// sscratch <- old t0
+	bnez sp, save_regs
 
 from_smode:
-	csrrw sp, sscratch, zero
-	add sp, sp, -FRAME_SIZE
-	sd x1, 1*8(sp)
-	add x1, sp, FRAME_SIZE
-	sd x1, 2*8(sp)
-	j save_regs
+	// sp == 0
+	// t0 <- old sp (kernel stack pointer)
+	// sscratch <- old t0
 
-from_umode:
-	add sp, sp, -FRAME_SIZE
-	sd x1, 1*8(sp)
-	csrrw x1, sscratch, zero
-	sd x1, 2*8(sp)
+	// someone could be stupid and have made kernel's sp not 8-byte aligned -> align down to 16-bytes
+	and sp, t0, -16
 
 save_regs:
-	// Save everything, but ra (x1), sp (x2)
-	.irp i, 0,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+	// sp != 0 - valid kernel stack pointer
+	// t0 <- old sp
+	// sscratch <- old t0
+
+	add sp, sp, -FRAME_SIZE
+	// save original sp and restore original t0 in sscratch
+	sd t0, 2*8(sp)
+	csrrw t0, sscratch, zero
+
+	// Save everything, but sp (x2)
+	.irp i, 0,1,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
 		sd x\i, \i*8(sp)
 	.endr
 
@@ -59,39 +66,39 @@ save_regs:
 	ld tp, FRAME_SIZE(sp)
 
 run_handler:
-    mv a0, sp
+	mv a0, sp
 
-    // fixup the stack alignment (16-bytes)
-    mv s0, sp
-    and sp, sp, ~15
+	// fixup the stack alignment (16-bytes)
+	mv s0, sp
+	and sp, sp, ~15
 	call kernel_trap_handler
 	mv sp, s0
 
 kernel_trap_restore:
-	.irp i, 3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
-		ld x\i, \i*8(sp)
-	.endr
+	ld t0, 33*8(sp)
+	and t0, t0, ~SSTATUS_SIE // whatever was specified, disable interrupts
+	csrw sstatus, t0
 
-	ld x1, 33*8(sp)
-	and x1, x1, ~SSTATUS_SIE // whatever was specified, disable interrupts
-	csrw sstatus, x1
+	ld t1, 32*8(sp)
+	csrw sepc, t1
 
-	and x1, x1, SSTATUS_SPP
-	bnez x1, restore_smode
+	and t2, t0, SSTATUS_SPP
+	bnez t2, restore_smode
 
 restore_umode:
-	add x1, sp, FRAME_SIZE
-	csrw sscratch, x1
+	add t1, sp, FRAME_SIZE
+	csrw sscratch, t1
+	sd tp, 0(t1)
 	j restore_finalize
 
 restore_smode:
 	csrw sscratch, zero
 
 restore_finalize:
-	ld x1, 32*8(sp)
-	csrw sepc, x1
+	.irp i, 1,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+		ld x\i, \i*8(sp)
+	.endr
 
-	ld x1, 1*8(sp)
 	ld sp, 2*8(sp)
 	sret
 
