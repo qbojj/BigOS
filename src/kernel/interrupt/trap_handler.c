@@ -20,6 +20,8 @@ void handle_irq(InterruptType irq) {
 }
 
 void handle_exc(ExceptionType exc, trap_frame_t* tf) {
+	[[maybe_unused]] reg_t stval = CSR_READ_RELAXED(stval);
+
 	switch (exc) {
 	case ExcEnvCallU:
 	case ExcEnvCallS:
@@ -38,9 +40,10 @@ void handle_exc(ExceptionType exc, trap_frame_t* tf) {
 }
 
 void kernel_trap_handler(trap_frame_t* tf) {
-	if (is_interrupt(tf->scause)) {
-		handle_irq(get_interrupt_code(tf->scause));
+	reg_t scause = CSR_READ_RELAXED(scause);
+	if (is_interrupt(scause)) {
+		handle_irq(get_interrupt_code(scause));
 	} else {
-		handle_exc(get_exception_code(tf->scause), tf);
+		handle_exc(get_exception_code(scause), tf);
 	}
 }

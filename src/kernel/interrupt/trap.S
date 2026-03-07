@@ -6,7 +6,7 @@
 
 .equ SSTATUS_SIE, 0x00000002 // Supervisor Interrupt Enable
 .equ SSTATUS_SPP, 0x00000100 // Supervisor Previous Privilege (1 = S-mode, 0 = U-mode)
-.equ FRAME_SIZE, 0x120
+.equ FRAME_SIZE, 0x110
 
 // sscratch should have kernel stack pointer IIF in user-mode
 // when comming from kernel-space then it should be 0
@@ -36,7 +36,7 @@ save_regs:
 	// sscratch <- old t0
 
 	add sp, sp, -FRAME_SIZE
-	// save original sp and restore original t0 in sscratch
+	// save original sp, restore original t0 in sscratch and restore sscratch invariant
 	sd t0, 2*8(sp)
 	csrrw t0, sscratch, zero
 
@@ -47,13 +47,9 @@ save_regs:
 
 	csrr t0, sepc
 	csrr t1, sstatus
-	csrr t2, scause
-	csrr t3, stval
 
 	sd t0, 32*8(sp)
 	sd t1, 33*8(sp)
-	sd t2, 34*8(sp)
-	sd t3, 35*8(sp)
 
 	andi t1, t1, SSTATUS_SPP
 	bnez t1, run_handler
@@ -67,34 +63,27 @@ save_regs:
 
 run_handler:
 	mv a0, sp
-
-	// fixup the stack alignment (16-bytes)
-	mv s0, sp
-	and sp, sp, ~15
 	call kernel_trap_handler
-	mv sp, s0
 
 kernel_trap_restore:
-	ld t0, 33*8(sp)
-	and t0, t0, ~SSTATUS_SIE // whatever was specified, disable interrupts
-	csrw sstatus, t0
+	ld t0, 32*8(sp)
+	ld t1, 33*8(sp)
 
-	ld t1, 32*8(sp)
-	csrw sepc, t1
+	// disable interrupts and restore sstatus and sepc
+	and t2, t1, ~SSTATUS_SIE
+	csrw sstatus, t2
+	csrw sepc, t0
 
-	and t2, t0, SSTATUS_SPP
-	bnez t2, restore_smode
+	and t2, t1, SSTATUS_SPP
+	bnez t2, load_regs
 
 restore_umode:
-	add t1, sp, FRAME_SIZE
-	csrw sscratch, t1
-	sd tp, 0(t1)
-	j restore_finalize
+	sd tp, FRAME_SIZE(sp)
 
-restore_smode:
-	csrw sscratch, zero
+	add t0, sp, FRAME_SIZE
+	csrw sscratch, t0
 
-restore_finalize:
+load_regs:
 	.irp i, 1,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
 		ld x\i, \i*8(sp)
 	.endr
