@@ -5,6 +5,10 @@
 #include <stdbigos/address.h>
 #include <stdbigos/error.h>
 #include <stdbigos/types.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include "stdbigos/array_sizes.h"
 
 typedef __phys void* phys_addr_t;
 

@@ -4,6 +4,7 @@
 #include <stdbigos/buffer.h>
 #include <stdbigos/string.h>
 #include <stdbigos/types.h>
+#include <stddef.h>
 
 #include "dt_common.h"
 #include "dt_defines.h"

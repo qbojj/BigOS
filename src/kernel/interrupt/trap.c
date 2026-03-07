@@ -4,6 +4,8 @@
 #include <stdbigos/error.h>
 #include <stdbigos/math.h>
 #include <stdbigos/string.h>
+#include <stdbigos/types.h>
+#include <stdint.h>
 
 extern void kernel_trap_entry();
 
@@ -13,14 +15,10 @@ error_t kernel_interrupt_init() {
 	return ERR_NONE;
 }
 
-error_t prepare_stack_for_transition(void** stack, const trap_frame_t* tf, void* thread_ptr) {
-	void* sp = (void*)ALIGN_DOWN((uintptr_t)*stack, 16);
-	sp = (void*)((void**)sp - 2);
-	*(void**)sp = thread_ptr;
-
-	sp = (trap_frame_t*)sp - 1;
-	memmove(sp, tf, sizeof(*tf));
-	*stack = sp;
+error_t prepare_stack_for_transition(void* restrict* restrict stack, const trap_frame_t* restrict tf) {
+	u8* sp = (u8*)ALIGN_DOWN((uintptr_t)*stack, 16);
+	*stack = sp - 16 - sizeof(*tf); // leave space for tp and trap frame
+	memcpy(*stack, tf, sizeof(*tf));
 
 	return ERR_NONE;
 }

@@ -1,5 +1,8 @@
 #include "allocator.h"
 
+#include "memory_management/include/physical_memory/manager.h"
+#include "stdbigos/error.h"
+
 size_t pmallocator_get_header_size(memory_area_t area) {
 	(void)area;
 	return 0;

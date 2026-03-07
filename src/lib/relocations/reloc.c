@@ -1,6 +1,7 @@
 #include <elf.h>
 #include <relocations/reloc.h>
 #include <stdbigos/types.h>
+#include <stdint.h>
 
 #define R_RISCV_NONE     0
 #define R_RISCV_RELATIVE 3

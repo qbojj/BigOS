@@ -16,8 +16,8 @@ typedef void (*pfn_continuation_t)(void* user);
 
 error_t kernel_interrupt_init();
 
-[[gnu::nonnull(1, 2)]]
-error_t prepare_stack_for_transition(void** stack, const trap_frame_t* tf, void* thread_ptr);
+[[gnu::nonnull]]
+error_t prepare_stack_for_transition(void* restrict* restrict stack, const trap_frame_t* restrict tf);
 
 [[noreturn, gnu::nonnull(1, 3)]]
 void jump_with_stack(void* stack, void* user, pfn_continuation_t continuation);
