@@ -1,9 +1,9 @@
-#include "trap.h"
-
 #include <debug/debug_stdio.h>
 #include <stdbigos/csr.h>
 #include <stdbigos/trap.h>
 #include <stdbigos/types.h>
+
+#include "trap.h"
 
 void handle_irq(InterruptType irq) {
 	switch (irq) {
