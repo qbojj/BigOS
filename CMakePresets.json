@@ -15,7 +15,8 @@
                 "build-dirs",
                 "compile-commands",
                 "cross-gcc",
-                "debug-type"
+                "debug-type",
+                "not-macos"
             ],
             "displayName": "Debug Configuration",
             "description": "Debug configuration with debug build."
@@ -26,7 +27,8 @@
                 "build-dirs",
                 "compile-commands",
                 "cross-gcc",
-                "release-type"
+                "release-type",
+                "not-macos"
             ],
             "displayName": "Release Configuration",
             "description": "Release configuration with optimized build."
@@ -37,7 +39,8 @@
                 "build-dirs",
                 "compile-commands",
                 "cross-gcc",
-                "release-size-type"
+                "release-size-type",
+                "not-macos"
             ],
             "displayName": "Release Configuration for size",
             "description": "Release configuration with optimized build for size."
@@ -48,7 +51,8 @@
                 "build-dirs",
                 "compile-commands",
                 "cross-gcc",
-                "release-debug-type"
+                "release-debug-type",
+                "not-macos"
             ],
             "displayName": "Release Configuration for debugging",
             "description": "Release configuration with debug symbols."
@@ -110,7 +114,8 @@
             "inherits": [
                 "build-dirs",
                 "compile-commands",
-                "cross-gcc"
+                "cross-gcc",
+                "not-macos"
             ],
             "generator": "Ninja Multi-Config",
             "displayName": "Ninja Multi-Config",
@@ -131,7 +136,7 @@
         },
         {
             "name": "ninja-multi-lto",
-            "inherits": ["ninja-multi", "build-release-lto"],
+            "inherits": ["ninja-multi", "build-release-lto", "not-macos"],
             "displayName": "Ninja Multi-Config with LTO",
             "description": "Configuration using Ninja Multi-Config generator with LTO. (add --config <CONFIG> to build)"
         },
@@ -143,7 +148,7 @@
         },
         {
             "name": "release-lto",
-            "inherits": ["release", "build-lto"],
+            "inherits": ["release", "build-lto", "not-macos"],
             "displayName": "Release Configuration with LTO",
             "description": "Release configuration with optimized build and LTO."
         },
@@ -158,7 +163,8 @@
             "inherits": [
                 "build-dirs",
                 "cross-gcc",
-                "warnings-as-errors"
+                "warnings-as-errors",
+                "not-macos"
             ],
             "displayName": "CI GCC Configuration",
             "description": "CI GCC configuration using Ninja with warnings as errors"
@@ -181,7 +187,8 @@
                 "build-dirs",
                 "cross-gcc",
                 "warnings-as-errors",
-                "build-lto"
+                "build-lto",
+                "not-macos"
             ],
             "displayName": "CI GCC Configuration with LTO",
             "description": "CI GCC configuration with LTO using Ninja with warnings as errors"
@@ -202,6 +209,7 @@
             "inherits": [
                 "build-dirs",
                 "cross-clang",
+                "macos-only",
                 "warnings-as-errors"
             ],
             "displayName": "CI MacOS Configuration",
@@ -212,6 +220,7 @@
             "inherits": [
                 "build-dirs",
                 "cross-clang",
+                "macos-only",
                 "warnings-as-errors",
                 "build-lto"
             ],

@@ -86,6 +86,24 @@
           "cacheVariables": {
             "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON"
           }
+        },
+        {
+            "name": "macos-only",
+            "hidden": true,
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            }
+        },
+        {
+            "name": "not-macos",
+            "hidden": true,
+            "condition": {
+                "type": "notEquals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            }
         }
     ]
 }
