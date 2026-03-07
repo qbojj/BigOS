@@ -13,12 +13,12 @@ error_t kernel_interrupt_init() {
 	return ERR_NONE;
 }
 
-error_t prepare_stack_for_transition(void** stack, struct trap_frame* tf, void* thread_ptr) {
+error_t prepare_stack_for_transition(void** stack, const trap_frame_t* tf, void* thread_ptr) {
 	void* sp = (void*)ALIGN_DOWN((uintptr_t)*stack, 16);
 	sp = (void*)((void**)sp - 2);
 	*(void**)sp = thread_ptr;
 
-	sp = (struct trap_frame*)sp - 1;
+	sp = (trap_frame_t*)sp - 1;
 	memmove(sp, tf, sizeof(*tf));
 	*stack = sp;
 

@@ -1,7 +1,7 @@
 .text
 
 .global kernel_trap_entry
-.global kernel_restore_cleanup_impl
+.global kernel_restore_with_cleanup
 .global jump_with_stack
 
 .equ SSTATUS_SIE, 0x00000002 // Supervisor Interrupt Enable
@@ -95,8 +95,13 @@ restore_finalize:
 	ld sp, 2*8(sp)
 	sret
 
-kernel_restore_cleanup_impl:
+kernel_restore_with_cleanup:
+	mv sp, a0
+	beqz a2, kernel_trap_restore
 	lla ra, kernel_trap_restore
+	mv a0, a1
+	jr a2
+
 jump_with_stack:
 	mv sp, a0
 	mv a0, a1
