@@ -3,6 +3,8 @@
 
 #include <stdbigos/array_sizes.h>
 #include <stdbigos/types.h>
+#include <stddef.h>
+#include <stdint.h>
 
 typedef struct {
 	size_t size;

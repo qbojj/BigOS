@@ -4,6 +4,8 @@
 #include <stdbigos/string.h>
 #include <stdbigos/trap.h>
 #include <stdbigos/types.h>
+#include <stddef.h>
+#include <stdint.h>
 
 // NOLINTBEGIN(readability-identifier-naming)
 extern u8 bss_start[];
