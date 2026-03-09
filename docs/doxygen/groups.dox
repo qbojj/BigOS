@@ -1,5 +1,6 @@
 /**
 @defgroup kernel Kernel
+	@defgroup kmm Kernel memory management
 	@defgroup kinit Kernel initialization
 	@defgroup hal Hardware abstraction layer
 @defgroup dt Device tree
