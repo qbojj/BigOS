@@ -5,5 +5,5 @@ API Documentation
    :maxdepth: 1
    :caption: Modules:
 
-   dt
+   libs/index
    kernel/index
