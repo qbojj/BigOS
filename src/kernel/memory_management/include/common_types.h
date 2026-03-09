@@ -46,10 +46,6 @@ bool do_memory_areas_overlap(memory_area_t area1, memory_area_t area2);
  *  @param align The alignment in bytes. Must be non-zero.
  *
  *  @return A memory area aligned to @p align that completely encompasses @p area.
- *
- *  @note If @p align is a power of two, the dedicated *_pow2 variants are preferred.
- *
- *  @see memory_area_expand_to_alignment_pow2
  */
 [[nodiscard]]
 memory_area_t memory_area_expand_to_alignment(memory_area_t area, u64 align);
@@ -66,10 +62,6 @@ memory_area_t memory_area_expand_to_alignment(memory_area_t area, u64 align);
  *  @param align The alignment in bytes. Must be non-zero.
  *
  *  @return A memory area aligned to @p align that is completely encompassed by @p area.
- *
- *  @note If @p align is a power of two, the dedicated *_pow2 variants are preferred.
- *
- *  @see memory_area_shrink_to_alignment_pow2
  */
 [[nodiscard]]
 memory_area_t memory_area_shrink_to_alignment(memory_area_t area, u64 align);
@@ -86,66 +78,8 @@ memory_area_t memory_area_shrink_to_alignment(memory_area_t area, u64 align);
  *  @param align The alignment in bytes. Must be non-zero.
  *
  *  @return A memory region aligned to @p align that is completely encompassed by @p region.
- *
- *  @note If @p align is a power of two, the dedicated *_pow2 variants are preferred.
- *
- *  @see memory_region_shrink_to_alignment_pow2
  */
 [[nodiscard]]
 memory_region_t memory_region_shrink_to_alignment(memory_region_t region, u64 align);
-
-/**
- *	@ingroup kernel
- *	@ingroup kmm
- *
- *  @brief Expands a memory area so that its start address and size are aligned to 2^@p pow2.
- *
- *  The resulting area always fully contains the original @p region.
- *
- *  @param area The memory area to align.
- *  @param pow2 The power of 2 to align to.
- *
- *  @return A memory area aligned to 2^@p pow2 that completely encompasses @p area.
- *
- *  @see memory_area_expand_to_alignment
- */
-[[nodiscard]]
-memory_area_t memory_area_expand_to_alignment_pow2(memory_area_t area, u64 pow2);
-
-/**
- *	@ingroup kernel
- *	@ingroup kmm
- *
- *  @brief Shrinks a memory region so that its start address and size are aligned to 2^@p pow2.
- *
- *  The resulting region is always fully contained in the original @p region.
- *
- *  @param area The memory area to align.
- *  @param pow2 The power of 2 to align to.
- *
- *  @return A memory area aligned to 2^@p pow2 that is completely encompassed by @p area.
- *
- *  @see memory_area_shrink_to_alignment
- */
-[[nodiscard]]
-memory_area_t memory_area_shrink_to_alignment_pow2(memory_area_t area, u64 pow2);
-
-/**
- *	@ingroup kernel
- *	@ingroup kmm
- *
- *  @brief Shrinks a memory region so that its start address and size are aligned to 2^@p pow2.
- *
- *  The resulting region is always fully contained in the original @p region.
- *
- *  @param region The memory region to align.
- *  @param pow2 The power of 2 to align to.
- *
- *  @return A memory region aligned to 2^@p pow2 that is completely encompassed by @p region.
- *
- *  @see memory_region_shrink_to_alignment
- */
-[[nodiscard]]
-memory_region_t memory_region_shrink_to_alignment_pow2(memory_region_t region, u64 pow2);
 
 #endif

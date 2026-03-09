@@ -161,7 +161,8 @@ error_t phys_mem_alloc_frame(frame_size_t frame_size, phys_addr_t* addrOUT) {
 			continue;
 		}
 		*addrOUT = frame_data;
-		KLOGLN_TRACE("Allocated a physical frame of size: %lu at %p", phys_mem_get_frame_size_in_bytes(frame_size), frame_data);
+		KLOGLN_TRACE("Allocated a physical frame of size: %lu at %p", phys_mem_get_frame_size_in_bytes(frame_size),
+		             frame_data);
 		return ERR_NONE;
 	}
 	KLOGLN_WARNING("Allocation of physical frame of size: %lu failed", phys_mem_get_frame_size_in_bytes(frame_size));
