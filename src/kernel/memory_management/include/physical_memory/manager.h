@@ -13,12 +13,14 @@
 typedef __phys void* phys_addr_t;
 
 /// @ingroup kmm
+/// @ingroup kmm_manager
 typedef struct {
 	size_t size;
 	phys_addr_t addr __sized_by(size);
 } physical_memory_region_t;
 
 /// @ingroup kmm
+/// @ingroup kmm_manager
 static inline memory_area_t phys_mem_reg_to_area(physical_memory_region_t region) {
 	memory_area_t area;
 	area.addr = (uintptr_t)region.addr;
@@ -27,6 +29,7 @@ static inline memory_area_t phys_mem_reg_to_area(physical_memory_region_t region
 }
 
 /// @ingroup kmm
+/// @ingroup kmm_manager
 static inline physical_memory_region_t area_to_phys_mem_reg(memory_area_t area) {
 	physical_memory_region_t region;
 	region.addr = (phys_addr_t)area.addr;
@@ -35,6 +38,7 @@ static inline physical_memory_region_t area_to_phys_mem_reg(memory_area_t area) 
 }
 
 /// @ingroup kmm
+/// @ingroup kmm_manager
 static inline void* physical_to_effective([[maybe_unused]] __phys void* addr) {
 	return nullptr;
 } // TODO: this is here temporarly
@@ -48,6 +52,7 @@ static inline memory_region_t phys_mem_reg_to_reg(physical_memory_region_t pmr) 
 }
 
 /// @ingroup kmm
+/// @ingroup kmm_manager
 typedef enum : u8 {
 	FRAME_SIZE_4KiB = 0,
 	FRAME_SIZE_8KiB = 1,
@@ -63,10 +68,12 @@ typedef enum : u8 {
 } frame_size_t; // NOTE: value of frame_size_t is (4KiB << frame_size)
 
 /// @ingroup kmm
+/// @ingroup kmm_manager
 u64 phys_mem_get_frame_size_in_bytes(frame_size_t fs);
 
 /**
  *	@ingroup kmm
+ *	@ingroup kmm_manager
  *	@brief Initializes physical memory manager
  *
  *	@param pmrs An array of allocatable regions of physical memory
@@ -79,18 +86,22 @@ u64 phys_mem_get_frame_size_in_bytes(frame_size_t fs);
  *	@retval ERR_OUT_OF_BOUND Internal memory mangament failed
  *	@retval ERR_BAD_ARG @p pmr_count is zero
  * */
-error_t phys_mem_init([[gnu::nonnull]] const physical_memory_region_t* pmrs, size_t pmr_count,
-                      [[gnu::nonnull]] const memory_area_t* reserved_areas, size_t reserved_areas_count);
+[[gnu::nonnull]]
+error_t phys_mem_init(const physical_memory_region_t* pmrs, size_t pmr_count, const memory_area_t* reserved_areas,
+                      size_t reserved_areas_count);
 
 /**
  *	@ingroup kmm
+ *	@ingroup kmm_manager
  *	@retval ERR_NONE
  *	@retval ERR_OUT_OF_MEMORY The block of specified size was not able to be allocated
  * */
-error_t phys_mem_alloc_frame(frame_size_t frame_size, [[gnu::nonnull]] phys_addr_t* addrOUT);
+[[gnu::nonnull]]
+error_t phys_mem_alloc_frame(frame_size_t frame_size, phys_addr_t* addrOUT);
 
 /**
  *	@ingroup kmm
+ *	@ingroup kmm_manager
  *	@retval ERR_NONE
  *	@retval ERR_NOT_VALID The address being freed was reported as not allocated
  * */
