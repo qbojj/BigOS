@@ -57,19 +57,6 @@ function(SETUP_EXECUTABLE name)
       )
 endfunction()
 
-function(COMPILE_BINARY name)
-    add_custom_command(
-        TARGET ${name} POST_BUILD
-        COMMAND ${CMAKE_OBJCOPY}
-                    -O binary
-                    "$<TARGET_FILE:${name}>"
-                    "$<TARGET_FILE:${name}>.bin"
-        VERBATIM
-    )
-
-    install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${name}.bin" TYPE BIN)
-endfunction()
-
 function(ADD_QEMU_TARGET name)
     cmake_parse_arguments(
         arg
@@ -81,7 +68,7 @@ function(ADD_QEMU_TARGET name)
 
     set(CMD "${BIGOS_QEMU_PATH}" ${BIGOS_QEMU_OPTIONS_LIST}
             $<IF:$<BOOL:${arg_BIOS_IMAGE}>,-bios,-kernel>
-            "$<TARGET_FILE:${name}>.bin"
+            "$<TARGET_FILE:${name}>"
         )
 
     add_custom_target(run-${name}

@@ -125,7 +125,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            clang llvm \
+            clang llvm lld \
             iwyu \
             gcc-riscv64-linux-gnu dosfstools e2fsprogs mtools \
             qemu-system-misc
@@ -161,8 +161,8 @@ jobs:
       - name: Generate and build
         uses: lukka/run-cmake@v10
         with:
-          configurePreset: 'ci-clang'
-          buildPreset: 'ci-clang'
+          configurePreset: 'ci-macos-clang'
+          buildPreset: 'ci-macos-clang'
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -189,8 +189,8 @@ jobs:
       - name: Generate and build
         uses: lukka/run-cmake@v10
         with:
-          configurePreset: 'ci-clang-lto'
-          buildPreset: 'ci-clang-lto'
+          configurePreset: 'ci-macos-clang-lto'
+          buildPreset: 'ci-macos-clang-lto'
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

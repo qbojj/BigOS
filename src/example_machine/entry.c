@@ -1,4 +1,5 @@
 #include <debug/debug_stdio.h>
+#include <relocations/reloc.h>
 #include <stdbigos/csr.h>
 #include <stdbigos/string.h>
 #include <stdbigos/trap.h>
@@ -17,7 +18,11 @@ static volatile u64* g_mtimecmp = (u64*)(g_clint_base + 0x4000);
 static const u64 g_quant = 50000llu;
 
 void main() {
-	for (u32 i = 0;; ++i) dprintf("hello OS %u\n", i);
+	for (u32 i = 0;; ++i) {
+		CSR_CLEAR(mstatus, 8); // disable interrupts
+		dprintf("hello OS %u\n", i);
+		CSR_SET(mstatus, 8);   // reenable interrupts
+	}
 }
 
 [[gnu::interrupt("machine")]]
@@ -29,10 +34,10 @@ void int_handler() {
 
 		switch (int_no) {
 		case IntMTimer:
-			dputs("\n\tgot timer interrupt\n");
+			dputs("got timer interrupt\n");
 			g_mtimecmp[hartid()] = *g_mtime + g_quant;
 			break;
-		default: dprintf("\n\tunknown interrupt (%ld)\n", int_no); break;
+		default: dprintf("unknown interrupt (%ld)\n", int_no); break;
 		}
 
 		CSR_CLEAR(mip, (reg_t)1 << int_no);
@@ -42,6 +47,7 @@ void int_handler() {
 
 [[noreturn, gnu::used]]
 void start() {
+	(void)self_relocate();
 	const size_t bss_sz = (uintptr_t)bss_end - (uintptr_t)bss_start;
 
 	memset(bss_start, '\0', bss_sz);
@@ -61,14 +67,4 @@ void start() {
 	main();
 
 	while (true) wfi();
-}
-
-[[gnu::section(".init"), gnu::naked]]
-void _start() { // NOLINT(readability-identifier-naming)
-	__asm__(".option push\n\t"
-	        ".option norelax\n\t"
-	        "la    gp, __global_pointer$\n\t"
-	        ".option pop\n\t"
-	        "la    sp, __stack_top\n\t"
-	        "j start");
 }
