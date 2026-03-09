@@ -5,6 +5,8 @@
 
 #include "allocator.h"
 #include "memory_management/include/common_types.h"
+#include "stdbigos/address.h"
+#include "stdbigos/error.h"
 #include "stdbigos/math.h"
 
 // Defs

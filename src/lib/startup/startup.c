@@ -10,6 +10,7 @@
 #include <stdbigos/csr.h>
 #include <stdbigos/string.h>
 #include <stdbigos/types.h>
+#include <stdint.h>
 
 // Generic C function pointer.
 typedef void (*function_t)(void);

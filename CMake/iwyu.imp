@@ -1,0 +1,3 @@
+[
+  { symbol: ["error_t", private, "<stdbigos/error.h>", public] },
+]

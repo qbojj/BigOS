@@ -1,6 +1,8 @@
 #include <memory_management/include/common_types.h>
 #include <stdbigos/math.h>
 
+#include "stdbigos/types.h"
+
 memory_area_t memory_region_get_area(memory_region_t reg) {
 	const memory_area_t out = {
 	    .addr = (uintptr_t)reg.addr,
