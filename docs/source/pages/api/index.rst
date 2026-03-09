@@ -6,9 +6,4 @@ API Documentation
    :caption: Modules:
 
    dt
-
-..
-   .. doxygenindex:: struct
-   NOTE: This index lists ALL structures defined in the API
-
-
+   kernel/index

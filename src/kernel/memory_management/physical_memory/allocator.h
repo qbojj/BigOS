@@ -10,7 +10,7 @@
 
 /**
  *	@ingroup kmm
- *	@ingroup phys_allocator
+ *	@ingroup palloc
  *
  *	@brief Looks for an area of suitable size and alignmnet to store all metadata about the @p area that the allocator
  * needs
@@ -28,7 +28,7 @@ error_t pmallocator_get_header(memory_area_t area, const memory_area_t* reserved
 
 /**
  *	@ingroup kmm
- *	@ingroup phys_allocator
+ *	@ingroup palloc
  *
  *	@param area The phiscal memory area to allocate from. Will be aligned to at least 4KiB boundry
  *	@param header A memory region of size at least `pmallocator_get_header_size(@p area)` aligned to 4KiB boundry
@@ -48,7 +48,7 @@ error_t pmallocator_init_region(memory_area_t area, memory_region_t header, cons
 
 /**
  *	@ingroup kmm
- *	@ingroup phys_allocator
+ *	@ingroup palloc
  *
  *	@param frame_order The frame size gives as `(1 << frame_order)`
  *	@param addrOUT Pointer the the variable to which the return address will be written to.
@@ -67,7 +67,7 @@ error_t pmallocator_allocate(u8 frame_order, memory_region_t header, phys_addr_t
 
 /**
  *	@ingroup kmm
- *	@ingroup phys_allocator
+ *	@ingroup palloc
  *
  *	@param addr
  *	@param header
