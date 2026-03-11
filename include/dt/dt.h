@@ -28,7 +28,7 @@ typedef u32 dt_prop_t;
  * @ingroup dt
  * @brief Flattened device tree structure.
  */
-typedef struct fdt_t {
+typedef struct {
 	buffer_t fdt_buffer; /**< Buffer containing the FDT data. */
 	dt_node_t root_node; /**< Root node offset. */
 	u32 total_size;      /**< Total size of the FDT. */
