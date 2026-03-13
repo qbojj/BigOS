@@ -16,32 +16,49 @@ typedef struct {
 } bitmap_range_t;
 
 
+static void bitmap_set(u64* bitmap, size_t bit) {
+	bitmap[bit / 64] |= (1ULL << (bit % 64));
+}
+
+static void bitmap_clear(u64* bitmap, size_t bit) {
+	bitmap[bit / 64] &= ~(1ULL << (bit % 64));
+}
+
+static bool bitmap_test(const u64* bitmap, size_t bit) {
+	return bitmap[bit / 64] & (1ULL << (bit % 64));
+}
+
+static void bitmap_set_range(u64* bitmap, size_t start, size_t count) {
+	for (size_t j = start; j < start + count; ++j)
+		bitmap_set(bitmap, j);
+}
+
 static size_t calculate_header_size(memory_area_t area) {
-	const size_t bitmap_bits = area.size / phys_mem_get_frame_size_in_bytes(FRAME_SIZE_4KiB);
+	const size_t bitmap_bits = area.size / PAGE_SIZE;
 	const size_t bitmap_bytes = ALIGN_UP(bitmap_bits, 64) / 8;
 	const size_t total = sizeof(pmallocator_header_t) + bitmap_bytes;
-	return ALIGN_UP(total, 0x1000);
+	return ALIGN_UP(total, PAGE_SIZE);
 }
 
 static bitmap_range_t addr_range_to_bitmap_range(uintptr_t range_addr, size_t range_size, uintptr_t base_addr) {
 
-	const size_t frame_size = phys_mem_get_frame_size_in_bytes(FRAME_SIZE_4KiB);
-	const uintptr_t aligned_start = ALIGN_DOWN(range_addr, frame_size);
-	const uintptr_t aligned_end   = ALIGN_UP(range_addr + range_size, frame_size);
+	const uintptr_t aligned_start = ALIGN_DOWN(range_addr, PAGE_SIZE);
+	const uintptr_t aligned_end   = ALIGN_UP(range_addr + range_size, PAGE_SIZE);
 
 	bitmap_range_t result = {
-	    .first_bit = (aligned_start - base_addr) / frame_size,
-	    .bit_count = (aligned_end - aligned_start) / frame_size,
+	    .first_bit = (aligned_start - base_addr) / PAGE_SIZE,
+	    .bit_count = (aligned_end - aligned_start) / PAGE_SIZE,
 	};
 	return result;
 }
+
 
 error_t pmallocator_get_header(memory_area_t area, get_next_reserved_region_t enumerator, void* user,
                                memory_area_t* headerOUT) {
 
 	const size_t header_size = calculate_header_size(area);
 
-	for (uintptr_t i = area.addr; i + header_size <= area.addr + area.size; i += 0x1000) {
+	for (uintptr_t i = area.addr; i + header_size <= area.addr + area.size; i += PAGE_SIZE) {
 		memory_area_t potential_header = {
 		    .addr = i,
 		    .size = header_size,
@@ -64,85 +81,84 @@ error_t pmallocator_get_header(memory_area_t area, get_next_reserved_region_t en
 		}
 	}
 
-	return ERR_NOT_ENOUGH_MEMORY;
+	return ERR_PHYSICAL_MEMORY_FULL;
 }
 
-error_t pmallocator_init_region(memory_area_t area, memory_region_t header, get_next_reserved_region_t enumerator,
+error_t pmallocator_init_region(memory_area_t area, memory_region_t header_region, get_next_reserved_region_t enumerator,
                                 void* user) {
+
+	pmallocator_header_t *header = header_region.addr;
+	header->area_size = area.size;
+	header->area_base_addr = area.addr;
 
 	const size_t header_size = calculate_header_size(area);
 	const size_t bitmap_size = header_size - sizeof(pmallocator_header_t);
-	pmallocator_header_t *effective_header = (pmallocator_header_t*)header.addr;
-	effective_header->area_base_addr = area.addr;
-	effective_header->area_size = area.size;
-	memset(effective_header->bitmap, 0, bitmap_size);
+
+	memset(header->bitmap, 0, bitmap_size);
 
 	if (enumerator != NULL) {
 		memory_area_t reserved_area;
 		while (enumerator(user, &reserved_area)) {
 			bitmap_range_t bitmap_range = addr_range_to_bitmap_range(reserved_area.addr, reserved_area.size, area.addr);
 
-			for (size_t j = bitmap_range.first_bit; j < bitmap_range.first_bit + bitmap_range.bit_count; ++j) {
-				effective_header->bitmap[j / 64] |= (1ULL << (j % 64));
-			}
+			bitmap_set_range(header->bitmap, bitmap_range.first_bit, bitmap_range.bit_count);
 		}
 	}
 
-	bitmap_range_t bitmap_range = addr_range_to_bitmap_range((uintptr_t)header.addr, header.size, area.addr);
-	for (size_t j = bitmap_range.first_bit; j < bitmap_range.first_bit + bitmap_range.bit_count; ++j) {
-		effective_header->bitmap[j / 64] |= (1ULL << (j % 64));
-	}
+	bitmap_range_t bitmap_range = addr_range_to_bitmap_range((uintptr_t)header_region.addr, header_region.size, area.addr);
+	bitmap_set_range(header->bitmap, bitmap_range.first_bit, bitmap_range.bit_count);
 
 	return ERR_NONE;
 }
 
-error_t pmallocator_allocate(u8 frame_order, memory_region_t header, memory_area_t* areaOUT) {
+error_t pmallocator_allocate(u8 frame_order, memory_region_t header_region, memory_area_t* areaOUT) {
 
-	const size_t frame_size = phys_mem_get_frame_size_in_bytes(FRAME_SIZE_4KiB);
+	pmallocator_header_t *header = header_region.addr;
+
+	const size_t bitmap_bits = header->area_size / PAGE_SIZE;
 	const size_t frame_count = 1ULL << frame_order;
-	pmallocator_header_t *effective_header = (pmallocator_header_t*)header.addr;
-
-	const size_t bitmap_bits = effective_header->area_size / frame_size;
 
 	for (size_t i = 0; i + frame_count <= bitmap_bits; i += frame_count) {
 
 		bool all_free = true;
 
 		for (size_t j = i; j < i + frame_count; ++j) {
-			if (effective_header->bitmap[j / 64] & (1ULL << (j % 64)) ) {
+			if (bitmap_test(header->bitmap, j)) {
 				all_free = false;
 				break;
 			}
 		}
 
 		if (all_free) {
-			for (size_t j = i; j < i + frame_count; ++j) {
-				effective_header->bitmap[j / 64] |= (1ULL << (j % 64));
-			}
-			areaOUT->addr = effective_header->area_base_addr + (i * frame_size);
-			areaOUT->size = frame_count * frame_size;
+			bitmap_set_range(header->bitmap, i, frame_count);
+			areaOUT->addr = header->area_base_addr + (i * PAGE_SIZE);
+			areaOUT->size = frame_count * PAGE_SIZE;
 			return ERR_NONE;
 		}
 	}
 
-	return ERR_NOT_ENOUGH_MEMORY;
+	return ERR_PHYSICAL_MEMORY_FULL;
 }
 
-error_t pmallocator_free(memory_area_t area, memory_region_t header) {
+error_t pmallocator_free(memory_area_t area, memory_region_t header_region) {
 
-	const size_t frame_size = phys_mem_get_frame_size_in_bytes(FRAME_SIZE_4KiB);
-	pmallocator_header_t *effective_header = (pmallocator_header_t*)header.addr;
+	pmallocator_header_t *header = header_region.addr;
+
+	const size_t frame_count = area.size / PAGE_SIZE;
 	const uintptr_t phys_addr = (uintptr_t)area.addr;
-	const size_t addr_bit = ( phys_addr - effective_header->area_base_addr) / frame_size;
+	const size_t addr_bit = (phys_addr - header->area_base_addr) / PAGE_SIZE;
+	const size_t total_pages = header->area_size / PAGE_SIZE;
 
-	if (phys_addr < effective_header->area_base_addr || addr_bit >= effective_header->area_size / frame_size) {
+	if (phys_addr < header->area_base_addr || addr_bit + frame_count > total_pages)
 		return ERR_OUT_OF_BOUNDS;
+
+	for (size_t j = addr_bit; j < addr_bit + frame_count; ++j) {
+		if (!bitmap_test(header->bitmap, j))
+			return ERR_NOT_VALID;
 	}
 
-	if (!(effective_header->bitmap[addr_bit / 64] & (1ULL << (addr_bit % 64))) ) {
-		return ERR_NOT_VALID;
-	}
+	for (size_t j = addr_bit; j < addr_bit + frame_count; ++j)
+		bitmap_clear(header->bitmap, j);
 
-	effective_header->bitmap[addr_bit / 64] &= ~(1ULL << (addr_bit % 64));
 	return ERR_NONE;
 }
