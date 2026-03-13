@@ -37,7 +37,8 @@ error_t pmallocator_get_header(memory_area_t area, get_next_reserved_region_t en
  *	@ingroup palloc
  *
  *	@param area The physical memory area to allocate from. Will be aligned to at least 4KiB boundary
- *	@param header_region A memory region of size at least `pmallocator_get_header_size(@p area)` aligned to 4KiB boundary
+ *	@param header_region A memory region of size at least `pmallocator_get_header_size(@p area)` aligned to 4KiB
+ * boundary
  *	@param iterator A pointer to a function that returns reserved regions. Should be nullptr if there are no reserved
  *					regions.
  *
@@ -47,8 +48,8 @@ error_t pmallocator_get_header(memory_area_t area, get_next_reserved_region_t en
  *	@note All pointers will break upon change of address space, because this is initialized before and will be used
  *		  after the change, no pointers can be stored inside the `header` region.
  * */
-error_t pmallocator_init_region(memory_area_t area, memory_region_t header_region, get_next_reserved_region_t enumerator,
-                                void* user);
+error_t pmallocator_init_region(memory_area_t area, memory_region_t header_region,
+                                get_next_reserved_region_t enumerator, void* user);
 
 /**
  *	@ingroup kmm
@@ -61,8 +62,8 @@ error_t pmallocator_init_region(memory_area_t area, memory_region_t header_regio
  *
  *	@retval ERR_NONE Success
  *	@retval ERR_NOT_VALID The requested frame order is not supported by the allocator
- *	@retval ERR_PHYSICAL_MEMORY_FULL Not enough memory in the area represented by @p header_region to allocate a frame of
- * desired size
+ *	@retval ERR_PHYSICAL_MEMORY_FULL Not enough memory in the area represented by @p header_region to allocate a frame
+ * of desired size
  *
  *	@note FRAME_ORDER_4KiB (order 0) must be a valid frame order.
  * */
@@ -78,8 +79,8 @@ error_t pmallocator_allocate(u8 frame_order, memory_region_t header_region, memo
  *
  *	@retval ERR_NONE Success
  *	@retval ERR_NOT_VALID The area represented by @p area is already free.
- *	@retval ERR_PHYSICAL_MEMORY_FULL Not enough memory in the area represented by @p header_region to allocate a frame of
- * desired size
+ *	@retval ERR_PHYSICAL_MEMORY_FULL Not enough memory in the area represented by @p header_region to allocate a frame
+ * of desired size
  *
  * */
 error_t pmallocator_free(memory_area_t area, memory_region_t header_region);

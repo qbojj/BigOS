@@ -1,4 +1,5 @@
 #include "allocator.h"
+
 #include "memory_management/include/physical_memory/manager.h"
 #include "stdbigos/error.h"
 #include "stdbigos/math.h"
@@ -15,7 +16,6 @@ typedef struct {
 	size_t bit_count;
 } bitmap_range_t;
 
-
 static void bitmap_set(u64* bitmap, size_t bit) {
 	bitmap[bit / 64] |= (1ULL << (bit % 64));
 }
@@ -29,8 +29,9 @@ static bool bitmap_test(const u64* bitmap, size_t bit) {
 }
 
 static void bitmap_set_range(u64* bitmap, size_t start, size_t count) {
-	for (size_t j = start; j < start + count; ++j)
+	for (size_t j = start; j < start + count; ++j) {
 		bitmap_set(bitmap, j);
+	}
 }
 
 static size_t calculate_header_size(memory_area_t area) {
@@ -41,9 +42,8 @@ static size_t calculate_header_size(memory_area_t area) {
 }
 
 static bitmap_range_t addr_range_to_bitmap_range(uintptr_t range_addr, size_t range_size, uintptr_t base_addr) {
-
 	const uintptr_t aligned_start = ALIGN_DOWN(range_addr, PAGE_SIZE);
-	const uintptr_t aligned_end   = ALIGN_UP(range_addr + range_size, PAGE_SIZE);
+	const uintptr_t aligned_end = ALIGN_UP(range_addr + range_size, PAGE_SIZE);
 
 	bitmap_range_t result = {
 	    .first_bit = (aligned_start - base_addr) / PAGE_SIZE,
@@ -52,10 +52,8 @@ static bitmap_range_t addr_range_to_bitmap_range(uintptr_t range_addr, size_t ra
 	return result;
 }
 
-
 error_t pmallocator_get_header(memory_area_t area, get_next_reserved_region_t enumerator, void* user,
                                memory_area_t* headerOUT) {
-
 	const size_t header_size = calculate_header_size(area);
 
 	for (uintptr_t i = area.addr; i + header_size <= area.addr + area.size; i += PAGE_SIZE) {
@@ -84,10 +82,9 @@ error_t pmallocator_get_header(memory_area_t area, get_next_reserved_region_t en
 	return ERR_PHYSICAL_MEMORY_FULL;
 }
 
-error_t pmallocator_init_region(memory_area_t area, memory_region_t header_region, get_next_reserved_region_t enumerator,
-                                void* user) {
-
-	pmallocator_header_t *header = header_region.addr;
+error_t pmallocator_init_region(memory_area_t area, memory_region_t header_region,
+                                get_next_reserved_region_t enumerator, void* user) {
+	pmallocator_header_t* header = header_region.addr;
 	header->area_size = area.size;
 	header->area_base_addr = area.addr;
 
@@ -105,21 +102,20 @@ error_t pmallocator_init_region(memory_area_t area, memory_region_t header_regio
 		}
 	}
 
-	bitmap_range_t bitmap_range = addr_range_to_bitmap_range((uintptr_t)header_region.addr, header_region.size, area.addr);
+	bitmap_range_t bitmap_range =
+	    addr_range_to_bitmap_range((uintptr_t)header_region.addr, header_region.size, area.addr);
 	bitmap_set_range(header->bitmap, bitmap_range.first_bit, bitmap_range.bit_count);
 
 	return ERR_NONE;
 }
 
 error_t pmallocator_allocate(u8 frame_order, memory_region_t header_region, memory_area_t* areaOUT) {
-
-	pmallocator_header_t *header = header_region.addr;
+	pmallocator_header_t* header = header_region.addr;
 
 	const size_t bitmap_bits = header->area_size / PAGE_SIZE;
 	const size_t frame_count = 1ULL << frame_order;
 
 	for (size_t i = 0; i + frame_count <= bitmap_bits; i += frame_count) {
-
 		bool all_free = true;
 
 		for (size_t j = i; j < i + frame_count; ++j) {
@@ -141,8 +137,7 @@ error_t pmallocator_allocate(u8 frame_order, memory_region_t header_region, memo
 }
 
 error_t pmallocator_free(memory_area_t area, memory_region_t header_region) {
-
-	pmallocator_header_t *header = header_region.addr;
+	pmallocator_header_t* header = header_region.addr;
 
 	const size_t frame_count = area.size / PAGE_SIZE;
 	const uintptr_t phys_addr = (uintptr_t)area.addr;
@@ -157,8 +152,9 @@ error_t pmallocator_free(memory_area_t area, memory_region_t header_region) {
 			return ERR_NOT_VALID;
 	}
 
-	for (size_t j = addr_bit; j < addr_bit + frame_count; ++j)
+	for (size_t j = addr_bit; j < addr_bit + frame_count; ++j) {
 		bitmap_clear(header->bitmap, j);
+	}
 
 	return ERR_NONE;
 }
