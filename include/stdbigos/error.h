@@ -1,6 +1,7 @@
-#ifndef BIGOS_INCLUDE_STDBIGOS_ERROR
-#define BIGOS_INCLUDE_STDBIGOS_ERROR
+#ifndef STDBIGOS_ERROR
+#define STDBIGOS_ERROR
 
+/// @ingroup stdbigos error
 typedef enum [[nodiscard]] {
 	ERR_NONE = 0,
 	ERR_NOT_IMPLEMENTED,

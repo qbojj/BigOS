@@ -6,28 +6,29 @@
 #include <stdbigos/math.h>
 #include <stdbigos/types.h>
 
-///	@ingroup stdbigos
+/// @addtogroup stdbigos
+/// @{
+/// @addtogroup types
+/// @{
+
 ///	Represents a contiguous range of valid, addressable memory.
 typedef struct {
 	size_t size;
 	void* addr __sized_by(size);
 } memory_region_t;
 
-///	@ingroup stdbigos
 ///	Represents a contiguous range of physical memory.
 typedef struct {
 	size_t size;
 	__phys void* addr __sized_by(size);
 } physical_memory_region_t;
 
-///	@ingroup stdbigos
 ///	Represents a range of memory, which isn't necessarily addressable.
 typedef struct {
 	size_t size;
 	uintptr_t addr;
 } memory_area_t;
 
-/// @ingroup stdbigos
 [[nodiscard]]
 static inline memory_area_t memory_region_to_area(memory_region_t reg) {
 	const memory_area_t out = {
@@ -37,7 +38,6 @@ static inline memory_area_t memory_region_to_area(memory_region_t reg) {
 	return out;
 }
 
-/// @ingroup stdbigos
 [[nodiscard]]
 static inline memory_area_t physical_memory_region_to_area(physical_memory_region_t reg) {
 	const memory_area_t out = {
@@ -47,7 +47,6 @@ static inline memory_area_t physical_memory_region_to_area(physical_memory_regio
 	return out;
 }
 
-/// @ingroup stdbigos
 [[nodiscard]]
 static inline bool do_memory_areas_overlap(memory_area_t area1, memory_area_t area2) {
 	bool cond1 = area1.addr < area2.addr + area2.size;
@@ -55,7 +54,6 @@ static inline bool do_memory_areas_overlap(memory_area_t area1, memory_area_t ar
 	return cond1 && cond2;
 }
 
-/// @ingroup stdbigos
 [[nodiscard]]
 static inline bool do_memory_regions_overlap(memory_region_t reg1, memory_region_t reg2) {
 	memory_area_t area1 = memory_region_to_area(reg1);
@@ -63,7 +61,6 @@ static inline bool do_memory_regions_overlap(memory_region_t reg1, memory_region
 	return do_memory_areas_overlap(area1, area2);
 }
 
-/// @ingroup stdbigos
 [[nodiscard]]
 static inline memory_area_t memory_area_expand_to_alignment(memory_area_t area, size_t align) {
 	memory_area_t aligned_reg = {
@@ -75,7 +72,6 @@ static inline memory_area_t memory_area_expand_to_alignment(memory_area_t area, 
 	return aligned_reg;
 }
 
-/// @ingroup stdbigos
 [[nodiscard]]
 static inline memory_area_t memory_area_shrink_to_alignment(memory_area_t area, size_t align) {
 	memory_area_t aligned_reg = {
@@ -87,7 +83,6 @@ static inline memory_area_t memory_area_shrink_to_alignment(memory_area_t area, 
 	return aligned_reg;
 }
 
-/// @ingroup stdbigos
 [[nodiscard]]
 static inline memory_region_t memory_region_shrink_to_alignment(memory_region_t region, size_t align) {
 	memory_area_t area = memory_region_to_area(region);

@@ -1,7 +1,12 @@
-#ifndef STDBIGOS_TRAP_H_
-#define STDBIGOS_TRAP_H_
+#ifndef STDBIGOS_TRAP
+#define STDBIGOS_TRAP
 
 #include "types.h"
+
+/// @ingroup stdbigos
+/// @{
+/// @ingroup trap
+/// @{
 
 typedef enum InterruptType {
 	IntSSoftware = 1,
@@ -54,4 +59,7 @@ static inline ExceptionType get_exception_code(reg_t cause) {
 	return cause;
 }
 
-#endif
+/// @}
+/// @}
+
+#endif // !STDBIGOS_TRAP

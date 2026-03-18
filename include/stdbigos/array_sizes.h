@@ -1,5 +1,5 @@
-#ifndef _STDBIGOS_ARRAY_SIZES_H
-#define _STDBIGOS_ARRAY_SIZES_H
+#ifndef STDBIGOS_ARRAY_SIZES
+#define STDBIGOS_ARRAY_SIZES
 
 #if __has_attribute(__counted_by__)
 	#define __counted_by(member) __attribute__((__counted_by__(member)))
@@ -13,4 +13,4 @@
 	#define __sized_by(member)
 #endif
 
-#endif
+#endif // !STDBIGOS_ARRAY_SIZES
