@@ -1,10 +1,10 @@
 #ifndef STDBIGOS_MEMORY_TYPES
 #define STDBIGOS_MEMORY_TYPES
 
+#include <stdbigos/address.h>
 #include <stdbigos/array_sizes.h>
 #include <stdbigos/math.h>
 #include <stdbigos/types.h>
-#include <stdbigos/address.h>
 
 ///	@ingroup stdbigos
 ///	Represents a contiguous range of valid, addressable memory.
@@ -12,6 +12,13 @@ typedef struct {
 	size_t size;
 	void* addr __sized_by(size);
 } memory_region_t;
+
+///	@ingroup stdbigos
+///	Represents a contiguous range of physical memory.
+typedef struct {
+	size_t size;
+	__phys void* addr __sized_by(size);
+} physical_memory_region_t;
 
 ///	@ingroup stdbigos
 ///	Represents a range of memory, which isn't necessarily addressable.
@@ -23,6 +30,16 @@ typedef struct {
 /// @ingroup stdbigos
 [[nodiscard]]
 static inline memory_area_t memory_region_to_area(memory_region_t reg) {
+	const memory_area_t out = {
+	    .addr = (uintptr_t)reg.addr,
+	    .size = reg.size,
+	};
+	return out;
+}
+
+/// @ingroup stdbigos
+[[nodiscard]]
+static inline memory_area_t physical_memory_region_to_area(physical_memory_region_t reg) {
 	const memory_area_t out = {
 	    .addr = (uintptr_t)reg.addr,
 	    .size = reg.size,

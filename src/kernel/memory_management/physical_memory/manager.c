@@ -1,10 +1,10 @@
 #include "memory_management/include/physical_memory/manager.h"
 
 #include <logging/klog.h>
+#include <stdbigos/memory_types.h>
 #include <stdbigos/string.h>
 
 #include "allocator.h"
-#include "memory_management/include/common_types.h"
 #include "stdbigos/address.h"
 #include "stdbigos/error.h"
 
@@ -50,11 +50,8 @@ static error_t store_header(physical_memory_region_t header) {
 		if (effective_hsn->next != nullptr) {
 			effective_hsn = physical_to_effective(effective_hsn->next);
 		} else {
-			physical_memory_region_t new_reg = {
-			    .addr = nullptr,
-			    .size = phys_mem_get_frame_size_in_bytes(FRAME_SIZE_4KiB),
-			};
-			error_t err = phys_mem_alloc_frame(FRAME_SIZE_4KiB, &new_reg.addr);
+			physical_memory_region_t new_reg = {0};
+			error_t err = phys_mem_alloc_frame(FRAME_SIZE_4KiB, &new_reg);
 			if (err)
 				return err;
 			err = init_header_storage_node(new_reg);
@@ -91,10 +88,11 @@ error_t phys_mem_init(const physical_memory_region_t* pmrs, size_t pmr_count, co
 	KLOG_INDENT_BLOCK_START;
 
 	for (size_t i = 0; i < pmr_count; ++i) {
-		memory_area_t pmr_area = phys_mem_reg_to_area(pmrs[i]);
-		pmr_area = memory_area_shrink_to_alignment(pmr_area, 0x1000);
-		memory_area_t header_area = {0};
+		physical_memory_region_t pmr = pmrs[i];
+		pmr = physical_memory_region_shrink_to_alignment(pmr, 0x1000);
 
+		memory_area_t header_area = {0};
+		memory_area_t pmr_area = physical_memory_region_to_area(pmr);
 		error_t err = pmallocator_get_header(pmr_area, reserved_areas, reserved_areas_count, &header_area);
 		if (err) {
 			KLOGLN_WARNING("Failed to get header region of memory region [%p - %p]", pmrs[i].addr,
@@ -102,33 +100,37 @@ error_t phys_mem_init(const physical_memory_region_t* pmrs, size_t pmr_count, co
 			continue;
 		}
 
-		physical_memory_region_t header_pmr = area_to_phys_mem_reg(header_area);
-		memory_region_t header_region = phys_mem_reg_to_reg(header_pmr);
+		physical_memory_region_t header_pmr = {
+		    .addr = (__phys void*)header_area.addr,
+		    .size = header_area.size,
+		};
+		memory_region_t header_eff_reg = physical_memory_region_to_effective(header_pmr);
 
-		err = pmallocator_init_region(pmr_area, header_region, reserved_areas, reserved_areas_count);
+		err = pmallocator_init_region(pmr_area, header_eff_reg, reserved_areas, reserved_areas_count);
 		if (err) {
 			KLOGLN_WARNING("Failed to init header region of memory region [%p - %p]", pmrs[i].addr,
 			               pmrs[i].addr + pmrs[i].size);
 			continue;
 		}
 		if (g_root_header_storage_node == nullptr) {
-			physical_memory_region_t new_reg = {
-			    .size = phys_mem_get_frame_size_in_bytes(FRAME_SIZE_4KiB),
-			    .addr = nullptr,
-			};
-			err = pmallocator_allocate(12, header_region, &new_reg.addr);
+			memory_area_t new_area = {0};
+			err = pmallocator_allocate(12, header_eff_reg, &new_area);
 			// NOTE: Since we failed to allocate the smallest possible frame size, we assume that this region is
 			// useless.
 			if (err) {
 				KLOGLN_WARNING("Failed to allocate a frame of size %zu from region [%p - %p]. This region will be "
 				               "ignored from now",
-				               new_reg.size, pmrs[i].addr, pmrs[i].addr + pmrs[i].size);
+				               new_area.size, pmrs[i].addr, pmrs[i].addr + pmrs[i].size);
 				continue;
 			}
 
 			KLOGLN_TRACE(
 			    "Memory region of size: %zu at addr: %p is used as primary node for physical region headers storage",
-			    new_reg.size, new_reg.addr);
+			    new_area.size, (void*)new_area.addr);
+			physical_memory_region_t new_reg = {
+				.addr = (__phys void*)new_area.addr,
+				.size = new_area.size,
+			};
 			err = init_header_storage_node(new_reg);
 			if (err) {
 				// No need to free this region since this error is, and should be, fatal
@@ -149,38 +151,43 @@ error_t phys_mem_init(const physical_memory_region_t* pmrs, size_t pmr_count, co
 }
 // NOLINTEND readability-function-cognitive-complexity
 
-error_t phys_mem_alloc_frame(frame_size_t frame_size, phys_addr_t* addrOUT) {
+error_t phys_mem_alloc_frame(frame_size_t frame_size, physical_memory_region_t* regOUT) {
 	u32 idx = 0;
 	physical_memory_region_t header_pmr;
 	while (get_header_pmr(idx, &header_pmr) == ERR_NONE) {
-		memory_region_t header_region = phys_mem_reg_to_reg(header_pmr);
-		phys_addr_t frame_data = nullptr;
-		error_t err = pmallocator_allocate(frame_size + 12, header_region, &frame_data);
+		memory_region_t header_region = physical_memory_region_to_effective(header_pmr);
+		memory_area_t area_out;
+		error_t err = pmallocator_allocate(frame_size + 12, header_region, &area_out);
 		if (err) {
 			++idx;
 			continue;
 		}
-		*addrOUT = frame_data;
+		physical_memory_region_t pmr_out = {
+		    .addr = (__phys void*)area_out.addr,
+		    .size = area_out.size,
+		};
+		*regOUT = pmr_out;
 		KLOGLN_TRACE("Allocated a physical frame of size: %lu at %p", phys_mem_get_frame_size_in_bytes(frame_size),
-		             frame_data);
+		             pmr_out.addr);
 		return ERR_NONE;
 	}
 	KLOGLN_WARNING("Allocation of physical frame of size: %lu failed", phys_mem_get_frame_size_in_bytes(frame_size));
 	return ERR_OUT_OF_MEMORY;
 }
 
-error_t phys_mem_free_frame(phys_addr_t addr) {
+error_t phys_mem_free_frame(physical_memory_region_t reg) {
 	u32 idx = 0;
 	physical_memory_region_t header_pmr;
 	while (get_header_pmr(idx, &header_pmr) == ERR_NONE) {
-		memory_region_t header_region = phys_mem_reg_to_reg(header_pmr);
-		error_t err = pmallocator_free(addr, header_region);
+		memory_region_t header_region = physical_memory_region_to_effective(header_pmr);
+		memory_area_t area = physical_memory_region_to_area(reg);
+		error_t err = pmallocator_free(area, header_region);
 		if (err) {
 			++idx;
 			continue;
 		}
 		return ERR_NONE;
 	}
-	KLOGLN_WARNING("Failed to free a physical frame at addr: %p", addr);
+	KLOGLN_WARNING("Failed to free a physical frame at addr: %p, of size: %zu", reg.addr, reg.size);
 	return ERR_NOT_VALID;
 }

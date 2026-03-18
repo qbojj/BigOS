@@ -1,11 +1,10 @@
 #ifndef BIGOS_KERNEL_MEMORY_MANAGEMENT_PHYSICAL_MEMORY_ALLOCATOR
 #define BIGOS_KERNEL_MEMORY_MANAGEMENT_PHYSICAL_MEMORY_ALLOCATOR
 
-#include <memory_management/include/physical_memory/manager.h>
 #include <stdbigos/error.h>
+#include <stdbigos/memory_types.h>
 #include <stddef.h>
 
-#include "memory_management/include/common_types.h"
 #include "stdbigos/types.h"
 
 /**
@@ -63,7 +62,7 @@ error_t pmallocator_init_region(memory_area_t area, memory_region_t header, cons
  *	@note 4KiB frame (or @p frame_order = 12) must be a valid frame size.
  * */
 [[gnu::nonnull]]
-error_t pmallocator_allocate(u8 frame_order, memory_region_t header, phys_addr_t* addrOUT);
+error_t pmallocator_allocate(u8 frame_order, memory_region_t header, memory_area_t* areaOUT);
 
 /**
  *	@ingroup kmm
@@ -75,6 +74,6 @@ error_t pmallocator_allocate(u8 frame_order, memory_region_t header, phys_addr_t
  *	@retval ERR_NONE Success
  *	@retval ERR_NOT_VALID The area represented by @p addr is already free.
  * */
-error_t pmallocator_free(phys_addr_t addr, memory_region_t header);
+error_t pmallocator_free(memory_area_t area, memory_region_t header);
 
 #endif
