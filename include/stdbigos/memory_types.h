@@ -4,22 +4,17 @@
 #include <stdbigos/array_sizes.h>
 #include <stdbigos/math.h>
 #include <stdbigos/types.h>
+#include <stdbigos/address.h>
 
-/**
- *	@ingroup stdbigos
- *
- *	Represents a contiguous range of valid, addressable memory.
- * */
+///	@ingroup stdbigos
+///	Represents a contiguous range of valid, addressable memory.
 typedef struct {
 	size_t size;
 	void* addr __sized_by(size);
 } memory_region_t;
 
-/**
- *	@ingroup stdbigos
- *
- *	Represents a range of memory, which isn't necessarily addressable.
- * */
+///	@ingroup stdbigos
+///	Represents a range of memory, which isn't necessarily addressable.
 typedef struct {
 	size_t size;
 	uintptr_t addr;
