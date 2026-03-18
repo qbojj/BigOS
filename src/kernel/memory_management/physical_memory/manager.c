@@ -128,8 +128,8 @@ error_t phys_mem_init(const physical_memory_region_t* pmrs, size_t pmr_count, co
 			    "Memory region of size: %zu at addr: %p is used as primary node for physical region headers storage",
 			    new_area.size, (void*)new_area.addr);
 			physical_memory_region_t new_reg = {
-				.addr = (__phys void*)new_area.addr,
-				.size = new_area.size,
+			    .addr = (__phys void*)new_area.addr,
+			    .size = new_area.size,
 			};
 			err = init_header_storage_node(new_reg);
 			if (err) {

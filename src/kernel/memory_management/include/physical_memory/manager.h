@@ -17,8 +17,8 @@ static inline void* physical_to_effective([[maybe_unused]] __phys void* addr) {
 
 static inline memory_region_t physical_memory_region_to_effective(physical_memory_region_t pmr) {
 	memory_region_t out = {
-		.addr = physical_to_effective(pmr.addr),
-		.size = pmr.size,
+	    .addr = physical_to_effective(pmr.addr),
+	    .size = pmr.size,
 	};
 	return out;
 }
@@ -59,7 +59,8 @@ u64 phys_mem_get_frame_size_in_bytes(frame_size_t fs);
  *	@retval ERR_BAD_ARG @p pmr_count is zero
  * */
 [[gnu::nonnull]]
-error_t phys_mem_init(const physical_memory_region_t* pmrs, size_t pmr_count, const memory_area_t* reserved_areas, size_t reserved_areas_count);
+error_t phys_mem_init(const physical_memory_region_t* pmrs, size_t pmr_count, const memory_area_t* reserved_areas,
+                      size_t reserved_areas_count);
 
 /**
  *	@ingroup kmm

@@ -71,7 +71,6 @@ size_t strcspn(const char* dest, const char* chars);
 [[unsequenced, gnu::nonnull, gnu::pure]]
 char* strpbrk(const char* dest, const char* breakset);
 
-/// @ingroup stdbigos string
 [[unsequenced, gnu::nonnull, gnu::pure]]
 char* strstr(const char* str, const char* substr);
 
