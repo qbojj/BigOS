@@ -12,20 +12,20 @@
 #include <stdbigos/buffer.h>
 #include <stdbigos/types.h>
 
+/// @addtogroup dt
+/// @{
+
 /**
- * @ingroup dt
  * @brief A node is an offset from the start of fdt with FDT_BEGIN_NODE.
  */
 typedef u32 dt_node_t;
 
 /**
- * @ingroup dt
  * @brief A property is an offset from the start of fdt with FDT_PROP.
  */
 typedef u32 dt_prop_t;
 
 /**
- * @ingroup dt
  * @brief Flattened device tree structure.
  */
 typedef struct {
@@ -39,7 +39,6 @@ typedef struct {
 } fdt_t;
 
 /**
- * @ingroup dt
  * @brief Read the header at fdt and set fields of obj.
  * @param fdt Pointer to the flattened device tree data.
  * @param obj Pointer to the fdt_t structure to initialize.
@@ -48,14 +47,12 @@ typedef struct {
 int dt_init(const void* fdt, fdt_t* obj);
 
 /**
- * @ingroup dt
  * @brief Reset properties of obj.
  * @param obj Pointer to the fdt_t structure to reset.
  */
 void dt_reset(fdt_t* obj);
 
 /**
- * @ingroup dt
  * @brief Get a node in a subtree of fdt, leave as 0 for global search.
  * @param fdt Pointer to the fdt object.
  * @param node The node of which subtree to search, leave as 0 for global search.
@@ -65,7 +62,6 @@ void dt_reset(fdt_t* obj);
 dt_node_t dt_get_node_in_subtree_by_path(const fdt_t* fdt, dt_node_t node, const char* node_path);
 
 /**
- * @ingroup dt
  * @brief Get a node globally in fdt.
  * @param fdt Pointer to the fdt object.
  * @param node_path Path to the node.
@@ -74,7 +70,6 @@ dt_node_t dt_get_node_in_subtree_by_path(const fdt_t* fdt, dt_node_t node, const
 dt_node_t dt_get_node_by_path(const fdt_t* fdt, const char* node_path);
 
 /**
- * @ingroup dt
  * @brief Get a node's first child in fdt.
  * @param fdt Pointer to the fdt object.
  * @param node The parent node.
@@ -83,7 +78,6 @@ dt_node_t dt_get_node_by_path(const fdt_t* fdt, const char* node_path);
 dt_node_t dt_get_node_child(const fdt_t* fdt, dt_node_t node);
 
 /**
- * @ingroup dt
  * @brief Get a node's next sibling in fdt.
  * @param fdt Pointer to the fdt object.
  * @param node The node to get the sibling of.
@@ -92,7 +86,6 @@ dt_node_t dt_get_node_child(const fdt_t* fdt, dt_node_t node);
 dt_node_t dt_get_node_sibling(const fdt_t* fdt, dt_node_t node);
 
 /**
- * @ingroup dt
  * @brief Get a node's name as a buffer in fdt.
  * @param fdt Pointer to the fdt object.
  * @param node The node to get the name of.
@@ -101,7 +94,6 @@ dt_node_t dt_get_node_sibling(const fdt_t* fdt, dt_node_t node);
 buffer_t dt_get_node_name(const fdt_t* fdt, dt_node_t node);
 
 /**
- * @ingroup dt
  * @brief Get a node's name as a pointer in fdt.
  * @param fdt Pointer to the fdt object.
  * @param node The node to get the name of.
@@ -110,7 +102,6 @@ buffer_t dt_get_node_name(const fdt_t* fdt, dt_node_t node);
 const char* dt_get_node_name_ptr(const fdt_t* fdt, dt_node_t node);
 
 /**
- * @ingroup dt
  * @brief Get a node's prop_name property in fdt.
  * @param fdt Pointer to the fdt object.
  * @param node The node to search in.
@@ -120,7 +111,6 @@ const char* dt_get_node_name_ptr(const fdt_t* fdt, dt_node_t node);
 dt_prop_t dt_get_prop_by_name(const fdt_t* fdt, dt_node_t node, const char* prop_name);
 
 /**
- * @ingroup dt
  * @brief Get a node's first property in fdt.
  * @param fdt Pointer to the fdt object.
  * @param node The node to get the first property of.
@@ -129,7 +119,6 @@ dt_prop_t dt_get_prop_by_name(const fdt_t* fdt, dt_node_t node, const char* prop
 dt_prop_t dt_get_first_prop(const fdt_t* fdt, dt_node_t node);
 
 /**
- * @ingroup dt
  * @brief Get a node's next property after prop in fdt.
  * @param fdt Pointer to the fdt object.
  * @param prop The current property.
@@ -138,7 +127,6 @@ dt_prop_t dt_get_first_prop(const fdt_t* fdt, dt_node_t node);
 dt_prop_t dt_get_next_prop(const fdt_t* fdt, dt_prop_t prop);
 
 /**
- * @ingroup dt
  * @brief Get a prop's name as a buffer in fdt.
  * @param fdt Pointer to the fdt object.
  * @param prop The property to get the name of.
@@ -147,7 +135,6 @@ dt_prop_t dt_get_next_prop(const fdt_t* fdt, dt_prop_t prop);
 buffer_t dt_get_prop_name(const fdt_t* fdt, dt_prop_t prop);
 
 /**
- * @ingroup dt
  * @brief Get a prop's name as a pointer in fdt.
  * @param fdt Pointer to the fdt object.
  * @param prop The property to get the name of.
@@ -156,12 +143,13 @@ buffer_t dt_get_prop_name(const fdt_t* fdt, dt_prop_t prop);
 const char* dt_get_prop_name_ptr(const fdt_t* fdt, dt_prop_t prop);
 
 /**
- * @ingroup dt
  * @brief Get a buffer for prop's data.
  * @param fdt Pointer to the fdt object.
  * @param prop The property to get the data of.
  * @return Buffer containing the property data.
  */
 buffer_t dt_get_prop_buffer(const fdt_t* fdt, dt_prop_t prop);
+
+/// @}
 
 #endif // !_DT_
