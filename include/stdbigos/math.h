@@ -1,14 +1,12 @@
-#ifndef _STDBIGOS_MATH_H
-#define _STDBIGOS_MATH_H
+#ifndef STDBIGOS_MATH
+#define STDBIGOS_MATH
 
-#define ALIGN_UP(x, align)       (((x) + (align) - 1) / (align) * (align))
-#define ALIGN_UP_POW2(x, pow2)   (((x) + (1 << (pow2)) - 1) & ~((1 << (pow2)) - 1))
-#define ALIGN_DOWN(x, align)     (((x) / (align) * (align)))
-#define ALIGN_DOWN_POW2(x, pow2) (((x) & ~((1 << pow2) - 1)))
+#define ALIGN_DOWN(x, align) ((x) & ~((align) - 1))
+#define ALIGN_UP(x, align)   (ALIGN_DOWN((x) + (align) - 1, (align)))
 
-#define POW2(x) (1 << (x))
+#define EXP2(x) (1ull << (x))
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
-#endif
+#endif // !STDBIGOS_MATH

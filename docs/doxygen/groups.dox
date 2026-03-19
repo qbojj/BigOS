@@ -6,4 +6,11 @@
 	@defgroup kinit Kernel initialization
 	@defgroup hal Hardware abstraction layer
 @defgroup dt Device tree
+@defgroup stdbigos
+	@defgroup sbi
+	@defgroup csr
+	@defgroup trap
+	@defgroup types
+	@defgroup string
+	@defgroup bitutils
 */

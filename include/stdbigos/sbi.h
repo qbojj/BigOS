@@ -3,6 +3,11 @@
 
 #include "types.h"
 
+/// @addtogroup stdbigos
+/// @{
+/// @addtogroup sbi
+/// @{
+
 #define SBI_SPEC_VERSION_DEFAULT     0x1
 #define SBI_SPEC_VERSION_MAJOR_SHIFT 24
 #define SBI_SPEC_VERSION_MAJOR_MASK  0x7f
@@ -199,5 +204,8 @@ struct sbiret sbi_mpxy_write_attributes(u32 channel_id, u32 base_attribute_id, u
 struct sbiret sbi_mpxy_send_message_with_response(u32 channel_id, u32 message_id, reg_t message_data_len);
 struct sbiret sbi_mpxy_send_message_without_response(u32 channel_id, u32 message_id, reg_t message_data_len);
 struct sbiret sbi_mpxy_get_notification_events(u32 channel_id);
+
+/// @}
+/// @}
 
 #endif

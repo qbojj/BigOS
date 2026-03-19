@@ -2,4 +2,4 @@
 Device Tree API
 ===============
 
-    .. doxygengroup:: dt
+.. doxygengroup:: dt
