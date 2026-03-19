@@ -2,4 +2,4 @@
 Physical memory allocator
 =========================
 
-    .. doxygengroup:: palloc
+.. doxygengroup:: palloc

@@ -2,4 +2,4 @@
 Physical memory manager
 ==============================
 
-    .. doxygengroup:: pmm
+.. doxygengroup:: pmm

@@ -1,5 +1,5 @@
-#ifndef _STDBIGOS_ADDRESS_H
-#define _STDBIGOS_ADDRESS_H
+#ifndef STDBIGOS_ADDRESS
+#define STDBIGOS_ADDRESS
 
 #ifdef __clang__
 	#define __noderef __attribute__((noderef))
@@ -13,4 +13,4 @@
 	#define __iomem
 #endif
 
-#endif
+#endif // !STDBIGOS_ADDRESS

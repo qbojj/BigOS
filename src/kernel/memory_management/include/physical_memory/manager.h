@@ -1,54 +1,26 @@
 #ifndef BIGOS_KERNEL_MEMORY_MANAGEMENT_PHYSICAL_MEMORY_MANAGER
 #define BIGOS_KERNEL_MEMORY_MANAGEMENT_PHYSICAL_MEMORY_MANAGER
 
-#include <memory_management/include/common_types.h>
 #include <stdbigos/address.h>
 #include <stdbigos/error.h>
+#include <stdbigos/memory_types.h>
 #include <stdbigos/types.h>
 #include <stddef.h>
 #include <stdint.h>
 
-#include "stdbigos/array_sizes.h"
-
-typedef __phys void* phys_addr_t;
-
 /// @ingroup kmm
 /// @ingroup pmm
-typedef struct {
-	size_t size;
-	phys_addr_t addr __sized_by(size);
-} physical_memory_region_t;
-
-/// @ingroup kmm
-/// @ingroup pmm
-static inline memory_area_t phys_mem_reg_to_area(physical_memory_region_t region) {
-	memory_area_t area;
-	area.addr = (uintptr_t)region.addr;
-	area.size = region.size;
-	return area;
-}
-
-/// @ingroup kmm
-/// @ingroup pmm
-static inline physical_memory_region_t area_to_phys_mem_reg(memory_area_t area) {
-	physical_memory_region_t region;
-	region.addr = (phys_addr_t)area.addr;
-	region.size = area.size;
-	return region;
-}
-
-/// @ingroup kmm
-/// @ingroup pmm
+/// @todo implement
 static inline void* physical_to_effective([[maybe_unused]] __phys void* addr) {
 	return nullptr;
-} // TODO: this is here temporarly
+}
 
-static inline memory_region_t phys_mem_reg_to_reg(physical_memory_region_t pmr) {
-	memory_region_t reg = {
-	    .size = pmr.size,
+static inline memory_region_t physical_memory_region_to_effective(physical_memory_region_t pmr) {
+	memory_region_t out = {
 	    .addr = physical_to_effective(pmr.addr),
+	    .size = pmr.size,
 	};
-	return reg;
+	return out;
 }
 
 /// @ingroup kmm
@@ -97,7 +69,7 @@ error_t phys_mem_init(const physical_memory_region_t* pmrs, size_t pmr_count, co
  *	@retval ERR_OUT_OF_MEMORY The block of specified size was not able to be allocated
  * */
 [[gnu::nonnull]]
-error_t phys_mem_alloc_frame(frame_size_t frame_size, phys_addr_t* addrOUT);
+error_t phys_mem_alloc_frame(frame_size_t frame_size, physical_memory_region_t* regOUT);
 
 /**
  *	@ingroup kmm
@@ -105,6 +77,6 @@ error_t phys_mem_alloc_frame(frame_size_t frame_size, phys_addr_t* addrOUT);
  *	@retval ERR_NONE
  *	@retval ERR_NOT_VALID The address being freed was reported as not allocated
  * */
-error_t phys_mem_free_frame(phys_addr_t addr);
+error_t phys_mem_free_frame(physical_memory_region_t reg);
 
 #endif //! BIGOS_KERNEL_MEMORY_MANAGMENT_PHYSICAL_MEMORY_MANAGMENT
