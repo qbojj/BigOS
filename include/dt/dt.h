@@ -4,28 +4,27 @@
  * @brief Device tree access interface.
  */
 
-#ifndef _DT_
-#define _DT_
-
-// TODO: Change return values of functions that return e.g. no next properties and errors as the same
+#ifndef DT_DT
+#define DT_DT
 
 #include <stdbigos/buffer.h>
+#include <stdbigos/error.h>
 #include <stdbigos/types.h>
 
+/// @addtogroup dt
+/// @{
+
 /**
- * @ingroup dt
  * @brief A node is an offset from the start of fdt with FDT_BEGIN_NODE.
  */
 typedef u32 dt_node_t;
 
 /**
- * @ingroup dt
  * @brief A property is an offset from the start of fdt with FDT_PROP.
  */
 typedef u32 dt_prop_t;
 
 /**
- * @ingroup dt
  * @brief Flattened device tree structure.
  */
 typedef struct {
@@ -39,129 +38,182 @@ typedef struct {
 } fdt_t;
 
 /**
- * @ingroup dt
  * @brief Read the header at fdt and set fields of obj.
  * @param fdt Pointer to the flattened device tree data.
  * @param obj Pointer to the fdt_t structure to initialize.
- * @return 0 if success, <0 if error. If an error occurs, fdt_buffer of obj is set to an invalid buffer.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args
+ * @retval ERR_NOT_VALID if the FDT is invalid or unsupported
+ * @note If an error occurs, fdt_buffer of obj is set to an invalid buffer.
  */
-int dt_init(const void* fdt, fdt_t* obj);
+error_t dt_init(const void* fdt, fdt_t* obj);
 
 /**
- * @ingroup dt
  * @brief Reset properties of obj.
  * @param obj Pointer to the fdt_t structure to reset.
  */
 void dt_reset(fdt_t* obj);
 
 /**
- * @ingroup dt
  * @brief Get a node in a subtree of fdt, leave as 0 for global search.
  * @param fdt Pointer to the fdt object.
  * @param node The node of which subtree to search, leave as 0 for global search.
  * @param node_path Path to the node.
- * @return >0 if success, 0 if error.
+ * @param[out] nodeOUT Found node.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args
+ * @retval ERR_NOT_VALID if the FDT is invalid
+ * @retval ERR_NOT_FOUND if no node found
+ * @retval ERR_OUT_OF_BOUNDS if search went out of bounds
  */
-dt_node_t dt_get_node_in_subtree_by_path(const fdt_t* fdt, dt_node_t node, const char* node_path);
+[[gnu::nonnull(4)]]
+error_t dt_get_node_in_subtree_by_path(const fdt_t* fdt, dt_node_t node, const char* node_path, dt_node_t* nodeOUT);
 
 /**
- * @ingroup dt
  * @brief Get a node globally in fdt.
  * @param fdt Pointer to the fdt object.
  * @param node_path Path to the node.
- * @return >0 if success, 0 if error.
+ * @param[out] nodeOUT Found node.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args
+ * @retval ERR_NOT_VALID if the FDT is invalid
+ * @retval ERR_NOT_FOUND if no node found
+ * @retval ERR_OUT_OF_BOUNDS if search went out of bounds
  */
-dt_node_t dt_get_node_by_path(const fdt_t* fdt, const char* node_path);
+[[gnu::nonnull(3)]]
+error_t dt_get_node_by_path(const fdt_t* fdt, const char* node_path, dt_node_t* nodeOUT);
 
 /**
- * @ingroup dt
  * @brief Get a node's first child in fdt.
  * @param fdt Pointer to the fdt object.
  * @param node The parent node.
- * @return 0 if no children exist or error, >0 if success.
+ * @param[out] nodeOUT Child node.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args
+ * @retval ERR_NOT_VALID if the FDT is invalid
+ * @retval ERR_NOT_FOUND if no node found
+ * @retval ERR_OUT_OF_BOUNDS if search went out of bounds
  */
-dt_node_t dt_get_node_child(const fdt_t* fdt, dt_node_t node);
+[[gnu::nonnull(3)]]
+error_t dt_get_node_child(const fdt_t* fdt, dt_node_t node, dt_node_t* nodeOUT);
 
 /**
- * @ingroup dt
  * @brief Get a node's next sibling in fdt.
  * @param fdt Pointer to the fdt object.
  * @param node The node to get the sibling of.
- * @return 0 if no siblings exist or error, >0 if success.
+ * @param[out] nodeOUT Sibling node.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args
+ * @retval ERR_NOT_VALID if the FDT is invalid
+ * @retval ERR_NOT_FOUND if no node found
+ * @retval ERR_OUT_OF_BOUNDS if search went out of bounds
  */
-dt_node_t dt_get_node_sibling(const fdt_t* fdt, dt_node_t node);
+[[gnu::nonnull(3)]]
+error_t dt_get_node_sibling(const fdt_t* fdt, dt_node_t node, dt_node_t* nodeOUT);
 
 /**
- * @ingroup dt
  * @brief Get a node's name as a buffer in fdt.
  * @param fdt Pointer to the fdt object.
  * @param node The node to get the name of.
- * @return Valid buffer if success, invalid buffer if error.
+ * @param[out] bufOUT Buffer with the name.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args or misaligned @p node
+ * @retval ERR_NOT_VALID if the FDT is invalid
  */
-buffer_t dt_get_node_name(const fdt_t* fdt, dt_node_t node);
+[[gnu::nonnull(3)]]
+error_t dt_get_node_name(const fdt_t* fdt, dt_node_t node, buffer_t* bufOUT);
 
 /**
- * @ingroup dt
  * @brief Get a node's name as a pointer in fdt.
  * @param fdt Pointer to the fdt object.
  * @param node The node to get the name of.
- * @return Pointer to the node name.
+ * @param[out] ptrOUT Pointer to the name.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args or misaligned @p node
+ * @retval ERR_NOT_VALID if the FDT is invalid
  */
-const char* dt_get_node_name_ptr(const fdt_t* fdt, dt_node_t node);
+[[gnu::nonnull(3)]]
+error_t dt_get_node_name_ptr(const fdt_t* fdt, dt_node_t node, const char** ptrOUT);
 
 /**
- * @ingroup dt
  * @brief Get a node's prop_name property in fdt.
  * @param fdt Pointer to the fdt object.
  * @param node The node to search in.
  * @param prop_name Name of the property.
- * @return >0 if success, 0 if error.
+ * @param[out] propOUT Property.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args or misaligned @p node
+ * @retval ERR_NOT_VALID if the FDT is invalid
+ * @retval ERR_NOT_FOUND if no prop found
+ * @retval ERR_OUT_OF_BOUNDS if search went out of bounds
  */
-dt_prop_t dt_get_prop_by_name(const fdt_t* fdt, dt_node_t node, const char* prop_name);
+[[gnu::nonnull(4)]]
+error_t dt_get_prop_by_name(const fdt_t* fdt, dt_node_t node, const char* prop_name, dt_prop_t* propOUT);
 
 /**
- * @ingroup dt
  * @brief Get a node's first property in fdt.
  * @param fdt Pointer to the fdt object.
  * @param node The node to get the first property of.
- * @return 0 if no properties exist or error, >0 if success.
+ * @param[out] propOUT First property.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args or misaligned @p node
+ * @retval ERR_NOT_VALID if the FDT is invalid
+ * @retval ERR_NOT_FOUND if no prop found
+ * @retval ERR_OUT_OF_BOUNDS if search went out of bounds
  */
-dt_prop_t dt_get_first_prop(const fdt_t* fdt, dt_node_t node);
+[[gnu::nonnull(3)]]
+error_t dt_get_first_prop(const fdt_t* fdt, dt_node_t node, dt_prop_t* propOUT);
 
 /**
- * @ingroup dt
  * @brief Get a node's next property after prop in fdt.
  * @param fdt Pointer to the fdt object.
  * @param prop The current property.
- * @return 0 if no next properties exist or error, >0 if success.
+ * @param[out] propOUT Next property.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args or misaligned @p prop
+ * @retval ERR_NOT_VALID if the FDT is invalid
+ * @retval ERR_NOT_FOUND if no prop found
+ * @retval ERR_OUT_OF_BOUNDS if search went out of bounds
  */
-dt_prop_t dt_get_next_prop(const fdt_t* fdt, dt_prop_t prop);
+[[gnu::nonnull(3)]]
+error_t dt_get_next_prop(const fdt_t* fdt, dt_prop_t prop, dt_prop_t* propOUT);
 
 /**
- * @ingroup dt
  * @brief Get a prop's name as a buffer in fdt.
  * @param fdt Pointer to the fdt object.
  * @param prop The property to get the name of.
- * @return Valid buffer if success, invalid buffer if error.
+ * @param[out] bufOUT Buffer with the name.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args or misaligned @p prop
+ * @retval ERR_NOT_VALID if the FDT is invalid
  */
-buffer_t dt_get_prop_name(const fdt_t* fdt, dt_prop_t prop);
+[[gnu::nonnull(3)]]
+error_t dt_get_prop_name(const fdt_t* fdt, dt_prop_t prop, buffer_t* bufOUT);
 
 /**
- * @ingroup dt
  * @brief Get a prop's name as a pointer in fdt.
  * @param fdt Pointer to the fdt object.
  * @param prop The property to get the name of.
- * @return Pointer to the property name.
+ * @param[out] ptrOUT Pointer to the name.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args or misaligned @p prop
+ * @retval ERR_NOT_VALID if the FDT is invalid
  */
-const char* dt_get_prop_name_ptr(const fdt_t* fdt, dt_prop_t prop);
+[[gnu::nonnull(3)]]
+error_t dt_get_prop_name_ptr(const fdt_t* fdt, dt_prop_t prop, const char** ptrOUT);
 
 /**
- * @ingroup dt
  * @brief Get a buffer for prop's data.
  * @param fdt Pointer to the fdt object.
  * @param prop The property to get the data of.
- * @return Buffer containing the property data.
+ * @param[out] bufOUT Buffer with the data.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args
+ * @retval ERR_NOT_VALID if the FDT is invalid
  */
-buffer_t dt_get_prop_buffer(const fdt_t* fdt, dt_prop_t prop);
+[[gnu::nonnull(3)]]
+error_t dt_get_prop_buffer(const fdt_t* fdt, dt_prop_t prop, buffer_t* bufOUT);
 
-#endif // !_DT_
+/// @}
+
+#endif // !DT_DT
