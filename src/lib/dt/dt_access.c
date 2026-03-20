@@ -27,8 +27,8 @@ static buffer_t buffer_strtok(const char** path, const char* sep) {
 	return make_buffer(p, sz);
 }
 
-error_t dt_get_node_in_subtree_by_path(const fdt_t* fdt, dt_node_t node, const char* node_path, dt_node_t* out_node) {
-	if (!fdt || !out_node)
+error_t dt_get_node_in_subtree_by_path(const fdt_t* fdt, dt_node_t node, const char* node_path, dt_node_t* nodeOUT) {
+	if (fdt == nullptr)
 		return ERR_BAD_ARG;
 
 	if (!node && fdt->root_node)
@@ -37,7 +37,7 @@ error_t dt_get_node_in_subtree_by_path(const fdt_t* fdt, dt_node_t node, const c
 	while (true) {
 		buffer_t segment_name = buffer_strtok(&node_path, "/");
 		if (!buffer_is_valid(segment_name)) {
-			*out_node = node;
+			*nodeOUT = node;
 			return ERR_NONE;
 		}
 
@@ -71,12 +71,12 @@ error_t dt_get_node_in_subtree_by_path(const fdt_t* fdt, dt_node_t node, const c
 	}
 }
 
-error_t dt_get_node_by_path(const fdt_t* fdt, const char* node_path, dt_node_t* out_node) {
-	return dt_get_node_in_subtree_by_path(fdt, (dt_node_t)0, node_path, out_node);
+error_t dt_get_node_by_path(const fdt_t* fdt, const char* node_path, dt_node_t* nodeOUT) {
+	return dt_get_node_in_subtree_by_path(fdt, (dt_node_t)0, node_path, nodeOUT);
 }
 
-error_t dt_get_node_child(const fdt_t* fdt, dt_node_t node, dt_node_t* out_node) {
-	if (!fdt || !out_node)
+error_t dt_get_node_child(const fdt_t* fdt, dt_node_t node, dt_node_t* nodeOUT) {
+	if (fdt == nullptr)
 		return ERR_BAD_ARG;
 
 	buffer_t fdt_buf = fdt->fdt_buffer;
@@ -98,7 +98,7 @@ error_t dt_get_node_child(const fdt_t* fdt, dt_node_t node, dt_node_t* out_node)
 
 		curr_offset += sizeof(fdt_token_t);
 		switch ((fdt_token_t)tag) {
-		case FDT_BEGIN_NODE: *out_node = node_offset; return ERR_NONE;
+		case FDT_BEGIN_NODE: *nodeOUT = node_offset; return ERR_NONE;
 
 		case FDT_NOP: continue;
 
@@ -114,8 +114,8 @@ error_t dt_get_node_child(const fdt_t* fdt, dt_node_t node, dt_node_t* out_node)
 	return ERR_OUT_OF_BOUNDS;
 }
 
-error_t dt_get_node_sibling(const fdt_t* fdt, dt_node_t node, dt_node_t* out_node) {
-	if (!fdt || !out_node)
+error_t dt_get_node_sibling(const fdt_t* fdt, dt_node_t node, dt_node_t* nodeOUT) {
+	if (fdt == nullptr)
 		return ERR_BAD_ARG;
 
 	buffer_t fdt_buf = fdt->fdt_buffer;
@@ -141,7 +141,7 @@ error_t dt_get_node_sibling(const fdt_t* fdt, dt_node_t node, dt_node_t* out_nod
 		switch ((fdt_token_t)tag) {
 		case FDT_BEGIN_NODE:
 			if (not_nested) {
-				*out_node = node_offset;
+				*nodeOUT = node_offset;
 				return ERR_NONE;
 			}
 
@@ -165,8 +165,8 @@ error_t dt_get_node_sibling(const fdt_t* fdt, dt_node_t node, dt_node_t* out_nod
 	return ERR_OUT_OF_BOUNDS;
 }
 
-error_t dt_get_node_name(const fdt_t* fdt, dt_node_t node, buffer_t* out_buf) {
-	if (!fdt || !out_buf)
+error_t dt_get_node_name(const fdt_t* fdt, dt_node_t node, buffer_t* bufOUT) {
+	if (fdt == nullptr)
 		return ERR_BAD_ARG;
 
 	buffer_t fdt_buf = fdt->fdt_buffer;
@@ -187,25 +187,25 @@ error_t dt_get_node_name(const fdt_t* fdt, dt_node_t node, buffer_t* out_buf) {
 	if (!buffer_read_cstring_len(fdt_buf, curr_offset + sizeof(fdt_token_t), &name, &name_len))
 		return ERR_NOT_VALID;
 
-	*out_buf = buffer_sub_buffer(fdt_buf, curr_offset + sizeof(fdt_token_t), name_len);
+	*bufOUT = buffer_sub_buffer(fdt_buf, curr_offset + sizeof(fdt_token_t), name_len);
 
 	return ERR_NONE;
 }
 
-error_t dt_get_node_name_ptr(const fdt_t* fdt, dt_node_t node, const char** out_ptr) {
+error_t dt_get_node_name_ptr(const fdt_t* fdt, dt_node_t node, const char** ptrOUT) {
 	buffer_t b;
 	error_t error = dt_get_node_name(fdt, node, &b);
 
 	if (error != ERR_NONE)
 		return error;
 
-	*out_ptr = b.data;
+	*ptrOUT = b.data;
 
 	return ERR_NONE;
 }
 
-error_t dt_get_prop_by_name(const fdt_t* fdt, dt_node_t node, const char* prop_name, dt_prop_t* out_prop) {
-	if (!fdt || !prop_name || !out_prop)
+error_t dt_get_prop_by_name(const fdt_t* fdt, dt_node_t node, const char* prop_name, dt_prop_t* propOUT) {
+	if (fdt == nullptr || !prop_name)
 		return ERR_BAD_ARG;
 
 	buffer_t name = make_buffer(prop_name, strlen(prop_name));
@@ -223,7 +223,7 @@ error_t dt_get_prop_by_name(const fdt_t* fdt, dt_node_t node, const char* prop_n
 			return error;
 
 		if (buffer_equal(child_name, name)) {
-			*out_prop = prop;
+			*propOUT = prop;
 			return ERR_NONE;
 		}
 
@@ -235,8 +235,8 @@ error_t dt_get_prop_by_name(const fdt_t* fdt, dt_node_t node, const char* prop_n
 	}
 }
 
-error_t dt_get_first_prop(const fdt_t* fdt, dt_node_t node, dt_prop_t* out_prop) {
-	if (!fdt || !out_prop)
+error_t dt_get_first_prop(const fdt_t* fdt, dt_node_t node, dt_prop_t* propOUT) {
+	if (fdt == nullptr)
 		return ERR_BAD_ARG;
 
 	buffer_t fdt_buf = fdt->fdt_buffer;
@@ -256,7 +256,7 @@ error_t dt_get_first_prop(const fdt_t* fdt, dt_node_t node, dt_prop_t* out_prop)
 			return ERR_NOT_VALID;
 
 		switch ((fdt_token_t)tag) {
-		case FDT_PROP: *out_prop = curr_offset; return ERR_NONE;
+		case FDT_PROP: *propOUT = curr_offset; return ERR_NONE;
 
 		case FDT_NOP: break;
 
@@ -271,8 +271,8 @@ error_t dt_get_first_prop(const fdt_t* fdt, dt_node_t node, dt_prop_t* out_prop)
 	return ERR_NOT_FOUND;
 }
 
-error_t dt_get_next_prop(const fdt_t* fdt, dt_prop_t prop, dt_prop_t* out_prop) {
-	if (!fdt || !out_prop)
+error_t dt_get_next_prop(const fdt_t* fdt, dt_prop_t prop, dt_prop_t* propOUT) {
+	if (fdt == nullptr)
 		return ERR_BAD_ARG;
 
 	buffer_t fdt_buf = fdt->fdt_buffer;
@@ -303,7 +303,7 @@ error_t dt_get_next_prop(const fdt_t* fdt, dt_prop_t prop, dt_prop_t* out_prop) 
 		}
 
 		switch ((fdt_token_t)tag) {
-		case FDT_PROP: *out_prop = curr_offset; return ERR_NONE;
+		case FDT_PROP: *propOUT = curr_offset; return ERR_NONE;
 
 		case FDT_NOP: break;
 
@@ -318,8 +318,8 @@ error_t dt_get_next_prop(const fdt_t* fdt, dt_prop_t prop, dt_prop_t* out_prop) 
 	return ERR_OUT_OF_BOUNDS;
 }
 
-error_t dt_get_prop_name(const fdt_t* fdt, dt_prop_t prop, buffer_t* out_buf) {
-	if (!fdt || !out_buf)
+error_t dt_get_prop_name(const fdt_t* fdt, dt_prop_t prop, buffer_t* bufOUT) {
+	if (fdt == nullptr)
 		return ERR_BAD_ARG;
 
 	buffer_t fdt_buf = fdt->fdt_buffer;
@@ -333,24 +333,24 @@ error_t dt_get_prop_name(const fdt_t* fdt, dt_prop_t prop, buffer_t* out_buf) {
 	if (!buffer_read_cstring_len(fdt_buf, fdt->strings_off + name_offset, &name, &name_len))
 		return ERR_NOT_VALID;
 
-	*out_buf = buffer_sub_buffer(fdt_buf, fdt->strings_off + name_offset, name_len);
+	*bufOUT = buffer_sub_buffer(fdt_buf, fdt->strings_off + name_offset, name_len);
 
 	return ERR_NONE;
 }
 
-error_t dt_get_prop_name_ptr(const fdt_t* fdt, dt_prop_t prop, const char** out_ptr) {
+error_t dt_get_prop_name_ptr(const fdt_t* fdt, dt_prop_t prop, const char** ptrOUT) {
 	buffer_t buf;
 	error_t error = dt_get_prop_name(fdt, prop, &buf);
 
 	if (error != ERR_NONE)
 		return error;
 
-	*out_ptr = buf.data;
+	*ptrOUT = buf.data;
 	return ERR_NONE;
 }
 
-error_t dt_get_prop_buffer(const fdt_t* fdt, dt_prop_t prop, buffer_t* out_buf) {
-	if (!fdt || !out_buf)
+error_t dt_get_prop_buffer(const fdt_t* fdt, dt_prop_t prop, buffer_t* bufOUT) {
+	if (fdt == nullptr)
 		return ERR_BAD_ARG;
 
 	buffer_t fdt_buf = fdt->fdt_buffer;
@@ -359,7 +359,7 @@ error_t dt_get_prop_buffer(const fdt_t* fdt, dt_prop_t prop, buffer_t* out_buf) 
 	if (!buffer_read_u32_be(fdt_buf, prop + sizeof(fdt_token_t), &prop_len))
 		return ERR_NOT_VALID;
 
-	*out_buf = buffer_sub_buffer(fdt_buf, prop + 3 * sizeof(fdt_token_t), prop_len);
+	*bufOUT = buffer_sub_buffer(fdt_buf, prop + 3 * sizeof(fdt_token_t), prop_len);
 
 	return ERR_NONE;
 }

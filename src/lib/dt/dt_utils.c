@@ -6,7 +6,7 @@
 #include "dt_defines.h"
 
 error_t dt_init(const void* fdt, fdt_t* obj) {
-	if (!fdt || !obj)
+	if (fdt == nullptr || obj == nullptr)
 		return ERR_BAD_ARG;
 
 	obj->fdt_buffer = make_buffer(nullptr, 0);

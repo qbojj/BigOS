@@ -9,8 +9,8 @@
 
 #include "dt_defines.h"
 
-error_t dt_skip_node_name(const fdt_t* fdt, dt_node_t node, u32* out_offset) {
-	if (!fdt || !out_offset)
+error_t dt_skip_node_name(const fdt_t* fdt, dt_node_t node, u32* offsetOUT) {
+	if (fdt == nullptr)
 		return ERR_BAD_ARG;
 
 	buffer_t fdt_buf = fdt->fdt_buffer;
@@ -37,13 +37,13 @@ error_t dt_skip_node_name(const fdt_t* fdt, dt_node_t node, u32* out_offset) {
 	// Skip name of node
 	curr_offset = align_u32(curr_offset + name_len, sizeof(u32));
 
-	*out_offset = curr_offset;
+	*offsetOUT = curr_offset;
 
 	return ERR_NONE;
 }
 
-error_t dt_skip_node_properties(const fdt_t* fdt, u32 offset, u32* out_offset) {
-	if (!fdt || !out_offset)
+error_t dt_skip_node_properties(const fdt_t* fdt, u32 offset, u32* offsetOUT) {
+	if (fdt == nullptr)
 		return ERR_BAD_ARG;
 
 	buffer_t fdt_buf = fdt->fdt_buffer;
@@ -73,13 +73,13 @@ error_t dt_skip_node_properties(const fdt_t* fdt, u32 offset, u32* out_offset) {
 
 	curr_offset = align_u32(props_off + props_len, sizeof(u32));
 
-	*out_offset = curr_offset;
+	*offsetOUT = curr_offset;
 
 	return ERR_NONE;
 }
 
-error_t dt_skip_node_header(const fdt_t* fdt, dt_node_t node, u32* out_offset) {
-	if (!fdt || !out_offset)
+error_t dt_skip_node_header(const fdt_t* fdt, dt_node_t node, u32* offsetOUT) {
+	if (fdt == nullptr)
 		return ERR_BAD_ARG;
 
 	u32 curr_offset = node;
@@ -94,13 +94,13 @@ error_t dt_skip_node_header(const fdt_t* fdt, dt_node_t node, u32* out_offset) {
 	if (error != ERR_NONE)
 		return error;
 
-	*out_offset = curr_offset;
+	*offsetOUT = curr_offset;
 
 	return ERR_NONE;
 }
 
-error_t dt_skip_nested_nodes(const fdt_t* fdt, dt_node_t nested_node, dt_node_t* out_node) {
-	if (!fdt || !out_node)
+error_t dt_skip_nested_nodes(const fdt_t* fdt, dt_node_t nested_node, dt_node_t* nodeOUT) {
+	if (fdt == nullptr)
 		return ERR_BAD_ARG;
 
 	buffer_t fdt_buf = fdt->fdt_buffer;
@@ -154,7 +154,7 @@ error_t dt_skip_nested_nodes(const fdt_t* fdt, dt_node_t nested_node, dt_node_t*
 		}
 	}
 
-	*out_node = curr_offset;
+	*nodeOUT = curr_offset;
 
 	return ERR_NONE;
 }

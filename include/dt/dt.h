@@ -4,8 +4,8 @@
  * @brief Device tree access interface.
  */
 
-#ifndef _DT_
-#define _DT_
+#ifndef DT_DT
+#define DT_DT
 
 #include <stdbigos/buffer.h>
 #include <stdbigos/error.h>
@@ -41,13 +41,11 @@ typedef struct {
  * @brief Read the header at fdt and set fields of obj.
  * @param fdt Pointer to the flattened device tree data.
  * @param obj Pointer to the fdt_t structure to initialize.
- * @return
- * - ERR_NONE on success
- * - ERR_BAD_ARG on nullptr args
- * - ERR_NOT_VALID if the FDT is invalid or unsupported
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args
+ * @retval ERR_NOT_VALID if the FDT is invalid or unsupported
  * @note If an error occurs, fdt_buffer of obj is set to an invalid buffer.
  */
-[[nodiscard]]
 error_t dt_init(const void* fdt, fdt_t* obj);
 
 /**
@@ -61,161 +59,161 @@ void dt_reset(fdt_t* obj);
  * @param fdt Pointer to the fdt object.
  * @param node The node of which subtree to search, leave as 0 for global search.
  * @param node_path Path to the node.
- * @param[out] out_node Found node.
- * @return
- * - ERR_NONE on success
- * - ERR_BAD_ARG on nullptr args
- * - ERR_NOT_VALID if the FDT is invalid
- * - ERR_NOT_FOUND if no node found
- * - ERR_OUT_OF_BOUNDS if search went out of bounds
+ * @param[out] nodeOUT Found node.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args
+ * @retval ERR_NOT_VALID if the FDT is invalid
+ * @retval ERR_NOT_FOUND if no node found
+ * @retval ERR_OUT_OF_BOUNDS if search went out of bounds
  */
-error_t dt_get_node_in_subtree_by_path(const fdt_t* fdt, dt_node_t node, const char* node_path, dt_node_t* out_node);
+[[gnu::nonnull(4)]]
+error_t dt_get_node_in_subtree_by_path(const fdt_t* fdt, dt_node_t node, const char* node_path, dt_node_t* nodeOUT);
 
 /**
  * @brief Get a node globally in fdt.
  * @param fdt Pointer to the fdt object.
  * @param node_path Path to the node.
- * @param[out] out_node Found node.
- * @return
- * - ERR_NONE on success
- * - ERR_BAD_ARG on nullptr args
- * - ERR_NOT_VALID if the FDT is invalid
- * - ERR_NOT_FOUND if no node found
- * - ERR_OUT_OF_BOUNDS if search went out of bounds
+ * @param[out] nodeOUT Found node.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args
+ * @retval ERR_NOT_VALID if the FDT is invalid
+ * @retval ERR_NOT_FOUND if no node found
+ * @retval ERR_OUT_OF_BOUNDS if search went out of bounds
  */
-error_t dt_get_node_by_path(const fdt_t* fdt, const char* node_path, dt_node_t* out_node);
+[[gnu::nonnull(3)]]
+error_t dt_get_node_by_path(const fdt_t* fdt, const char* node_path, dt_node_t* nodeOUT);
 
 /**
  * @brief Get a node's first child in fdt.
  * @param fdt Pointer to the fdt object.
  * @param node The parent node.
- * @param[out] out_node Child node.
- * @return
- * - ERR_NONE on success
- * - ERR_BAD_ARG on nullptr args
- * - ERR_NOT_VALID if the FDT is invalid
- * - ERR_NOT_FOUND if no node found
- * - ERR_OUT_OF_BOUNDS if search went out of bounds
+ * @param[out] nodeOUT Child node.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args
+ * @retval ERR_NOT_VALID if the FDT is invalid
+ * @retval ERR_NOT_FOUND if no node found
+ * @retval ERR_OUT_OF_BOUNDS if search went out of bounds
  */
-error_t dt_get_node_child(const fdt_t* fdt, dt_node_t node, dt_node_t* out_node);
+[[gnu::nonnull(3)]]
+error_t dt_get_node_child(const fdt_t* fdt, dt_node_t node, dt_node_t* nodeOUT);
 
 /**
  * @brief Get a node's next sibling in fdt.
  * @param fdt Pointer to the fdt object.
  * @param node The node to get the sibling of.
- * @param[out] out_node Sibling node.
- * @return
- * - ERR_NONE on success
- * - ERR_BAD_ARG on nullptr args
- * - ERR_NOT_VALID if the FDT is invalid
- * - ERR_NOT_FOUND if no node found
- * - ERR_OUT_OF_BOUNDS if search went out of bounds
+ * @param[out] nodeOUT Sibling node.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args
+ * @retval ERR_NOT_VALID if the FDT is invalid
+ * @retval ERR_NOT_FOUND if no node found
+ * @retval ERR_OUT_OF_BOUNDS if search went out of bounds
  */
-error_t dt_get_node_sibling(const fdt_t* fdt, dt_node_t node, dt_node_t* out_node);
+[[gnu::nonnull(3)]]
+error_t dt_get_node_sibling(const fdt_t* fdt, dt_node_t node, dt_node_t* nodeOUT);
 
 /**
  * @brief Get a node's name as a buffer in fdt.
  * @param fdt Pointer to the fdt object.
  * @param node The node to get the name of.
- * @param[out] out_buf Buffer with the name.
- * @return
- * - ERR_NONE on success
- * - ERR_BAD_ARG on nullptr args or misaligned @p node
- * - ERR_NOT_VALID if the FDT is invalid
+ * @param[out] bufOUT Buffer with the name.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args or misaligned @p node
+ * @retval ERR_NOT_VALID if the FDT is invalid
  */
-error_t dt_get_node_name(const fdt_t* fdt, dt_node_t node, buffer_t* out_buf);
+[[gnu::nonnull(3)]]
+error_t dt_get_node_name(const fdt_t* fdt, dt_node_t node, buffer_t* bufOUT);
 
 /**
  * @brief Get a node's name as a pointer in fdt.
  * @param fdt Pointer to the fdt object.
  * @param node The node to get the name of.
- * @param[out] out_ptr Pointer to the name.
- * @return
- * - ERR_NONE on success
- * - ERR_BAD_ARG on nullptr args or misaligned @p node
- * - ERR_NOT_VALID if the FDT is invalid
+ * @param[out] ptrOUT Pointer to the name.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args or misaligned @p node
+ * @retval ERR_NOT_VALID if the FDT is invalid
  */
-error_t dt_get_node_name_ptr(const fdt_t* fdt, dt_node_t node, const char** out_ptr);
+[[gnu::nonnull(3)]]
+error_t dt_get_node_name_ptr(const fdt_t* fdt, dt_node_t node, const char** ptrOUT);
 
 /**
  * @brief Get a node's prop_name property in fdt.
  * @param fdt Pointer to the fdt object.
  * @param node The node to search in.
  * @param prop_name Name of the property.
- * @param[out] out_prop Property.
- * @return
- * - ERR_NONE on success
- * - ERR_BAD_ARG on nullptr args or misaligned @p node
- * - ERR_NOT_VALID if the FDT is invalid
- * - ERR_NOT_FOUND if no prop found
- * - ERR_OUT_OF_BOUNDS if search went out of bounds
+ * @param[out] propOUT Property.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args or misaligned @p node
+ * @retval ERR_NOT_VALID if the FDT is invalid
+ * @retval ERR_NOT_FOUND if no prop found
+ * @retval ERR_OUT_OF_BOUNDS if search went out of bounds
  */
-error_t dt_get_prop_by_name(const fdt_t* fdt, dt_node_t node, const char* prop_name, dt_prop_t* out_prop);
+[[gnu::nonnull(4)]]
+error_t dt_get_prop_by_name(const fdt_t* fdt, dt_node_t node, const char* prop_name, dt_prop_t* propOUT);
 
 /**
  * @brief Get a node's first property in fdt.
  * @param fdt Pointer to the fdt object.
  * @param node The node to get the first property of.
- * @param[out] out_prop First property.
- * @return
- * - ERR_NONE on success
- * - ERR_BAD_ARG on nullptr args or misaligned @p node
- * - ERR_NOT_VALID if the FDT is invalid
- * - ERR_NOT_FOUND if no prop found
- * - ERR_OUT_OF_BOUNDS if search went out of bounds
+ * @param[out] propOUT First property.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args or misaligned @p node
+ * @retval ERR_NOT_VALID if the FDT is invalid
+ * @retval ERR_NOT_FOUND if no prop found
+ * @retval ERR_OUT_OF_BOUNDS if search went out of bounds
  */
-error_t dt_get_first_prop(const fdt_t* fdt, dt_node_t node, dt_prop_t* out_prop);
+[[gnu::nonnull(3)]]
+error_t dt_get_first_prop(const fdt_t* fdt, dt_node_t node, dt_prop_t* propOUT);
 
 /**
  * @brief Get a node's next property after prop in fdt.
  * @param fdt Pointer to the fdt object.
  * @param prop The current property.
- * @param[out] out_prop Next property.
- * @return
- * - ERR_NONE on success
- * - ERR_BAD_ARG on nullptr args or misaligned @p prop
- * - ERR_NOT_VALID if the FDT is invalid
- * - ERR_NOT_FOUND if no prop found
- * - ERR_OUT_OF_BOUNDS if search went out of bounds
+ * @param[out] propOUT Next property.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args or misaligned @p prop
+ * @retval ERR_NOT_VALID if the FDT is invalid
+ * @retval ERR_NOT_FOUND if no prop found
+ * @retval ERR_OUT_OF_BOUNDS if search went out of bounds
  */
-error_t dt_get_next_prop(const fdt_t* fdt, dt_prop_t prop, dt_prop_t* out_prop);
+[[gnu::nonnull(3)]]
+error_t dt_get_next_prop(const fdt_t* fdt, dt_prop_t prop, dt_prop_t* propOUT);
 
 /**
  * @brief Get a prop's name as a buffer in fdt.
  * @param fdt Pointer to the fdt object.
  * @param prop The property to get the name of.
- * @param[out] out_buf Buffer with the name.
- * @return
- * - ERR_NONE on success
- * - ERR_BAD_ARG on nullptr args or misaligned @p prop
- * - ERR_NOT_VALID if the FDT is invalid
+ * @param[out] bufOUT Buffer with the name.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args or misaligned @p prop
+ * @retval ERR_NOT_VALID if the FDT is invalid
  */
-error_t dt_get_prop_name(const fdt_t* fdt, dt_prop_t prop, buffer_t* out_buf);
+[[gnu::nonnull(3)]]
+error_t dt_get_prop_name(const fdt_t* fdt, dt_prop_t prop, buffer_t* bufOUT);
 
 /**
  * @brief Get a prop's name as a pointer in fdt.
  * @param fdt Pointer to the fdt object.
  * @param prop The property to get the name of.
- * @param[out] out_ptr Pointer to the name.
- * @return
- * - ERR_NONE on success
- * - ERR_BAD_ARG on nullptr args or misaligned @p prop
- * - ERR_NOT_VALID if the FDT is invalid
+ * @param[out] ptrOUT Pointer to the name.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args or misaligned @p prop
+ * @retval ERR_NOT_VALID if the FDT is invalid
  */
-error_t dt_get_prop_name_ptr(const fdt_t* fdt, dt_prop_t prop, const char** out_ptr);
+[[gnu::nonnull(3)]]
+error_t dt_get_prop_name_ptr(const fdt_t* fdt, dt_prop_t prop, const char** ptrOUT);
 
 /**
  * @brief Get a buffer for prop's data.
  * @param fdt Pointer to the fdt object.
  * @param prop The property to get the data of.
- * @param[out] out_buf Buffer with the data.
- * @return
- * - ERR_NONE on success
- * - ERR_BAD_ARG on nullptr args
- * - ERR_NOT_VALID if the FDT is invalid
+ * @param[out] bufOUT Buffer with the data.
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG on nullptr args
+ * @retval ERR_NOT_VALID if the FDT is invalid
  */
-error_t dt_get_prop_buffer(const fdt_t* fdt, dt_prop_t prop, buffer_t* out_buf);
+[[gnu::nonnull(3)]]
+error_t dt_get_prop_buffer(const fdt_t* fdt, dt_prop_t prop, buffer_t* bufOUT);
 
 /// @}
 
-#endif // !_DT_
+#endif // !DT_DT
