@@ -9,32 +9,43 @@
 
 #include "dt_defines.h"
 
-u32 dt_skip_node_name(const fdt_t* fdt, dt_node_t node) {
+error_t dt_skip_node_name(const fdt_t* fdt, dt_node_t node, u32* out_offset) {
+	if (!fdt || !out_offset)
+		return ERR_BAD_ARG;
+
 	buffer_t fdt_buf = fdt->fdt_buffer;
 
 	u32 curr_offset = node;
 
 	u32 tag;
 
+	if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
+		return ERR_NOT_VALID;
+
 	// Check validity of node
-	if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag) || (fdt_token_t)tag != FDT_BEGIN_NODE)
-		return 0;
+	if ((fdt_token_t)tag != FDT_BEGIN_NODE)
+		return ERR_BAD_ARG;
 
 	curr_offset += sizeof(fdt_token_t);
 
 	const char* name;
 	if (!buffer_read_cstring(fdt_buf, curr_offset, &name))
-		return 0;
+		return ERR_NOT_VALID;
 
 	u32 name_len = strlen(name) + 1;
 
 	// Skip name of node
 	curr_offset = align_u32(curr_offset + name_len, sizeof(u32));
 
-	return curr_offset;
+	*out_offset = curr_offset;
+
+	return ERR_NONE;
 }
 
-u32 dt_skip_node_properties(const fdt_t* fdt, u32 offset) {
+error_t dt_skip_node_properties(const fdt_t* fdt, u32 offset, u32* out_offset) {
+	if (!fdt || !out_offset)
+		return ERR_BAD_ARG;
+
 	buffer_t fdt_buf = fdt->fdt_buffer;
 
 	u32 curr_offset = offset;
@@ -46,14 +57,14 @@ u32 dt_skip_node_properties(const fdt_t* fdt, u32 offset) {
 	while (curr_offset < max_offset) {
 		u32 tag;
 		if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
-			return 0;
+			return ERR_NOT_VALID;
 
 		if ((fdt_token_t)tag != FDT_PROP)
 			break;
 
 		u32 p_len;
 		if (!buffer_read_u32_be(fdt_buf, curr_offset + sizeof(u32), &p_len))
-			return 0;
+			return ERR_NOT_VALID;
 
 		curr_offset += 3 * sizeof(u32); // Skip tag, length, name_offset
 		curr_offset = align_u32(curr_offset + p_len, sizeof(u32));
@@ -62,24 +73,36 @@ u32 dt_skip_node_properties(const fdt_t* fdt, u32 offset) {
 
 	curr_offset = align_u32(props_off + props_len, sizeof(u32));
 
-	return curr_offset;
+	*out_offset = curr_offset;
+
+	return ERR_NONE;
 }
 
-u32 dt_skip_node_header(const fdt_t* fdt, dt_node_t node) {
+error_t dt_skip_node_header(const fdt_t* fdt, dt_node_t node, u32* out_offset) {
+	if (!fdt || !out_offset)
+		return ERR_BAD_ARG;
+
 	u32 curr_offset = node;
 
-	u32 name_skip = dt_skip_node_name(fdt, curr_offset);
+	error_t error = dt_skip_node_name(fdt, curr_offset, &curr_offset);
 
-	if (name_skip == 0)
-		return 0;
+	if (error != ERR_NONE)
+		return error;
 
-	u32 prop_skip = dt_skip_node_properties(fdt, name_skip);
+	error = dt_skip_node_properties(fdt, curr_offset, &curr_offset);
 
-	// If skip dt_skip_node_properties breaks, prop_skip will return 0
-	return prop_skip;
+	if (error != ERR_NONE)
+		return error;
+
+	*out_offset = curr_offset;
+
+	return ERR_NONE;
 }
 
-u32 dt_skip_nested_nodes(const fdt_t* fdt, dt_node_t nested_node) {
+error_t dt_skip_nested_nodes(const fdt_t* fdt, dt_node_t nested_node, dt_node_t* out_node) {
+	if (!fdt || !out_node)
+		return ERR_BAD_ARG;
+
 	buffer_t fdt_buf = fdt->fdt_buffer;
 
 	u32 curr_offset = nested_node;
@@ -96,16 +119,17 @@ u32 dt_skip_nested_nodes(const fdt_t* fdt, dt_node_t nested_node) {
 
 		u32 tag;
 		if (!buffer_read_u32_be(fdt_buf, curr_offset, &tag))
-			return 0;
+			return ERR_NOT_VALID;
 
 		switch (tag) {
 		case FDT_BEGIN_NODE:
 
 			depth += 1;
-			curr_offset = dt_skip_node_name(fdt, curr_offset);
 
-			if (curr_offset == 0)
-				return 0;
+			error_t error = dt_skip_node_name(fdt, curr_offset, &curr_offset);
+
+			if (error != ERR_NONE)
+				return error;
 
 			break;
 
@@ -115,10 +139,10 @@ u32 dt_skip_nested_nodes(const fdt_t* fdt, dt_node_t nested_node) {
 			break;
 
 		case FDT_PROP:
-			curr_offset = dt_skip_node_properties(fdt, curr_offset);
+			error = dt_skip_node_properties(fdt, curr_offset, &curr_offset);
 
-			if (curr_offset == 0)
-				return 0;
+			if (error != ERR_NONE)
+				return error;
 
 			break;
 
@@ -126,9 +150,11 @@ u32 dt_skip_nested_nodes(const fdt_t* fdt, dt_node_t nested_node) {
 
 		case FDT_END:
 		default: // Unknown element type (not defined in v17)
-			return 0;
+			return ERR_NOT_VALID;
 		}
 	}
 
-	return curr_offset;
+	*out_node = curr_offset;
+
+	return ERR_NONE;
 }

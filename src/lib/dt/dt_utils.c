@@ -5,15 +5,15 @@
 
 #include "dt_defines.h"
 
-int dt_init(const void* fdt, fdt_t* obj) {
-	obj->fdt_buffer = make_buffer(nullptr, 0);
+error_t dt_init(const void* fdt, fdt_t* obj) {
+	if (!fdt || !obj)
+		return ERR_BAD_ARG;
 
-	if (!fdt)
-		return -1;
+	obj->fdt_buffer = make_buffer(nullptr, 0);
 
 	u32 magic = read_be32(fdt);
 	if (magic != FDT_MAGIC)
-		return -1;
+		return ERR_NOT_VALID;
 
 	u32 fdt_size = read_be32((u8*)fdt + FDT_OFF_TOTAL_SIZE);
 
@@ -23,7 +23,7 @@ int dt_init(const void* fdt, fdt_t* obj) {
 
 	if (fdt_buf.size < (FDT_OFF_OFF_DT_STRINGS + 4)) {
 		obj->fdt_buffer = make_buffer(nullptr, 0);
-		return -1;
+		return ERR_NOT_VALID;
 	}
 
 	u32 last_comp_version;
@@ -35,22 +35,22 @@ int dt_init(const void* fdt, fdt_t* obj) {
 	    !buffer_read_u32_be(fdt_buf, FDT_OFF_VERSION, &obj->fdt_version) ||
 	    !buffer_read_u32_be(fdt_buf, FDT_OFF_VERSION, &last_comp_version)) {
 		obj->fdt_buffer = make_buffer(nullptr, 0);
-		return -2;
+		return ERR_NOT_VALID;
 	}
 
 	if (FDT_COMPATIBLE_VERSION < last_comp_version || FDT_COMPATIBLE_VERSION > obj->fdt_version) {
 		obj->fdt_buffer = make_buffer(nullptr, 0);
-		return -3;
+		return ERR_NOT_VALID;
 	}
 
 	if (obj->struct_off + obj->struct_size > obj->total_size) {
 		obj->fdt_buffer = make_buffer(nullptr, 0);
-		return -4;
+		return ERR_NOT_VALID;
 	}
 
 	obj->root_node = obj->struct_off;
 
-	return 0;
+	return ERR_NONE;
 }
 
 // Reset properties
