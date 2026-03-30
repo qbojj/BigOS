@@ -372,12 +372,12 @@ error_t dt_get_rsv_mem_entry(const fdt_t* fdt, u32 index, fdt_rsv_entry* entryOU
 
 	u32 curr_index = 0;
 
-	u32 curr_offset = fdt->rsvmap_off;
+	u32 max_offset = fdt->struct_off;
 
-	u32 max_offset = fdt->struct_off + fdt->struct_size;
 	fdt_rsv_entry entry;
 
-	do {
+	for (u32 curr_offset = fdt->rsvmap_off; curr_offset + 2 * sizeof(u64) <= max_offset;
+	     curr_offset += 2 * sizeof(u64)) {
 		if (!buffer_read_u64_be(fdt_buf, curr_offset, &entry.address) ||
 		    !buffer_read_u64_be(fdt_buf, curr_offset + sizeof(u64), &entry.size)) {
 			return ERR_NOT_VALID;
@@ -388,15 +388,12 @@ error_t dt_get_rsv_mem_entry(const fdt_t* fdt, u32 index, fdt_rsv_entry* entryOU
 		}
 
 		if (curr_index == index) {
-			entryOUT->address = entry.address;
-			entryOUT->size = entry.size;
+			*entryOUT = entry;
 			return ERR_NONE;
 		}
 
 		curr_index += 1;
-		curr_offset += 2 * sizeof(u64);
+	}
 
-	} while (curr_offset < max_offset);
-
-	return ERR_OUT_OF_BOUNDS;
+	return ERR_NOT_VALID;
 }
