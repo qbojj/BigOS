@@ -1,15 +1,25 @@
-#ifndef STDBIGOS_CSR
-#define STDBIGOS_CSR
-
-#include "csr_vals.h"
-#include "types.h"
-
 /**
- * @addtogroup stdbigos
- * @addtogroup csr
- * @{
+ * @file csr_internal.h
+ * @brief Internal RISC-V CSR (Control and Status Register) access macros.
+ *
+ * This header is internal to HAL and should not be used by code outside the HAL.
+ * CSR access is architecture-specific and not part of the platform-generic HAL interface.
+ *
+ * SPDX-License-Identifier: Unlicense
  */
 
+#ifndef HAL_ARCH_RISCV_CSR_INTERNAL_H
+#define HAL_ARCH_RISCV_CSR_INTERNAL_H
+
+#include "csr_vals.h"
+#include <stdbigos/types.h>
+
+/**
+ * Read and write a CSR, swapping the old value for a new one.
+ * @param csr CSR name (unquoted)
+ * @param val New value
+ * @return Old CSR value
+ */
 #define CSR_SWAP(csr, val)                                                               \
 	({                                                                                   \
 		reg_t _val = (reg_t)(val);                                                       \
@@ -17,6 +27,11 @@
 		_val;                                                                            \
 	})
 
+/**
+ * Read a CSR with full memory ordering.
+ * @param csr CSR name (unquoted)
+ * @return CSR value
+ */
 #define CSR_READ(csr)                                                 \
 	({                                                                \
 		reg_t _val;                                                   \
@@ -24,7 +39,11 @@
 		_val;                                                         \
 	})
 
-// read csr while allowing caching
+/**
+ * Read a CSR while allowing caching (relaxed: no memory barriers).
+ * @param csr CSR name (unquoted)
+ * @return CSR value
+ */
 #define CSR_READ_RELAXED(csr)                   \
 	({                                          \
 		reg_t _val;                             \
@@ -32,12 +51,23 @@
 		_val;                                   \
 	})
 
+/**
+ * Write a CSR with full memory ordering.
+ * @param csr CSR name (unquoted)
+ * @param val New value
+ */
 #define CSR_WRITE(csr, val)                                              \
 	({                                                                   \
 		reg_t _val = (reg_t)(val);                                       \
 		__asm__ volatile("csrw " #csr ", %0" : : "rK"(_val) : "memory"); \
 	})
 
+/**
+ * Read CSR and set bits, returning the old value.
+ * @param csr CSR name (unquoted)
+ * @param val Bits to set
+ * @return Old CSR value
+ */
 #define CSR_READ_SET(csr, val)                                                           \
 	({                                                                                   \
 		reg_t _val = (reg_t)(val);                                                       \
@@ -45,6 +75,12 @@
 		_val;                                                                            \
 	})
 
+/**
+ * Read CSR and clear bits, returning the old value.
+ * @param csr CSR name (unquoted)
+ * @param val Bits to clear
+ * @return Old CSR value
+ */
 #define CSR_READ_CLEAR(csr, val)                                                         \
 	({                                                                                   \
 		reg_t _val = (reg_t)(val);                                                       \
@@ -52,32 +88,26 @@
 		_val;                                                                            \
 	})
 
+/**
+ * Set bits in a CSR.
+ * @param csr CSR name (unquoted)
+ * @param val Bits to set
+ */
 #define CSR_SET(csr, val)                                                \
 	({                                                                   \
 		reg_t _val = (reg_t)(val);                                       \
 		__asm__ volatile("csrs " #csr ", %0" : : "rK"(_val) : "memory"); \
 	})
 
+/**
+ * Clear bits in a CSR.
+ * @param csr CSR name (unquoted)
+ * @param val Bits to clear
+ */
 #define CSR_CLEAR(csr, val)                                              \
 	({                                                                   \
 		reg_t _val = (reg_t)(val);                                       \
 		__asm__ volatile("csrc " #csr ", %0" : : "rK"(_val) : "memory"); \
 	})
 
-static inline void wfi() {
-	__asm__ volatile("wfi" ::: "memory");
-}
-
-static inline void ebreak() {
-	__asm__ volatile("ebreak" ::: "memory");
-}
-static inline void intr_enable() {
-	CSR_SET(sstatus, CSR_SSTATUS_SIE);
-}
-static inline void intr_disable() {
-	CSR_CLEAR(sstatus, CSR_SSTATUS_SIE);
-}
-
-/// @}
-
-#endif // !STDBIGOS_CSR
+#endif // !HAL_ARCH_RISCV_CSR_INTERNAL_H

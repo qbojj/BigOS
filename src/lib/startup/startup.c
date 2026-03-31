@@ -7,7 +7,7 @@
 */
 
 #include <relocations/reloc.h>
-#include <stdbigos/csr.h>
+#include <hal/trap.h>
 #include <stdbigos/string.h>
 #include <stdbigos/types.h>
 #include <stdint.h>
@@ -37,7 +37,7 @@ extern int main(u32 hartid, const void* fdt);
 
 [[gnu::section(".fini"), noreturn, gnu::noinline]]
 static void _Exit([[maybe_unused]] int return_code) {
-	while (1) wfi();
+	while (1) hal_wait_for_interrupt();
 }
 
 // NOLINTBEGIN(clang-analyzer-security.ArrayBound)

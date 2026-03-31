@@ -1,5 +1,5 @@
-#ifndef STDBIGOS_CSR_VALS
-#define STDBIGOS_CSR_VALS
+#ifndef HAL_RISCV_CSR_VALS
+#define HAL_RISCV_CSR_VALS
 
 #define CSR_SSTATUS_SIE        (1ul << 1)
 #define CSR_SSTATUS_SPIE       (1ul << 5)
@@ -19,4 +19,4 @@
 #define CSR_SSTATUS_UXL_MASK   0b11
 #define CSR_SSTATUS_SD         (1ul << 63)
 
-#endif // !STDBIGOS_CSR_VALS
+#endif // !HAL_RISCV_CSR_VALS

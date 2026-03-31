@@ -1,110 +1,66 @@
 #include <debug/debug_stdio.h>
-#include <stdbigos/csr.h>
 #include <stdbigos/error.h>
 #include <stdbigos/types.h>
-#include <hal/arch/riscv/trap.h>
+#include <hal/trap.h>
 
-void handle_exc(hal_riscv_trap_exception_t exc, hal_trap_frame_t* frame) {
-	[[maybe_unused]] reg_t stval = hal_riscv_trap_context_get_stval(frame);
+/**
+ * Syscall handler - called when userspace makes an ecall.
+ * Receives syscall arguments as reg_t (architecture-dependent).
+ * Returns error code and value - error in a0, value in a1.
+ */
+hal_syscall_result_t syscall_handler(reg_t syscall_id, reg_t arg0, reg_t arg1, reg_t arg2, reg_t arg3, reg_t arg4, reg_t arg5) {
+	(void)arg1; (void)arg2; (void)arg3; (void)arg4; (void)arg5;
+	switch (syscall_id) {
+	case 0:  // Example syscall 0
+		DEBUG_PRINTF("syscall: got 0x%lx\n", arg0);
+		return (hal_syscall_result_t){.error = 0, .value = 0xeed};
 
-	switch (exc) {
-	case HAL_RISCV_TRAP_EXC_ENV_CALL_U:
-		intr_enable();
-		hal_riscv_trap_context_set_sepc(frame, hal_riscv_trap_context_get_sepc(frame) + 4); // skip ECALL instruction
-
-		DEBUG_PRINTF("syscall: got 0x%lx\n", hal_riscv_trap_context_get_a0(frame));
-		hal_riscv_trap_context_set_a0(frame, 0xeed);
-
-		intr_disable();
-		return;
 	default:
-		// we've got reserved exception
-		DEBUG_PRINTF("exception: got unknown number %lu\n", (u64)exc);
-		return;
+		// unknown syscall
+		DEBUG_PRINTF("syscall: unknown number %lu\n", (u64)syscall_id);
+		return (hal_syscall_result_t){.error = 1, .value = 0};
 	}
 }
 
-void my_trap_handler(hal_trap_frame_t* frame) {
-	reg_t scause = hal_riscv_trap_context_get_scause(frame);
-	if (hal_riscv_trap_is_interrupt(scause)) {
-		DEBUG_PRINTF("got interrupt: %lu\n", (u64)hal_riscv_trap_get_interrupt_code(scause));
-	} else {
-		handle_exc(hal_riscv_trap_get_exception_code(scause), frame);
-	}
-}
-
-static u8 g_kernel_mode_stack[4096] __attribute__((aligned(4096)));
-static u8 g_kernel_mode_stack2[4096] __attribute__((aligned(4096)));
 static u8 g_user_mode_stack[4096] __attribute__((aligned(4096)));
 
-void user_fn() {
+void user_fn(void) {
 	while (1) {
 		DEBUG_PRINTF("from user mode\n");
 
-		register reg_t a0 __asm__("a0") = 0xdeadbeef;
-		__asm__ volatile("ecall" : "+r"(a0));
-		DEBUG_PRINTF("syscall returned: 0x%lx\n", a0);
-
-		// try to do something bad with sp, so we know kernel will not break
-		__asm__ volatile("mv t0, sp\n\t"
-		                 "mv sp, zero\n\t"
-		                 "ecall\n\t"
-		                 "mv sp, t0"
-		                 : "+r"(a0)
-		                 :
-		                 : "t0");
+		register reg_t a0 __asm__("a0") = 0xbade;
+		register reg_t a1 __asm__("a1") = 0xaaaa;
+		register reg_t syscallid __asm__("a7") = 0;
+		__asm__ volatile("ecall" : "+r"(a0), "+r"(a1) : "r"(syscallid) : "memory");
+		DEBUG_PRINTF("syscall returned: 0x%lx, 0x%lx\n", a0, a1);
 	}
 }
 
-typedef struct {
-	u32 hartid;
-	const void* fdt;
-} kernel_state_t;
-
-static inline void* get_sp() {
+static inline void* get_sp(void) {
 	void* sp;
 	__asm__("mv %0, sp" : "=r"(sp));
 	return sp;
 }
 
-void kernel_continuation(void* usr) {
-	// copy the state from the old stack
-	kernel_state_t state = *(kernel_state_t*)usr;
-	DEBUG_PRINTF("on new stack: hartid %d, fdt %p, sp %p\n", state.hartid, state.fdt, get_sp());
-
-	// from now on we can cleanup the old stack
-
-	// now jump to user mode (also reenter our stack)
-	void* user_stack_top = &g_user_mode_stack[sizeof(g_user_mode_stack)];
-	void* kernel_stack_top = &g_kernel_mode_stack2[sizeof(g_kernel_mode_stack2)];
-	hal_riscv_trap_context_t context;
-	hal_riscv_trap_context_clear(&context);
-
-	hal_riscv_trap_context_set_sp((hal_trap_frame_t*)&context, (reg_t)user_stack_top);
-	hal_riscv_trap_context_set_sepc((hal_trap_frame_t*)&context, (reg_t)user_fn);   // setup user entry point
-	hal_riscv_trap_context_set_sstatus((hal_trap_frame_t*)&context, CSR_READ_RELAXED(sstatus));
-	hal_riscv_trap_context_set_sstatus(
-	    (hal_trap_frame_t*)&context,
-	    hal_riscv_trap_context_get_sstatus((hal_trap_frame_t*)&context) & ~(1ull << 8)); // clear previous privilege
-
-	if (hal_trap_prepare_stack_for_transition(&kernel_stack_top, (const hal_trap_frame_t*)&context) != ERR_NONE) {
-		DEBUG_PRINTF("failed to prepare stack for transition\n");
-		return;
-	}
-
-	DEBUG_PRINTF("transition to U-mode\n");
-	hal_trap_restore_with_cleanup(kernel_stack_top, nullptr, nullptr);
-}
-
 void main([[maybe_unused]] u32 hartid, [[maybe_unused]] const void* fdt) {
 	DEBUG_PRINTF("on old stack: hartid %d, fdt %p, sp %p\n", hartid, fdt, get_sp());
 
-	if (hal_trap_init(my_trap_handler) != ERR_NONE) {
+	// Initialize trap handling system
+	if (hal_trap_init() != ERR_NONE) {
+		DEBUG_PRINTF("failed to initialize trap handling\n");
 		return;
 	}
 
-	// migrate to a different stack
-	kernel_state_t state = {hartid, fdt};
-	void* stack_top = &g_kernel_mode_stack[sizeof(g_kernel_mode_stack)];
-	hal_trap_jump_with_stack(stack_top, &state, kernel_continuation);
+	if (hal_trap_register_syscall_handler(syscall_handler) != ERR_NONE) {
+		DEBUG_PRINTF("failed to register syscall handler\n");
+		return;
+	}
+
+	// Jump to user mode with user stack and function pointer
+	void* user_stack_top = &g_user_mode_stack[sizeof(g_user_mode_stack)];
+	DEBUG_PRINTF("jumping to user mode, pc=%p, sp=%p\n", (void*)user_fn, user_stack_top);
+
+	hal_trap_jump_to_userspace((uintptr_t)user_stack_top, (uintptr_t)user_fn);
+
+	// Should never reach here (hal_trap_jump_to_userspace is noreturn)
 }

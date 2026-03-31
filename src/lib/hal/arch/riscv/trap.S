@@ -1,12 +1,11 @@
 .text
 
 .global hal_riscv_trap_entry
-.global hal_trap_restore_with_cleanup
-.global hal_trap_jump_with_stack
+.global hal_riscv_trap_restore
 
 .equ FRAME_SIZE, 0x120
 
-#include <stdbigos/csr_vals.h>
+#include "csr_vals.h"
 
 // sscratch should have kernel stack pointer IIF in user-mode
 // when coming from kernel-space then it should be 0
@@ -74,7 +73,7 @@ hal_riscv_trap_entry:
 	mv a0, sp
 	call hal_riscv_trap_handler_trampoline
 
-kernel_trap_restore:
+.Lkernel_trap_restore:
 	ld a0, 31*8(sp)
 	ld a1, 32*8(sp)
 
@@ -103,15 +102,6 @@ kernel_trap_restore:
 	ld sp, 1*8(sp)
 	sret
 
-hal_trap_restore_with_cleanup:
+hal_riscv_trap_restore:
 	mv sp, a0
-	beqz a2, kernel_trap_restore
-	lla ra, kernel_trap_restore
-	mv a0, a1
-	jr a2
-
-hal_trap_jump_with_stack:
-	mv sp, a0
-	mv a0, a1
-	mv ra, zero
-	jr a2
+	j .Lkernel_trap_restore
