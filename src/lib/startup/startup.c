@@ -20,16 +20,7 @@ typedef void (*function_t)(void);
 
 // NOLINTBEGIN(readability-identifier-naming)
 extern u8 __bss_start [[gnu::weak]][];
-extern u8 __bss_end [[gnu::weak]][];
-
-extern function_t __preinit_array_start [[gnu::weak]][];
-extern function_t __preinit_array_end [[gnu::weak]][];
-
-extern function_t __init_array_start [[gnu::weak]][];
-extern function_t __init_array_end [[gnu::weak]][];
-
-extern function_t __fini_array_start [[gnu::weak]][];
-extern function_t __fini_array_end [[gnu::weak]][];
+extern u8 _end [[gnu::weak]][];
 
 extern u8 __stack_start [[gnu::weak]][];
 
@@ -41,35 +32,17 @@ static void _Exit([[maybe_unused]] int return_code) {
 }
 
 // NOLINTBEGIN(clang-analyzer-security.ArrayBound)
-static void _call_constructors() {
-	for (const function_t* entry = __preinit_array_start; entry < __preinit_array_end; ++entry) {
-		(*entry)();
-	}
-
-	for (const function_t* entry = __init_array_start; entry < __init_array_end; ++entry) {
-		(*entry)();
-	}
-}
-
-static void _call_destructors() {
-	for (const function_t* entry = __fini_array_start; entry < __fini_array_end; ++entry) {
-		(*entry)();
-	}
-}
-
 [[noreturn, gnu::used]]
 void _start_c(u32 hartid, const void* fdt) {
 	if (!self_relocate()) {
 		_Exit(-1);
 	}
 	if (__bss_start) {
-		memset(__bss_start, 0, (uintptr_t)__bss_end - (uintptr_t)__bss_start);
+		memset(__bss_start, 0, (uintptr_t)_end - (uintptr_t)__bss_start);
 	}
-	_call_constructors();
 
 	int rc = main(hartid, fdt);
 
-	_call_destructors();
 	_Exit(rc);
 }
 // NOLINTEND(clang-analyzer-security.ArrayBound)
