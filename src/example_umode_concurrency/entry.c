@@ -4,7 +4,7 @@
 #include <stdbigos/error.h>
 #include <stdbigos/sbi.h>
 #include <stdbigos/types.h>
-#include <hal/trap.h>
+#include <hal/arch/riscv/trap.h>
 
 enum {
 	SYSCALL_PRINT = 1,

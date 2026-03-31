@@ -4,7 +4,7 @@
 #include <stdbigos/string.h>
 #include <stdbigos/types.h>
 #include <stdint.h>
-#include <hal/trap.h>
+#include <hal/arch/riscv/trap.h>
 
 extern void trap_entry();
 
