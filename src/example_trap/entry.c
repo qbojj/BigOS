@@ -2,7 +2,7 @@
 #include <stdbigos/csr.h>
 #include <stdbigos/error.h>
 #include <stdbigos/types.h>
-#include <trap/trap.h>
+#include <hal/trap.h>
 
 void handle_exc(trap_exception_type_t exc, trap_frame_t* tf) {
 	[[maybe_unused]] reg_t stval = tf->stval;
