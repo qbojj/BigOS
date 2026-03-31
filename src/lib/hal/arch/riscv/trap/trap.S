@@ -1,8 +1,8 @@
 .text
 
-.global trap_entry
-.global trap_restore_with_cleanup
-.global trap_utils_jump_with_stack
+.global hal_riscv_trap_entry
+.global hal_trap_restore_with_cleanup
+.global hal_trap_jump_with_stack
 
 .equ FRAME_SIZE, 0x120
 
@@ -14,7 +14,7 @@
 // the thread pointer should be at the base of the sscratch location if it is not 0
 
 .align 4
-trap_entry:
+hal_riscv_trap_entry:
 	csrrw sp, sscratch, sp
 	csrrw a0, sscratch, a0
 
@@ -72,7 +72,7 @@ trap_entry:
 
 .Lrun_handler:
 	mv a0, sp
-	call trap_handler_trampoline
+	call hal_riscv_trap_handler_trampoline
 
 kernel_trap_restore:
 	ld a0, 31*8(sp)
@@ -103,14 +103,14 @@ kernel_trap_restore:
 	ld sp, 1*8(sp)
 	sret
 
-trap_restore_with_cleanup:
+hal_trap_restore_with_cleanup:
 	mv sp, a0
 	beqz a2, kernel_trap_restore
 	lla ra, kernel_trap_restore
 	mv a0, a1
 	jr a2
 
-trap_utils_jump_with_stack:
+hal_trap_jump_with_stack:
 	mv sp, a0
 	mv a0, a1
 	mv ra, zero

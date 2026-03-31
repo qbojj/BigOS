@@ -1,5 +1,5 @@
-#ifndef TRAP_H
-#define TRAP_H
+#ifndef HAL_TRAP_H
+#define HAL_TRAP_H
 
 #include <stdbigos/error.h>
 #include <stdbigos/types.h>
@@ -15,16 +15,16 @@
  * Architecture-specific fields are defined in arch trap headers,
  * e.g. `hal/arch/riscv/trap.h`.
  */
-typedef struct trap_frame trap_frame_t;
+typedef struct hal_trap_frame hal_trap_frame_t;
 
 /**
  * @brief Trap handler callback executed by the trap trampoline.
  */
-typedef void (*pfn_trap_handler_t)(trap_frame_t* tf);
+typedef void (*hal_trap_handler_t)(hal_trap_frame_t* frame);
 /**
  * @brief Continuation callback used by stack transition helpers.
  */
-typedef void (*pfn_continuation_t)(void* user);
+typedef void (*hal_continuation_t)(void* user);
 
 /**
  * @brief Installs trap entry and sets kernel trap callback.
@@ -34,7 +34,7 @@ typedef void (*pfn_continuation_t)(void* user);
  * @retval ERR_NONE success
  */
 [[gnu::nonnull]]
-error_t trap_init(pfn_trap_handler_t handler);
+error_t hal_trap_init(hal_trap_handler_t handler);
 
 /**
  * @brief Prepares a stack so trap restore can continue from a supplied frame.
@@ -46,7 +46,7 @@ error_t trap_init(pfn_trap_handler_t handler);
  * @retval ERR_NONE success
  */
 [[gnu::nonnull]]
-error_t trap_utils_prepare_stack_for_transition(void** stack, const trap_frame_t* tf);
+error_t hal_trap_prepare_stack_for_transition(void** stack, const hal_trap_frame_t* frame);
 
 /**
  * @brief Switches to `stack` and transfers control to `continuation(user)`.
@@ -60,7 +60,7 @@ error_t trap_utils_prepare_stack_for_transition(void** stack, const trap_frame_t
  * @param continuation Non-null callback executed after the stack switch.
  */
 [[noreturn, gnu::nonnull(1, 3)]]
-void trap_utils_jump_with_stack(void* stack, void* user, pfn_continuation_t continuation);
+void hal_trap_jump_with_stack(void* stack, void* user, hal_continuation_t continuation);
 
 /**
  * @brief Restores trap context from `stack`, optionally running `cleanup(user)` first on the new stack.
@@ -75,8 +75,8 @@ void trap_utils_jump_with_stack(void* stack, void* user, pfn_continuation_t cont
  * without cleanup.
  */
 [[noreturn, gnu::nonnull(1)]]
-void trap_restore_with_cleanup(void* stack, void* user, pfn_continuation_t cleanup);
+void hal_trap_restore_with_cleanup(void* stack, void* user, hal_continuation_t cleanup);
 
 /// @}
 
-#endif // !TRAP_H
+#endif // !HAL_TRAP_H

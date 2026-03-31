@@ -4,16 +4,16 @@
 #include <stdbigos/types.h>
 #include <hal/arch/riscv/trap.h>
 
-void handle_exc(trap_exception_type_t exc, trap_frame_t* tf) {
-	[[maybe_unused]] reg_t stval = tf->stval;
+void handle_exc(hal_riscv_trap_exception_t exc, hal_trap_frame_t* frame) {
+	[[maybe_unused]] reg_t stval = hal_riscv_trap_context_get_stval(frame);
 
 	switch (exc) {
-	case TRAP_EXC_ENV_CALL_U:
+	case HAL_RISCV_TRAP_EXC_ENV_CALL_U:
 		intr_enable();
-		tf->sepc += 4; // skip ECALL instruction
+		hal_riscv_trap_context_set_sepc(frame, hal_riscv_trap_context_get_sepc(frame) + 4); // skip ECALL instruction
 
-		DEBUG_PRINTF("syscall: got 0x%lx\n", tf->a0);
-		tf->a0 = 0xeed;
+		DEBUG_PRINTF("syscall: got 0x%lx\n", hal_riscv_trap_context_get_a0(frame));
+		hal_riscv_trap_context_set_a0(frame, 0xeed);
 
 		intr_disable();
 		return;
@@ -24,12 +24,12 @@ void handle_exc(trap_exception_type_t exc, trap_frame_t* tf) {
 	}
 }
 
-void my_trap_handler(trap_frame_t* tf) {
-	reg_t scause = tf->scause;
-	if (trap_is_interrupt(scause)) {
-		DEBUG_PRINTF("got interrupt: %lu\n", (u64)trap_get_interrupt_code(scause));
+void my_trap_handler(hal_trap_frame_t* frame) {
+	reg_t scause = hal_riscv_trap_context_get_scause(frame);
+	if (hal_riscv_trap_is_interrupt(scause)) {
+		DEBUG_PRINTF("got interrupt: %lu\n", (u64)hal_riscv_trap_get_interrupt_code(scause));
 	} else {
-		handle_exc(trap_get_exception_code(scause), tf);
+		handle_exc(hal_riscv_trap_get_exception_code(scause), frame);
 	}
 }
 
@@ -77,31 +77,34 @@ void kernel_continuation(void* usr) {
 	// now jump to user mode (also reenter our stack)
 	void* user_stack_top = &g_user_mode_stack[sizeof(g_user_mode_stack)];
 	void* kernel_stack_top = &g_kernel_mode_stack2[sizeof(g_kernel_mode_stack2)];
-	trap_frame_t tf = {0};
+	hal_riscv_trap_context_t context;
+	hal_riscv_trap_context_clear(&context);
 
-	tf.sp = (reg_t)user_stack_top;
-	tf.sepc = (reg_t)user_fn;   // setup user entry point
-	tf.sstatus = CSR_READ_RELAXED(sstatus);
-	tf.sstatus &= ~(1ull << 8); // clear previous privilege S -> sret will return to U mode
+	hal_riscv_trap_context_set_sp((hal_trap_frame_t*)&context, (reg_t)user_stack_top);
+	hal_riscv_trap_context_set_sepc((hal_trap_frame_t*)&context, (reg_t)user_fn);   // setup user entry point
+	hal_riscv_trap_context_set_sstatus((hal_trap_frame_t*)&context, CSR_READ_RELAXED(sstatus));
+	hal_riscv_trap_context_set_sstatus(
+	    (hal_trap_frame_t*)&context,
+	    hal_riscv_trap_context_get_sstatus((hal_trap_frame_t*)&context) & ~(1ull << 8)); // clear previous privilege
 
-	if (trap_utils_prepare_stack_for_transition(&kernel_stack_top, &tf) != ERR_NONE) {
+	if (hal_trap_prepare_stack_for_transition(&kernel_stack_top, (const hal_trap_frame_t*)&context) != ERR_NONE) {
 		DEBUG_PRINTF("failed to prepare stack for transition\n");
 		return;
 	}
 
 	DEBUG_PRINTF("transition to U-mode\n");
-	trap_restore_with_cleanup(kernel_stack_top, nullptr, nullptr);
+	hal_trap_restore_with_cleanup(kernel_stack_top, nullptr, nullptr);
 }
 
 void main([[maybe_unused]] u32 hartid, [[maybe_unused]] const void* fdt) {
 	DEBUG_PRINTF("on old stack: hartid %d, fdt %p, sp %p\n", hartid, fdt, get_sp());
 
-	if (trap_init(my_trap_handler) != ERR_NONE) {
+	if (hal_trap_init(my_trap_handler) != ERR_NONE) {
 		return;
 	}
 
 	// migrate to a different stack
 	kernel_state_t state = {hartid, fdt};
 	void* stack_top = &g_kernel_mode_stack[sizeof(g_kernel_mode_stack)];
-	trap_utils_jump_with_stack(stack_top, &state, kernel_continuation);
+	hal_trap_jump_with_stack(stack_top, &state, kernel_continuation);
 }

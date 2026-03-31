@@ -20,10 +20,10 @@ enum {
 // sleep for 1 second each
 #define TIMER_QUANTUM (u64)(TIMEBASE_FREQUENCY / 100)
 #define SLEEP_TIME    (u64)(TIMEBASE_FREQUENCY * 1)
-#define SIE_STIE      (1ul << TRAP_INT_S_TIMER)
+#define SIE_STIE      (1ul << HAL_RISCV_TRAP_INT_S_TIMER)
 
 typedef struct {
-	trap_frame_t tf;
+	hal_riscv_trap_context_t context;
 	bool initialized;
 } task_ctx_t;
 
@@ -79,63 +79,67 @@ static inline void user_sys_print(const char* str) {
 }
 
 static void init_task(task_ctx_t* task, void (*entry)(), void* user_stack_top) {
-	task->tf = (trap_frame_t){0};
-	task->tf.sp = (reg_t)user_stack_top;
-	task->tf.sepc = (reg_t)entry;
-	task->tf.sstatus = CSR_READ_RELAXED(sstatus);
-	task->tf.sstatus &= ~CSR_SSTATUS_SPP;
-	task->tf.sstatus |= CSR_SSTATUS_SPIE;
+	hal_riscv_trap_context_clear(&task->context);
+	hal_riscv_trap_context_set_sp((hal_trap_frame_t*)&task->context, (reg_t)user_stack_top);
+	hal_riscv_trap_context_set_sepc((hal_trap_frame_t*)&task->context, (reg_t)entry);
+	hal_riscv_trap_context_set_sstatus((hal_trap_frame_t*)&task->context, CSR_READ_RELAXED(sstatus));
+	hal_riscv_trap_context_set_sstatus(
+	    (hal_trap_frame_t*)&task->context,
+	    (hal_riscv_trap_context_get_sstatus((hal_trap_frame_t*)&task->context) & ~CSR_SSTATUS_SPP) |
+	        CSR_SSTATUS_SPIE);
 	task->initialized = true;
 }
 
-static void handle_syscall(trap_frame_t* tf) {
-	tf->sepc += 4;
+static void handle_syscall(hal_trap_frame_t* frame) {
+	hal_riscv_trap_context_set_sepc(frame, hal_riscv_trap_context_get_sepc(frame) + 4);
 
-	switch (tf->a7) {
+	switch (hal_riscv_trap_context_get_a7(frame)) {
 	case SYSCALL_PRINT:
-		dputs((const char*)tf->a0);
-		tf->a0 = 0;
+		dputs((const char*)hal_riscv_trap_context_get_a0(frame));
+		hal_riscv_trap_context_set_a0(frame, 0);
 		break;
 	default:
-		dprintf("unknown syscall id=%lu\n", (u64)tf->a7);
-		tf->a0 = (reg_t)-1;
+		dprintf("unknown syscall id=%lu\n", (u64)hal_riscv_trap_context_get_a7(frame));
+		hal_riscv_trap_context_set_a0(frame, (reg_t)-1);
 		break;
 	}
 }
 
-static void switch_to_next_task(trap_frame_t* tf) {
-	g_tasks[g_current_task].tf = *tf;
+static void switch_to_next_task(hal_trap_frame_t* frame) {
+	hal_riscv_trap_context_copy(&g_tasks[g_current_task].context, (const hal_riscv_trap_context_t*)frame);
 	g_current_task = (g_current_task + 1) % TASK_COUNT;
-	*tf = g_tasks[g_current_task].tf;
+	hal_riscv_trap_context_copy((hal_riscv_trap_context_t*)frame, &g_tasks[g_current_task].context);
 }
 
-void my_trap_handler(trap_frame_t* tf) {
-	const reg_t scause = tf->scause;
-	if (trap_is_interrupt(scause)) {
-		if (trap_get_interrupt_code(scause) == TRAP_INT_S_TIMER) {
+void my_trap_handler(hal_trap_frame_t* frame) {
+	const reg_t scause = hal_riscv_trap_context_get_scause(frame);
+	if (hal_riscv_trap_is_interrupt(scause)) {
+		if (hal_riscv_trap_get_interrupt_code(scause) == HAL_RISCV_TRAP_INT_S_TIMER) {
 			if (read_time() < g_next_switch) {
 				// Spurious timer interrupt, ignore.
 				return;
 			}
 			arm_next_timer();
-			switch_to_next_task(tf);
+			switch_to_next_task(frame);
 			return;
 		}
 
-		dprintf("unexpected interrupt %lu\n", (u64)trap_get_interrupt_code(scause));
+		dprintf("unexpected interrupt %lu\n", (u64)hal_riscv_trap_get_interrupt_code(scause));
 		return;
 	}
 
-	switch (trap_get_exception_code(scause)) {
-	case TRAP_EXC_ENV_CALL_U: handle_syscall(tf); break;
+	switch (hal_riscv_trap_get_exception_code(scause)) {
+	case HAL_RISCV_TRAP_EXC_ENV_CALL_U: handle_syscall(frame); break;
 	default:
-		dprintf("unexpected exception %lu stval=%p\n", (u64)trap_get_exception_code(scause), (void*)tf->stval);
+		dprintf("unexpected exception %lu stval=%p\n",
+		        (u64)hal_riscv_trap_get_exception_code(scause),
+		        (void*)hal_riscv_trap_context_get_stval(frame));
 		break;
 	}
 }
 
 void main([[maybe_unused]] u32 hartid, [[maybe_unused]] const void* fdt) {
-	if (trap_init(my_trap_handler) != ERR_NONE) {
+	if (hal_trap_init(my_trap_handler) != ERR_NONE) {
 		dputs("trap_init failed\n");
 		return;
 	}
@@ -152,6 +156,6 @@ void main([[maybe_unused]] u32 hartid, [[maybe_unused]] const void* fdt) {
 	// per task
 
 	// we will piggyback of our current stack
-	alignas(16) trap_frame_t tf = g_tasks[0].tf;
-	trap_restore_with_cleanup(&tf, nullptr, nullptr);
+	alignas(16) hal_riscv_trap_context_t context = g_tasks[0].context;
+	hal_trap_restore_with_cleanup(&context, nullptr, nullptr);
 }
