@@ -1,5 +1,6 @@
 #include "allocator.h"
 
+#include "hal/irq.h"
 #include "memory_management/include/physical_memory/manager.h"
 #include "stdbigos/error.h"
 #include "stdbigos/math.h"
@@ -110,6 +111,8 @@ error_t pmallocator_init_region(memory_area_t area, memory_region_t header_regio
 }
 
 error_t pmallocator_allocate(u8 frame_order, memory_region_t header_region, memory_area_t* areaOUT) {
+	// FIXME: use a real critical section
+	hal_disable_irq();
 	pmallocator_header_t* header = header_region.addr;
 
 	const size_t bitmap_bits = header->area_size / PAGE_SIZE;
@@ -129,14 +132,18 @@ error_t pmallocator_allocate(u8 frame_order, memory_region_t header_region, memo
 			bitmap_set_range(header->bitmap, i, frame_count);
 			areaOUT->addr = header->area_base_addr + (i * PAGE_SIZE);
 			areaOUT->size = frame_count * PAGE_SIZE;
+			hal_enable_irq();
 			return ERR_NONE;
 		}
 	}
 
+	hal_enable_irq();
 	return ERR_PHYSICAL_MEMORY_FULL;
 }
 
 error_t pmallocator_free(memory_area_t area, memory_region_t header_region) {
+	// FIXME: use a real critical section
+	hal_disable_irq();
 	pmallocator_header_t* header = header_region.addr;
 
 	const size_t frame_count = area.size / PAGE_SIZE;
@@ -144,17 +151,22 @@ error_t pmallocator_free(memory_area_t area, memory_region_t header_region) {
 	const size_t addr_bit = (phys_addr - header->area_base_addr) / PAGE_SIZE;
 	const size_t total_pages = header->area_size / PAGE_SIZE;
 
-	if (phys_addr < header->area_base_addr || addr_bit + frame_count > total_pages)
+	if (phys_addr < header->area_base_addr || addr_bit + frame_count > total_pages) {
+		hal_enable_irq();
 		return ERR_OUT_OF_BOUNDS;
+	}
 
 	for (size_t j = addr_bit; j < addr_bit + frame_count; ++j) {
-		if (!bitmap_test(header->bitmap, j))
+		if (!bitmap_test(header->bitmap, j)) {
+			hal_enable_irq();
 			return ERR_NOT_VALID;
+		}
 	}
 
 	for (size_t j = addr_bit; j < addr_bit + frame_count; ++j) {
 		bitmap_clear(header->bitmap, j);
 	}
 
+	hal_enable_irq();
 	return ERR_NONE;
 }
