@@ -1,82 +1,116 @@
 #include <debug/debug_stdio.h>
+#include <hal/trap.h>
 #include <stdbigos/error.h>
 #include <stdbigos/types.h>
-#include <hal/trap.h>
-
-/**
- * Simple user mode example using the simplified public HAL API.
- *
- * This demonstrates basic syscall handling from user mode.
- * For a more advanced example with task switching, internal APIs would be needed.
- */
 
 enum {
 	SYSCALL_PRINT = 1,
+	SYSCALL_YIELD = 2,
 };
 
-static u8 g_user_mode_stack1[4096] __attribute__((aligned(4096)));
-static u8 g_user_mode_stack2[4096] __attribute__((aligned(4096)));
+// extracted from fdt /cpus/timebase-frequency
+// QEMU tells 10MHz
+#define TIMEBASE_FREQUENCY 10000000ul
+#define SLEEP_TIME         (u64)(TIMEBASE_FREQUENCY * 1)
 
-/**
- * User-mode task that makes syscalls.
- */
-[[noreturn]]
-void user_task1(void) {
-	while (true) {
-		// Make a syscall: a7=1 (SYSCALL_PRINT), a0=string pointer
-		register u64 result __asm__("a0") = (reg_t)"[User 1] Hello from user mode!\n";
-		register u64 id __asm__("a7") = SYSCALL_PRINT;
-		__asm__ volatile("ecall" : "+r"(result) : "r"(id) : );
+static hal_trap_frame_t* g_inactive_task_frame = nullptr;
+
+static u8 g_user_mode_stack_a[4096] __attribute__((aligned(4096)));
+static u8 g_user_mode_stack_b[4096] __attribute__((aligned(4096)));
+
+// Backing storage for both task frames.
+static u8 g_active_frame_storage[512] __attribute__((aligned(64)));
+static u8 g_saved_frame_storage[512] __attribute__((aligned(64)));
+
+static inline u64 read_time() {
+	u64 now;
+	__asm__ volatile("rdtime %0" : "=r"(now)::"memory");
+	return now;
+}
+
+static inline void user_sys_print(const char* str) {
+	register reg_t a0 __asm__("a0") = (reg_t)str;
+	register reg_t a7 __asm__("a7") = SYSCALL_PRINT;
+	__asm__ volatile("ecall" : "+r"(a0) : "r"(a7) : "memory");
+	if (a0 != 0) {
+		dprintf("print syscall failed: %lu\n", (u64)a0);
 	}
 }
 
-[[noreturn]]
-void user_task2(void) {
-	while (true) {
-		// Make a syscall: a7=1 (SYSCALL_PRINT), a0=string pointer
-		register u64 result __asm__("a0") = (reg_t)"[User 2] Hello from user mode!\n";
-		register u64 id __asm__("a7") = SYSCALL_PRINT;
-		__asm__ volatile("ecall" : "+r"(result) : "r"(id) : );
+static inline void user_sys_yield() {
+	register reg_t a0 __asm__("a0") = 0;
+	register reg_t a7 __asm__("a7") = SYSCALL_YIELD;
+	__asm__ volatile("ecall" : "=r"(a0) : "r"(a7) : "memory");
+	if (a0 != 0) {
+		dprintf("yield syscall failed: %lu\n", (u64)a0);
 	}
 }
 
-/**
- * Syscall handler - processes system calls from user mode.
- * Receives syscall arguments as reg_t (architecture-dependent).
- * Returns error code and value - error in a0, value in a1.
- */
-hal_syscall_result_t syscall_handler(reg_t syscall_id, reg_t arg0, reg_t arg1, reg_t arg2, reg_t arg3, reg_t arg4, reg_t arg5) {
-	(void)arg1; (void)arg2; (void)arg3; (void)arg4; (void)arg5;
+[[noreturn]] void user_task_a() {
+	while (true) {
+		user_sys_print("[U-task A] running\n");
+		u64 start = read_time();
+		while (read_time() - start < SLEEP_TIME) user_sys_yield();
+	}
+}
+
+[[noreturn]] void user_task_b() {
+	while (true) {
+		user_sys_print("[U-task B] running\n");
+		u64 start = read_time();
+		while (read_time() - start < SLEEP_TIME) user_sys_yield();
+	}
+}
+
+hal_syscall_result_t syscall_handler(reg_t syscall_id, reg_t arg0, reg_t arg1, reg_t arg2, reg_t arg3, reg_t arg4,
+                                     reg_t arg5) {
+	(void)arg1;
+	(void)arg2;
+	(void)arg3;
+	(void)arg4;
+	(void)arg5;
+
 	switch (syscall_id) {
-	case SYSCALL_PRINT:
-		dputs((const char*)arg0);
+	case SYSCALL_PRINT: dputs((const char*)arg0); return (hal_syscall_result_t){.error = 0, .value = 0};
+	case SYSCALL_YIELD:
+		if (!g_inactive_task_frame) {
+			return (hal_syscall_result_t){.error = 1, .value = 0};
+		}
+
+		if (!hal_trap_request_deferred_frame_swap(g_inactive_task_frame)) {
+			return (hal_syscall_result_t){.error = 2, .value = 0};
+		}
 		return (hal_syscall_result_t){.error = 0, .value = 0};
 	default:
-		dprintf("[Kernel] Unknown syscall: %lu\n", (u64)syscall_id);
+		dprintf("unknown syscall id=%lu\n", (u64)syscall_id);
 		return (hal_syscall_result_t){.error = 1, .value = 0};
 	}
 }
 
 void main([[maybe_unused]] u32 hartid, [[maybe_unused]] const void* fdt) {
-	// Initialize the trap handling subsystem
 	if (hal_trap_init() != ERR_NONE) {
 		dputs("trap_init failed\n");
 		return;
 	}
 
-	// Register the syscall handler
-	if (hal_trap_register_timer_handler(timer_handler) != ERR_NONE) {
-		dputs("timer handler registration failed\n");
+	hal_trap_frame_t* active_task_frame =
+	    hal_trap_frame_from_buffer(g_active_frame_storage, sizeof(g_active_frame_storage));
+	g_inactive_task_frame = hal_trap_frame_from_buffer(g_saved_frame_storage, sizeof(g_saved_frame_storage));
+	if (!active_task_frame || !g_inactive_task_frame) {
+		dputs("trap frame allocation failed\n");
 		return;
 	}
+
+	hal_trap_frame_init_userspace(active_task_frame, (uintptr_t)&g_user_mode_stack_a[sizeof(g_user_mode_stack_a)],
+	                              (uintptr_t)user_task_a);
+	hal_trap_frame_init_userspace(g_inactive_task_frame, (uintptr_t)&g_user_mode_stack_b[sizeof(g_user_mode_stack_b)],
+	                              (uintptr_t)user_task_b);
 
 	if (hal_trap_register_syscall_handler(syscall_handler) != ERR_NONE) {
 		dputs("syscall handler registration failed\n");
 		return;
 	}
 
-	dputs("Jumping to user mode...\n");
-
-	void* user_stack_top = &g_user_mode_stack1[sizeof(g_user_mode_stack1)];
-	hal_trap_jump_to_userspace((uintptr_t)user_stack_top, (uintptr_t)user_task1);
+	dputs("starting U-mode concurrency example\n");
+	hal_trap_start_task(active_task_frame);
 }

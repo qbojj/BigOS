@@ -11,8 +11,9 @@
 #ifndef HAL_ARCH_RISCV_CSR_INTERNAL_H
 #define HAL_ARCH_RISCV_CSR_INTERNAL_H
 
-#include "csr_vals.h"
 #include <stdbigos/types.h>
+
+#include "csr_vals.h"
 
 /**
  * Read and write a CSR, swapping the old value for a new one.

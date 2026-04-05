@@ -1,17 +1,22 @@
 #include <debug/debug_stdio.h>
+#include <hal/trap.h>
 #include <stdbigos/error.h>
 #include <stdbigos/types.h>
-#include <hal/trap.h>
 
 /**
  * Syscall handler - called when userspace makes an ecall.
  * Receives syscall arguments as reg_t (architecture-dependent).
  * Returns error code and value - error in a0, value in a1.
  */
-hal_syscall_result_t syscall_handler(reg_t syscall_id, reg_t arg0, reg_t arg1, reg_t arg2, reg_t arg3, reg_t arg4, reg_t arg5) {
-	(void)arg1; (void)arg2; (void)arg3; (void)arg4; (void)arg5;
+hal_syscall_result_t syscall_handler(reg_t syscall_id, reg_t arg0, reg_t arg1, reg_t arg2, reg_t arg3, reg_t arg4,
+                                     reg_t arg5) {
+	(void)arg1;
+	(void)arg2;
+	(void)arg3;
+	(void)arg4;
+	(void)arg5;
 	switch (syscall_id) {
-	case 0:  // Example syscall 0
+	case 0: // Example syscall 0
 		DEBUG_PRINTF("syscall: got 0x%lx\n", arg0);
 		return (hal_syscall_result_t){.error = 0, .value = 0xeed};
 
@@ -23,6 +28,7 @@ hal_syscall_result_t syscall_handler(reg_t syscall_id, reg_t arg0, reg_t arg1, r
 }
 
 static u8 g_user_mode_stack[4096] __attribute__((aligned(4096)));
+static u8 g_task_frame_storage[512] __attribute__((aligned(64)));
 
 void user_fn(void) {
 	while (1) {
@@ -56,11 +62,17 @@ void main([[maybe_unused]] u32 hartid, [[maybe_unused]] const void* fdt) {
 		return;
 	}
 
-	// Jump to user mode with user stack and function pointer
+	// Prepare initial userspace task and start it.
+	hal_trap_frame_t* task_frame = hal_trap_frame_from_buffer(g_task_frame_storage, sizeof(g_task_frame_storage));
+	if (!task_frame) {
+		DEBUG_PRINTF("failed to allocate task frame\n");
+		return;
+	}
+
 	void* user_stack_top = &g_user_mode_stack[sizeof(g_user_mode_stack)];
-	DEBUG_PRINTF("jumping to user mode, pc=%p, sp=%p\n", (void*)user_fn, user_stack_top);
+	DEBUG_PRINTF("starting user task, pc=%p, sp=%p\n", (void*)user_fn, user_stack_top);
+	hal_trap_frame_init_userspace(task_frame, (uintptr_t)user_stack_top, (uintptr_t)user_fn);
+	hal_trap_start_task(task_frame);
 
-	hal_trap_jump_to_userspace((uintptr_t)user_stack_top, (uintptr_t)user_fn);
-
-	// Should never reach here (hal_trap_jump_to_userspace is noreturn)
+	// Should never reach here (hal_trap_start_task is noreturn)
 }

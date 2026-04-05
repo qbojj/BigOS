@@ -1,22 +1,91 @@
+#include "trap.h"
+
+#include <debug/debug_stdio.h>
+#include <hal/trap.h>
 #include <stdbigos/error.h>
 #include <stdbigos/math.h>
 #include <stdbigos/string.h>
 #include <stdbigos/types.h>
 #include <stdint.h>
-#include <hal/trap.h>
-#include "csr_vals.h"
+
 #include "csr.h"
-#include "trap.h"
+#include "csr_vals.h"
 
 extern void hal_riscv_trap_entry();
-extern void hal_riscv_trap_restore();
+extern void hal_riscv_trap_restore(void*);
 
 // Global registered handlers
 static hal_timer_handler_t g_timer_handler = nullptr;
 static hal_syscall_handler_t g_syscall_handler = nullptr;
+static riscv_trap_frame_t* g_active_trap_frame = nullptr;
+static riscv_trap_frame_t* g_deferred_swap_frame = nullptr;
 
-static void hal_riscv_trap_interrupt_handler(hal_riscv_trap_interrupt_t code, riscv_trap_frame_t* ctx) {
-	switch(code) {
+size_t hal_trap_frame_size(void) {
+	return sizeof(riscv_trap_frame_t);
+}
+
+size_t hal_trap_frame_alignment(void) {
+	return alignof(riscv_trap_frame_t);
+}
+
+hal_trap_frame_t* hal_trap_frame_from_buffer(void* buffer, size_t buffer_size) {
+	if (!buffer) {
+		return nullptr;
+	}
+
+	const size_t alignment = hal_trap_frame_alignment();
+	const uintptr_t start = (uintptr_t)buffer;
+	const uintptr_t aligned = ALIGN_UP(start, alignment);
+	const size_t padding = (size_t)(aligned - start);
+
+	if (padding > buffer_size) {
+		return nullptr;
+	}
+
+	if ((buffer_size - padding) < hal_trap_frame_size()) {
+		return nullptr;
+	}
+
+	return (hal_trap_frame_t*)aligned;
+}
+
+bool hal_trap_frame_copy_out(hal_trap_frame_t* out_frame) {
+	if (!g_active_trap_frame || !out_frame) {
+		return false;
+	}
+
+	memcpy(out_frame, g_active_trap_frame, sizeof(*g_active_trap_frame));
+	return true;
+}
+
+bool hal_trap_frame_swap(hal_trap_frame_t* in_out_frame) {
+	if (!g_active_trap_frame || !in_out_frame) {
+		return false;
+	}
+
+	riscv_trap_frame_t saved = *g_active_trap_frame;
+	*g_active_trap_frame = *(riscv_trap_frame_t*)in_out_frame;
+	*(riscv_trap_frame_t*)in_out_frame = saved;
+	return true;
+}
+
+void hal_trap_frame_init_userspace(hal_trap_frame_t* frame, uintptr_t user_sp, uintptr_t user_pc) {
+	if (!frame) {
+		return;
+	}
+
+	riscv_trap_frame_t* riscv_frame = (riscv_trap_frame_t*)frame;
+	memset(riscv_frame, 0, sizeof(*riscv_frame));
+
+	riscv_frame->sp = user_sp;
+	riscv_frame->sepc = user_pc;
+	riscv_frame->sstatus = CSR_READ(sstatus);
+	riscv_frame->sstatus &= ~CSR_SSTATUS_SPP;
+	riscv_frame->sstatus |= CSR_SSTATUS_SPIE;
+}
+
+static void hal_riscv_trap_interrupt_handler(hal_riscv_trap_interrupt_t code) {
+	switch (code) {
 	case HAL_RISCV_TRAP_INT_S_TIMER:
 		if (g_timer_handler) {
 			g_timer_handler();
@@ -31,6 +100,8 @@ static void hal_riscv_trap_interrupt_handler(hal_riscv_trap_interrupt_t code, ri
 static void hal_riscv_trap_exception_handler(hal_riscv_trap_exception_t code, riscv_trap_frame_t* ctx) {
 	switch (code) {
 	case HAL_RISCV_TRAP_EXC_ENV_CALL_U:
+		ctx->sepc += 4; // advance past ecall instruction
+
 		if (g_syscall_handler) {
 			// Extract syscall arguments from registers (as reg_t)
 			reg_t syscall_id = ctx->a7;
@@ -44,35 +115,46 @@ static void hal_riscv_trap_exception_handler(hal_riscv_trap_exception_t code, ri
 			// Call handler and get result
 			hal_syscall_result_t result = g_syscall_handler(syscall_id, arg0, arg1, arg2, arg3, arg4, arg5);
 
-			// Store error in a0, value in a1
+			// Store error in a0, value in a1 (unless deferred swap will override)
 			ctx->a0 = result.error;
 			ctx->a1 = result.value;
 		}
-
-		ctx->sepc += 4; // advance past ecall instruction
 		break;
 	default:
 		// Unknown exception - for now just ignore
+		dprintf("Unhandled exception code=%lu, stval=%lu\n", (u64)code, (u64)ctx->stval);
 		break;
 	}
 }
 
 void hal_riscv_trap_handler_trampoline(riscv_trap_frame_t* ctx) {
+	bool is_top_level = g_active_trap_frame == nullptr;
+
+	if (is_top_level) {
+		g_active_trap_frame = ctx;
+	}
+
 	// disable:
-	// - floating point extensions
-	// - vector extensions
 	// - MXR - memory executable readable
 	// - SUM - supervisor read userspace
-	// - SDT - double trap detection
-	CSR_CLEAR(sstatus, (CSR_SSTATUS_VS_MASK << CSR_SSTATUS_VS_OFFSET) | (CSR_SSTATUS_FS_MASK << CSR_SSTATUS_FS_OFFSET) |
-	                       CSR_SSTATUS_MXR | CSR_SSTATUS_SUM | CSR_SSTATUS_SDT | 0);
+	CSR_CLEAR(sstatus, CSR_SSTATUS_MXR | CSR_SSTATUS_SUM);
 
-	reg_t scause = ctx->scause;
-
-	if (hal_riscv_trap_is_interrupt(scause)) {
-		hal_riscv_trap_interrupt_handler(hal_riscv_trap_get_interrupt_code(scause), ctx);
+	if (hal_riscv_trap_is_interrupt(ctx->scause)) {
+		hal_riscv_trap_interrupt_handler(hal_riscv_trap_get_interrupt_code(ctx->scause));
 	} else {
-		hal_riscv_trap_exception_handler(hal_riscv_trap_get_exception_code(scause), ctx);
+		hal_riscv_trap_exception_handler(hal_riscv_trap_get_exception_code(ctx->scause), ctx);
+	}
+
+	if (is_top_level) {
+		// Execute deferred frame swap if requested
+		if (g_deferred_swap_frame) {
+			riscv_trap_frame_t saved = *g_active_trap_frame;
+			*g_active_trap_frame = *g_deferred_swap_frame;
+			*g_deferred_swap_frame = saved;
+			g_deferred_swap_frame = nullptr;
+		}
+
+		g_active_trap_frame = nullptr;
 	}
 }
 
@@ -92,78 +174,26 @@ error_t hal_trap_register_syscall_handler(hal_syscall_handler_t handler) {
 	return ERR_NONE;
 }
 
-__attribute__((noreturn))
-void hal_trap_jump_to_userspace(uintptr_t user_sp, uintptr_t user_pc) {
-	// Create a trap frame for user mode entry
-	// This sets up the state as if we're returning from a trap
-	riscv_trap_frame_t frame;
-	memset(&frame, 0, sizeof(frame));
+bool hal_trap_request_deferred_frame_swap(hal_trap_frame_t* frame) {
+	if (!g_active_trap_frame || !frame) {
+		return false;
+	}
 
-	// Set up registers
-	frame.sp = user_sp;
-	frame.sepc = user_pc;
+	g_deferred_swap_frame = (riscv_trap_frame_t*)frame;
+	return true;
+}
 
-	// Set sstatus for user mode:
-	// SPP = 0 (user mode), SPIE = 1 (enable interrupts after sret)
-	frame.sstatus = CSR_READ(sstatus);
-	frame.sstatus &= ~CSR_SSTATUS_SPP;
-	frame.sstatus |= CSR_SSTATUS_SPIE;
+__attribute__((noreturn)) void hal_trap_start_task(const hal_trap_frame_t* frame) {
+	if (!frame) {
+		// panic
+		dputs("hal_trap_start_task called with null frame\n");
+		while (true) {
+			hal_wait_for_interrupt();
+		}
+	}
 
-	// Jump to user mode using sret
-	// We need to restore context and execute sret
-	__asm__ volatile(
-		// Load all registers from frame
-		"mv a0, %0\n"              // a0 = &frame
-
-		// Restore all GPRs from the frame
-		"ld ra, 0(a0)\n"
-		"ld sp, 8(a0)\n"
-		"ld gp, 16(a0)\n"
-		"ld tp, 24(a0)\n"
-		"ld t0, 32(a0)\n"
-		"ld t1, 40(a0)\n"
-		"ld t2, 48(a0)\n"
-		"ld s0, 56(a0)\n"
-		"ld s1, 64(a0)\n"
-		"ld a1, 80(a0)\n"
-		"ld a2, 88(a0)\n"
-		"ld a3, 96(a0)\n"
-		"ld a4, 104(a0)\n"
-		"ld a5, 112(a0)\n"
-		"ld a6, 120(a0)\n"
-		"ld a7, 128(a0)\n"
-		"ld s2, 136(a0)\n"
-		"ld s3, 144(a0)\n"
-		"ld s4, 152(a0)\n"
-		"ld s5, 160(a0)\n"
-		"ld s6, 168(a0)\n"
-		"ld s7, 176(a0)\n"
-		"ld s8, 184(a0)\n"
-		"ld s9, 192(a0)\n"
-		"ld s10, 200(a0)\n"
-		"ld s11, 208(a0)\n"
-		"ld t3, 216(a0)\n"
-		"ld t4, 224(a0)\n"
-		"ld t5, 232(a0)\n"
-		"ld t6, 240(a0)\n"
-
-		// Load control registers (after other registers to avoid clobbering a0/a1)
-		"ld a1, 248(a0)\n"         // sepc at offset 31*8
-		"ld a2, 256(a0)\n"         // sstatus at offset 32*8
-
-		// Load a0 last
-		"ld a0, 72(a0)\n"
-
-		// Set CSRs
-		"csrw sepc, a1\n"
-		"csrw sstatus, a2\n"
-
-		// Jump to user mode
-		"sret\n"
-
-		: : "r"(&frame) : "memory"
-	);
-
+	riscv_trap_frame_t on_stack_frame = *(riscv_trap_frame_t*)frame;
+	hal_riscv_trap_restore(&on_stack_frame);
 	__builtin_unreachable();
 }
 

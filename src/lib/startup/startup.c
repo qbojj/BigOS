@@ -6,8 +6,8 @@
 
 */
 
-#include <relocations/reloc.h>
 #include <hal/trap.h>
+#include <relocations/reloc.h>
 #include <stdbigos/string.h>
 #include <stdbigos/types.h>
 #include <stdint.h>
