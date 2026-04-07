@@ -4,8 +4,6 @@
  *
  * This header is internal to HAL and should not be included directly by user code.
  * Architecture-specific trap handling is an implementation detail of the HAL.
- *
- * SPDX-License-Identifier: Unlicense
  */
 
 #ifndef HAL_ARCH_RISCV_TRAP_DEFS_H
