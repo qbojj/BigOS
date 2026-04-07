@@ -98,7 +98,7 @@ typedef enum hal_riscv_trap_exception {
  * @param cause Raw `scause` value.
  * @return `true` if the cause is an interrupt, `false` if it is an exception.
  */
-bool hal_riscv_trap_is_interrupt(reg_t cause) {
+static inline bool hal_riscv_trap_is_interrupt(reg_t cause) {
 	return (ireg_t)cause < 0;
 }
 
@@ -107,7 +107,7 @@ bool hal_riscv_trap_is_interrupt(reg_t cause) {
  * @param cause Raw `scause` value.
  * @return Interrupt code.
  */
-hal_riscv_trap_interrupt_t hal_riscv_trap_get_interrupt_code(reg_t cause) {
+static inline hal_riscv_trap_interrupt_t hal_riscv_trap_get_interrupt_code(reg_t cause) {
 	return (cause << 1) >> 1; // strip highest bit
 }
 
@@ -116,7 +116,7 @@ hal_riscv_trap_interrupt_t hal_riscv_trap_get_interrupt_code(reg_t cause) {
  * @param cause Raw `scause` value.
  * @return Exception code.
  */
-hal_riscv_trap_exception_t hal_riscv_trap_get_exception_code(reg_t cause) {
+static inline hal_riscv_trap_exception_t hal_riscv_trap_get_exception_code(reg_t cause) {
 	return cause;
 }
 

@@ -79,10 +79,11 @@ hal_trap_frame_t* hal_trap_frame_from_buffer(void* buffer, size_t buffer_size);
  * This function is only valid while running inside trap handling code.
  *
  * @param out_frame Destination trap frame.
- * @retval true on success
- * @retval false if called outside trap context or with NULL destination
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG if @p out_frame is NULL
+ * @retval ERR_NOT_VALID if called outside trap context
  */
-bool hal_trap_frame_copy_out(hal_trap_frame_t* out_frame);
+error_t hal_trap_frame_copy_out(hal_trap_frame_t* out_frame);
 
 /**
  * @brief Swaps the current trap frame with @p in_out_frame.
@@ -91,10 +92,11 @@ bool hal_trap_frame_copy_out(hal_trap_frame_t* out_frame);
  * It is intended for cooperative/preemptive task context switching.
  *
  * @param in_out_frame On input: frame to restore. On output: previous current frame.
- * @retval true on success
- * @retval false if called outside trap context or with NULL frame
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG if @p in_out_frame is NULL
+ * @retval ERR_NOT_VALID if called outside trap context
  */
-bool hal_trap_frame_swap(hal_trap_frame_t* in_out_frame);
+error_t hal_trap_frame_swap(hal_trap_frame_t* in_out_frame);
 
 /**
  * @brief Initializes trap frame for entering userspace via `sret`.
@@ -156,10 +158,11 @@ error_t hal_trap_register_syscall_handler(hal_syscall_handler_t handler);
  * restored task's registers intact, rather than writing the current syscall results.
  *
  * @param frame Frame to swap with the current frame on handler exit
- * @retval true on success
- * @retval false if called outside trap context or with NULL frame
+ * @retval ERR_NONE on success
+ * @retval ERR_BAD_ARG if @p frame is NULL
+ * @retval ERR_NOT_VALID if called outside trap context
  */
-bool hal_trap_request_deferred_frame_swap(hal_trap_frame_t* frame);
+error_t hal_trap_request_deferred_frame_swap(hal_trap_frame_t* frame);
 
 /**
  * @brief Start execution of a prepared userspace task frame.

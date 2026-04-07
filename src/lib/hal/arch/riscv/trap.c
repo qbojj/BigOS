@@ -49,24 +49,32 @@ hal_trap_frame_t* hal_trap_frame_from_buffer(void* buffer, size_t buffer_size) {
 	return (hal_trap_frame_t*)aligned;
 }
 
-bool hal_trap_frame_copy_out(hal_trap_frame_t* out_frame) {
-	if (!g_active_trap_frame || !out_frame) {
-		return false;
+error_t hal_trap_frame_copy_out(hal_trap_frame_t* out_frame) {
+	if (!out_frame) {
+		return ERR_BAD_ARG;
+	}
+
+	if (!g_active_trap_frame) {
+		return ERR_NOT_VALID;
 	}
 
 	memcpy(out_frame, g_active_trap_frame, sizeof(*g_active_trap_frame));
-	return true;
+	return ERR_NONE;
 }
 
-bool hal_trap_frame_swap(hal_trap_frame_t* in_out_frame) {
-	if (!g_active_trap_frame || !in_out_frame) {
-		return false;
+error_t hal_trap_frame_swap(hal_trap_frame_t* in_out_frame) {
+	if (!in_out_frame) {
+		return ERR_BAD_ARG;
+	}
+
+	if (!g_active_trap_frame) {
+		return ERR_NOT_VALID;
 	}
 
 	riscv_trap_frame_t saved = *g_active_trap_frame;
 	*g_active_trap_frame = *(riscv_trap_frame_t*)in_out_frame;
 	*(riscv_trap_frame_t*)in_out_frame = saved;
-	return true;
+	return ERR_NONE;
 }
 
 void hal_trap_frame_init_userspace(hal_trap_frame_t* frame, uintptr_t user_sp, uintptr_t user_pc) {
@@ -174,13 +182,17 @@ error_t hal_trap_register_syscall_handler(hal_syscall_handler_t handler) {
 	return ERR_NONE;
 }
 
-bool hal_trap_request_deferred_frame_swap(hal_trap_frame_t* frame) {
-	if (!g_active_trap_frame || !frame) {
-		return false;
+error_t hal_trap_request_deferred_frame_swap(hal_trap_frame_t* frame) {
+	if (!frame) {
+		return ERR_BAD_ARG;
+	}
+
+	if (!g_active_trap_frame) {
+		return ERR_NOT_VALID;
 	}
 
 	g_deferred_swap_frame = (riscv_trap_frame_t*)frame;
-	return true;
+	return ERR_NONE;
 }
 
 __attribute__((noreturn)) void hal_trap_start_task(const hal_trap_frame_t* frame) {

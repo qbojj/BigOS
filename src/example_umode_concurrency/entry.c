@@ -77,8 +77,9 @@ hal_syscall_result_t syscall_handler(reg_t syscall_id, reg_t arg0, reg_t arg1, r
 			return (hal_syscall_result_t){.error = 1, .value = 0};
 		}
 
-		if (!hal_trap_request_deferred_frame_swap(g_inactive_task_frame)) {
-			return (hal_syscall_result_t){.error = 2, .value = 0};
+		error_t swap_err = hal_trap_request_deferred_frame_swap(g_inactive_task_frame);
+		if (swap_err != ERR_NONE) {
+			return (hal_syscall_result_t){.error = (reg_t)swap_err, .value = 0};
 		}
 		return (hal_syscall_result_t){.error = 0, .value = 0};
 	default:
