@@ -49,7 +49,9 @@ void int_handler() {
 
 [[noreturn, gnu::used]]
 void start() {
-	(void)self_relocate();
+	reloc_dynamic_info_t dynamic_info;
+	(void)reloc_load_dynamic_info(&dynamic_info);
+	(void)self_relocate(&dynamic_info);
 	const size_t bss_sz = (uintptr_t)bss_end - (uintptr_t)bss_start;
 
 	memset(bss_start, '\0', bss_sz);
