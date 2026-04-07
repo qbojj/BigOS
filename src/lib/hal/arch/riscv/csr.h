@@ -1,11 +1,9 @@
 /**
- * @file csr_internal.h
+ * @file csr.h
  * @brief Internal RISC-V CSR (Control and Status Register) access macros.
  *
  * This header is internal to HAL and should not be used by code outside the HAL.
  * CSR access is architecture-specific and not part of the platform-generic HAL interface.
- *
- * SPDX-License-Identifier: Unlicense
  */
 
 #ifndef HAL_ARCH_RISCV_CSR_INTERNAL_H
