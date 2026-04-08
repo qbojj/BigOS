@@ -57,6 +57,14 @@ error_t pmallocator_get_header(memory_area_t area, get_next_reserved_region_t en
                                memory_area_t* headerOUT) {
 	const size_t header_size = calculate_header_size(area);
 
+	if (enumerator == nullptr) {
+		*headerOUT = (memory_area_t){
+		    .addr = area.addr,
+		    .size = header_size,
+		};
+		return ERR_NONE;
+	}
+
 	for (uintptr_t i = area.addr; i + header_size <= area.addr + area.size; i += PAGE_SIZE) {
 		memory_area_t potential_header = {
 		    .addr = i,
@@ -64,13 +72,11 @@ error_t pmallocator_get_header(memory_area_t area, get_next_reserved_region_t en
 		};
 		bool overlaps_reserved = false;
 
-		if (enumerator != NULL) {
-			memory_area_t reserved_area;
-			while (enumerator(user, &reserved_area)) {
-				if (do_memory_areas_overlap(potential_header, reserved_area)) {
-					overlaps_reserved = true;
-					break;
-				}
+		memory_area_t reserved_area;
+		while (enumerator(user, &reserved_area)) {
+			if (do_memory_areas_overlap(potential_header, reserved_area)) {
+				overlaps_reserved = true;
+				break;
 			}
 		}
 
@@ -94,7 +100,7 @@ error_t pmallocator_init_region(memory_area_t area, memory_region_t header_regio
 
 	memset(header->bitmap, 0, bitmap_size);
 
-	if (enumerator != NULL) {
+	if (enumerator != nullptr) {
 		memory_area_t reserved_area;
 		while (enumerator(user, &reserved_area)) {
 			bitmap_range_t bitmap_range = addr_range_to_bitmap_range(reserved_area.addr, reserved_area.size, area.addr);
