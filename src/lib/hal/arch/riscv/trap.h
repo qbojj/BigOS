@@ -1,13 +1,13 @@
 /**
- * @file trap_defs.h
+ * @file trap.h
  * @brief Internal RISC-V trap definitions
  *
  * This header is internal to HAL and should not be included directly by user code.
  * Architecture-specific trap handling is an implementation detail of the HAL.
  */
 
-#ifndef HAL_ARCH_RISCV_TRAP_DEFS_H
-#define HAL_ARCH_RISCV_TRAP_DEFS_H
+#ifndef HAL_ARCH_RISCV_TRAP_H
+#define HAL_ARCH_RISCV_TRAP_H
 
 #include <hal/trap.h>
 #include <stdbigos/types.h>
@@ -120,4 +120,4 @@ static inline hal_riscv_trap_exception_t hal_riscv_trap_get_exception_code(reg_t
 
 /// @}
 
-#endif // !HAL_ARCH_RISCV_TRAP_DEFS_H
+#endif // !HAL_ARCH_RISCV_TRAP_H

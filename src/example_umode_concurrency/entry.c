@@ -102,6 +102,8 @@ void main([[maybe_unused]] u32 hartid, [[maybe_unused]] const void* fdt) {
 		return;
 	}
 
+	__asm__ volatile("csrs scounteren, 0b111"); // enable all scounteren bits so that user mode can read timebase
+
 	hal_trap_frame_init_userspace(active_task_frame, (uintptr_t)&g_user_mode_stack_a[sizeof(g_user_mode_stack_a)],
 	                              (uintptr_t)user_task_a);
 	hal_trap_frame_init_userspace(g_inactive_task_frame, (uintptr_t)&g_user_mode_stack_b[sizeof(g_user_mode_stack_b)],

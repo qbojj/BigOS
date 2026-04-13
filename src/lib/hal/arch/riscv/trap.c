@@ -87,9 +87,24 @@ void hal_trap_frame_init_userspace(hal_trap_frame_t* frame, uintptr_t user_sp, u
 
 	riscv_frame->sp = user_sp;
 	riscv_frame->sepc = user_pc;
-	riscv_frame->sstatus = CSR_READ(sstatus);
-	riscv_frame->sstatus &= ~CSR_SSTATUS_SPP;
-	riscv_frame->sstatus |= CSR_SSTATUS_SPIE;
+	riscv_frame->sstatus = 0;
+}
+
+[[noreturn]]
+static void hal_riscv_trap_unhandled_interrupt(hal_riscv_trap_interrupt_t code) {
+	dprintf("Unhandled interrupt code=%lu\n", (u64)code);
+	while (true) {
+		hal_wait_for_interrupt();
+	}
+}
+
+[[noreturn]]
+static void hal_riscv_trap_unhandled_exception(hal_riscv_trap_exception_t code, reg_t stval) {
+	CSR_CLEAR(sstatus, CSR_SSTATUS_SIE);
+	dprintf("Unhandled exception code=%lu, stval=%lu\n", (u64)code, (u64)stval);
+	while (true) {
+		hal_wait_for_interrupt();
+	}
 }
 
 static void hal_riscv_trap_interrupt_handler(hal_riscv_trap_interrupt_t code) {
@@ -100,7 +115,7 @@ static void hal_riscv_trap_interrupt_handler(hal_riscv_trap_interrupt_t code) {
 		}
 		break;
 	default:
-		// Unknown interrupt - for now just ignore
+		hal_riscv_trap_unhandled_interrupt(code);
 		break;
 	}
 }
@@ -129,8 +144,7 @@ static void hal_riscv_trap_exception_handler(hal_riscv_trap_exception_t code, ri
 		}
 		break;
 	default:
-		// Unknown exception - for now just ignore
-		dprintf("Unhandled exception code=%lu, stval=%lu\n", (u64)code, (u64)ctx->stval);
+		hal_riscv_trap_unhandled_exception(code, ctx->stval);
 		break;
 	}
 }
