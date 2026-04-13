@@ -114,9 +114,7 @@ static void hal_riscv_trap_interrupt_handler(hal_riscv_trap_interrupt_t code) {
 			g_timer_handler();
 		}
 		break;
-	default:
-		hal_riscv_trap_unhandled_interrupt(code);
-		break;
+	default: hal_riscv_trap_unhandled_interrupt(code); break;
 	}
 }
 
@@ -143,9 +141,7 @@ static void hal_riscv_trap_exception_handler(hal_riscv_trap_exception_t code, ri
 			ctx->a1 = result.value;
 		}
 		break;
-	default:
-		hal_riscv_trap_unhandled_exception(code, ctx->stval);
-		break;
+	default: hal_riscv_trap_unhandled_exception(code, ctx->stval); break;
 	}
 }
 
