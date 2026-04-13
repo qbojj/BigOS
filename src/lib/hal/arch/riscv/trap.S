@@ -79,9 +79,6 @@ hal_riscv_trap_entry:
 
 	// disable interrupts and restore sstatus and sepc
 	and a2, a1, ~CSR_SSTATUS_SIE
-	// set double trap bit
-	li t0, CSR_SSTATUS_SDT
-	or a2, a2, t0
 	csrw sstatus, a2
 	csrw sepc, a0
 
