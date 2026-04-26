@@ -1,12 +1,12 @@
-#ifndef _STDBIGOS_MATH_H
-#define _STDBIGOS_MATH_H
+#ifndef STDBIGOS_MATH
+#define STDBIGOS_MATH
 
-#ifndef min
-	#define min(a, b) ((a) < (b) ? (a) : (b))
-#endif
+#define ALIGN_DOWN(x, align) ((x) & ~((align) - 1))
+#define ALIGN_UP(x, align)   (ALIGN_DOWN((x) + (align) - 1, (align)))
 
-#ifndef max
-	#define max(a, b) ((a) > (b) ? (a) : (b))
-#endif
+#define EXP2(x) (1ull << (x))
 
-#endif
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
+#endif // !STDBIGOS_MATH

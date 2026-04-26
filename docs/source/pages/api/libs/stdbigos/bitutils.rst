@@ -1,0 +1,5 @@
+========
+Bitutils
+========
+
+.. doxygengroup:: bitutils

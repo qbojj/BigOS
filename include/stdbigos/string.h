@@ -1,10 +1,15 @@
-#ifndef _STDBIGOS_STRING_H_
-#define _STDBIGOS_STRING_H_
+#ifndef STDBIGOS_STRING
+#define STDBIGOS_STRING
 
 #include <stddef.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"
+
+/// @addtogroup stdbigos
+/// @{
+/// @addtogroup string
+/// @{
 
 [[reproducible, gnu::nonnull]]
 void* memcpy(void* restrict dest, const void* restrict src, size_t n);
@@ -69,6 +74,9 @@ char* strpbrk(const char* dest, const char* breakset);
 [[unsequenced, gnu::nonnull, gnu::pure]]
 char* strstr(const char* str, const char* substr);
 
+/// @}
+/// @}
+
 #pragma GCC diagnostic pop
 
-#endif
+#endif // !STDBIGOS_STRING

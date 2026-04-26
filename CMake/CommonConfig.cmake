@@ -24,7 +24,7 @@ function(SETUP_LIBRARY name)
     SETUP_COMMON(${name})
 
     file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS *.c)
-    file(GLOB_RECURSE AS_SOURCES CONFIGURE_DEPENDS *.s)
+    file(GLOB_RECURSE AS_SOURCES CONFIGURE_DEPENDS *.S *.s)
     file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include/${name}/*.h")
 
     target_sources(${name}
@@ -44,7 +44,7 @@ function(SETUP_EXECUTABLE name)
 
 	file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS *.c)
     file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS *.h)
-    file(GLOB_RECURSE AS_SOURCES CONFIGURE_DEPENDS *.s)
+    file(GLOB_RECURSE AS_SOURCES CONFIGURE_DEPENDS *.S *.s)
 
     target_sources(${name}
       PRIVATE
@@ -57,6 +57,7 @@ function(SETUP_EXECUTABLE name)
       )
 endfunction()
 
+<<<<<<< HEAD
 function(COMPILE_BINARY name)
     add_custom_command(
         TARGET ${name} POST_BUILD
@@ -71,6 +72,8 @@ function(COMPILE_BINARY name)
     install(TARGETS ${name})
 endfunction()
 
+=======
+>>>>>>> origin/main
 function(ADD_QEMU_TARGET name)
     cmake_parse_arguments(
         arg
@@ -82,7 +85,7 @@ function(ADD_QEMU_TARGET name)
 
     set(CMD "${BIGOS_QEMU_PATH}" ${BIGOS_QEMU_OPTIONS_LIST}
             $<IF:$<BOOL:${arg_BIOS_IMAGE}>,-bios,-kernel>
-            "$<TARGET_FILE:${name}>.bin"
+            "$<TARGET_FILE:${name}>"
         )
 
     add_custom_target(run-${name}

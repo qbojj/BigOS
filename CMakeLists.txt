@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.29)
 project(BigOS LANGUAGES C ASM)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)

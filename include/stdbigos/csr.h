@@ -1,5 +1,5 @@
-#ifndef _STDBIGOS_CSR_H_
-#define _STDBIGOS_CSR_H_
+#ifndef STDBIGOS_CSR
+#define STDBIGOS_CSR
 
 #include "types.h"
 
@@ -57,14 +57,24 @@
 		__asm__ volatile("csrc " #csr ", %0" : : "rK"(_val) : "memory"); \
 	})
 
+/// @addtogroup stdbigos
+/// @{
+/// @addtogroup csr
+/// @{
+
 static inline u32 hartid() {
 	return CSR_READ_RELAXED(mhartid);
 }
+
 static inline void wfi() {
 	__asm__ volatile("wfi" ::: "memory");
 }
+
 static inline void ebreak() {
 	__asm__ volatile("ebreak" ::: "memory");
 }
 
-#endif
+/// @}
+/// @}
+
+#endif // !STDBIGOS_CSR
