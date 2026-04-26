@@ -6,16 +6,7 @@
 
 **BigOS** is an educational operating system developed at the University of Wrocław. Its goal is to make operating system development more accessible and easier to understand, providing a platform for experimentation with modular OS components.
 
-<<<<<<< HEAD
-- **CMake** (3.24) + makefile generator
-- **qemu-system-riscv**
-- **riscv64-elf-gcc**
-- **riscv64-linux-gnu-gcc**
-- **clang-format** (19.0)
-- **MkDocs** (1.4.2) – only for documentation
-=======
 For full documentation, tutorials, examples and contribution guidelines, please visit our [documentation](https://Operacja-System.github.io/BigOS/).
->>>>>>> origin/main
 
 ## License
 

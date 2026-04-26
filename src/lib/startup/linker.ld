@@ -13,16 +13,9 @@ SECTIONS
 {
     __stack_size = DEFINED(__stack_size) ? __stack_size : 32M;
 
-<<<<<<< HEAD:src/example_sbi/linker.ld
-    .init 0x84000000 : {
-        KEEP (*(.init.enter))
-        KEEP (*(SORT_NONE(.init)))
-    }
-=======
     .init 0x80200000 : {
         *(SORT_NONE(.init))
     } :text
->>>>>>> origin/main:src/lib/startup/linker.ld
 
     .fini : {
         *(SORT_NONE(.fini))

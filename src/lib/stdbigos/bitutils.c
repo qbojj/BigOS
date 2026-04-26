@@ -23,6 +23,14 @@ u64 read_le64(const void* addr) {
 	       ((u64)bytes[3] << 24) | ((u64)bytes[2] << 16) | ((u64)bytes[1] << 8) | ((u64)bytes[0] << 0);
 }
 
+void write_be32(const void* addr, u32 val) {
+    u8* bytes = (const u8*)addr;
+    bytes[0] = (u8)(val >> 24);
+    bytes[1] = (u8)(val >> 16);
+    bytes[2] = (u8)(val >> 8);
+    bytes[3] = (u8)(val >> 0);
+}
+
 u32 align_u32(u32 num, u32 align) {
 	return (num + (align - 1)) & ~(align - 1);
 }

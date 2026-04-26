@@ -66,11 +66,7 @@ do
 		echo "${dash} ${sha} ${etc}"
 		;;
 	esac
-<<<<<<< HEAD
-done <<< "$(git log --check --pretty=format:"---% h% s" "${baseCommit}".. -- "$PROJ_DIR" ':!external')"
-=======
 done <<< "$(git log --check --pretty=format:"---% h% s" "${baseCommit}".. -- ":!external" ":!*.rst")"
->>>>>>> origin/main
 
 if test ${#problems[*]} -gt 0
 then

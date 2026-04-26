@@ -57,23 +57,6 @@ function(SETUP_EXECUTABLE name)
       )
 endfunction()
 
-<<<<<<< HEAD
-function(COMPILE_BINARY name)
-    add_custom_command(
-        TARGET ${name} POST_BUILD
-        COMMAND ${CMAKE_OBJCOPY}
-                    -O binary
-                    "$<TARGET_FILE:${name}>"
-                    "$<TARGET_FILE:${name}>.bin"
-        VERBATIM
-    )
-
-    install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${name}.bin" TYPE BIN)
-    install(TARGETS ${name})
-endfunction()
-
-=======
->>>>>>> origin/main
 function(ADD_QEMU_TARGET name)
     cmake_parse_arguments(
         arg
